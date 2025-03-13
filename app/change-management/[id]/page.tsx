@@ -37,12 +37,26 @@ interface ChangeRequest {
     integration_risk: number;
     uat_result: string;
     status: string;
+    requester_name: string | null;
+    approver_name: string | null;
 }
+
+interface FormDataState extends ChangeRequest {
+    compliance_checklist_file: File | null;
+    procedure_checklist_file: File | null;
+    rollback_checklist_file: File | null;
+    architecture_diagram_file: File | null;
+    captures_file: File | null;
+    completion_report_file: File | null;
+}
+
+const fileFields = ["compliance_checklist", "procedure_checklist", "rollback_checklist", "architecture_diagram", "captures", "completion_report"] as const;
+type FileFieldName = (typeof fileFields)[number];
 
 export default function ChangeRequestDetails() {
     const params = useParams();
     const requestId = params.id as string; // Ensure requestId is a string
-    const [formData, setFormData] = useState<ChangeRequest | null>(null);
+    const [formData, setFormData] = useState<FormDataState | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const { token } = useAuth();
@@ -72,7 +86,44 @@ export default function ChangeRequestDetails() {
                     throw new Error("Failed to fetch change request.");
                 }
 
-                setFormData(result.data[0]); // Assuming the API returns an array with one element
+                const initialFormData: FormDataState = {
+                    ...result.data,
+                    compliance_checklist_file: null,
+                    procedure_checklist_file: null,
+                    rollback_checklist_file: null,
+                    architecture_diagram_file: null,
+                    captures_file: null,
+                    completion_report_file: null,
+                };
+
+                // Function to download a file from URL and convert to File object
+                const downloadFile = async (url: string, filename: string): Promise<File | null> => {
+                    try {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        return new File([blob], filename, { type: blob.type });
+                    } catch (error) {
+                        console.error(`Failed to download file ${filename}:`, error);
+                        return null;
+                    }
+                };
+
+                // Download existing files
+                await Promise.all(
+                    fileFields.map(async (field) => {
+                        const backendFilename = initialFormData[field];
+                        if (backendFilename) {
+                            const downloadURL = `http://localhost:8080/files/${field}/${backendFilename}`;
+                            const file = await downloadFile(downloadURL, backendFilename);
+
+                            if (file) {
+                                (initialFormData as any)[`${field}_file`] = file;
+                            }
+                        }
+                    })
+                );
+
+                setFormData(initialFormData);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Unknown error");
             } finally {
@@ -125,19 +176,45 @@ export default function ChangeRequestDetails() {
     }
 
     const handleChange = (e: any) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
+        if (formData) {
+            setFormData({ ...formData, [e.target.id]: e.target.value });
+        }
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fieldName: FileFieldName) => {
+        if (formData) {
+            const file = event.target.files?.[0] || null;
+            setFormData({ ...formData, [`${fieldName}_file`]: file });
+        }
+    };
+
+    const getDownloadURL = (field: FileFieldName) => {
+        if (!formData) return null;
+
+        const clientFile = formData[`${field}_file`];
+
+        if (clientFile) {
+            return URL.createObjectURL(clientFile); // Create a temporary URL for the client-side file
+        }
+        const backendFilename = formData[field];
+        if (backendFilename) {
+            return `http://localhost:8080/files/${field}/${backendFilename}`;
+        }
+        return null;
     };
 
     const approveRequest = async () => {
         const loadingToast = toast.loading("Approving request...");
         try {
+            const formDataToSend = new FormData();
+            formDataToSend.append("cab_meeting_date", formData?.cab_meeting_date || "");
+
             const response = await fetch(`http://localhost:8080/api/requests/approve/${requestId}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ cab_meeting_date: formData?.cab_meeting_date }),
+                body: formDataToSend,
             });
 
             const result = await response.json();
@@ -163,14 +240,37 @@ export default function ChangeRequestDetails() {
 
     const finalizeRequest = async () => {
         const loadingToast = toast.loading("Finalizing request...");
+        const formDataToSend = new FormData();
+
+        // Append text fields
+        for (const key in formData) {
+            if (key.endsWith('_file')) continue; // Skip file fields for now
+            if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number' || typeof formData[key as keyof FormDataState] === 'boolean' || formData[key as keyof FormDataState] === null) {
+                formDataToSend.append(key, String(formData[key as keyof FormDataState]));
+            }
+        }
+
+        // Append file fields
+        for (const field of fileFields) {
+            const fileFieldKey = `${field}_file` as keyof FormDataState;
+            const file = formData[fileFieldKey];
+            if (file) {
+                if (file instanceof File) {
+                    formDataToSend.append(field, file);
+                }
+            } else {
+                // If no new file is selected, keep the existing filename in the database
+                formDataToSend.append(field, formData[field] || ""); // Append the existing filename if no new file is selected
+            }
+        }
+
         try {
             const response = await fetch(`http://localhost:8080/api/requests/finalize/${requestId}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(formData),
+                body: formDataToSend,
             });
 
             const result = await response.json();
@@ -196,14 +296,37 @@ export default function ChangeRequestDetails() {
 
     const completeRequest = async (isSucceed: boolean) => {
         const loadingToast = toast.loading("Completing request...");
+        const formDataToSend = new FormData();
+
+        // Append text fields
+        for (const key in formData) {
+            if (key.endsWith('_file')) continue; // Skip file fields for now
+            if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number' || typeof formData[key as keyof FormDataState] === 'boolean' || formData[key as keyof FormDataState] === null) {
+                formDataToSend.append(key, String(formData[key as keyof FormDataState]));
+            }
+        }
+
+        // Append file fields
+        for (const field of fileFields) {
+            const fileFieldKey = `${field}_file` as keyof FormDataState;
+            const file = formData[fileFieldKey];
+            if (file) {
+                if (file instanceof File) {
+                    formDataToSend.append(field, file);
+                }
+            } else {
+                // If no new file is selected, keep the existing filename in the database
+                formDataToSend.append(field, formData[field] || ""); // Append the existing filename if no new file is selected
+            }
+        }
+
         try {
             const response = await fetch(`http://localhost:8080/api/requests/complete/${requestId}?isSucceed=${isSucceed}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ completion_report: formData?.completion_report, post_implementation_review: formData?.post_implementation_review }),
+                body: formDataToSend,
             });
 
             const result = await response.json();
@@ -256,19 +379,19 @@ export default function ChangeRequestDetails() {
         return statusSteps.slice(0, statusIndex);
     };
 
-    const determineStatus = (step:string) => {
-      if (formData.status === 'success' || formData.status === 'failed'){
-        return 'completed'
-      }
+    const determineStatus = (step: string) => {
+        if (formData.status === 'success' || formData.status === 'failed') {
+            return 'completed'
+        }
 
-      if (formData.status === step){
-        return 'active'
-      }
+        if (formData.status === step) {
+            return 'active'
+        }
 
-      if (completedSteps().includes(step)) {
-        return 'completed'
-      }
-      return 'pending'
+        if (completedSteps().includes(step)) {
+            return 'completed'
+        }
+        return 'pending'
     }
 
     const getNodeColor = (step: string) => {
@@ -287,6 +410,20 @@ export default function ChangeRequestDetails() {
         const status = determineStatus(step);
         return status === 'pending' ? 'text-gray-400' : 'text-white';
     };
+
+    const timestampMap: { [key in string]: string | null } = {
+      "draft": formData?.created_at,
+      "waiting_approval": formData?.approved_at,
+      "waiting_finalization": formData?.finalized_at,
+      "waiting_migration": formData?.finished_at,
+      "success/failed": formData?.finished_at,
+    };
+
+    const formatTimestamp = (timestamp: string | null | undefined) => {
+        if (!timestamp) return "";
+        return new Date(timestamp).toLocaleString();
+    };
+
 
     const getButton = () => {
         const status = formData?.status;
@@ -362,10 +499,17 @@ export default function ChangeRequestDetails() {
                         <h1 className="text-3xl font-bold text-center flex-grow">Edit Change Request</h1>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-6 p-4 bg-gray-800 rounded">
                         <h2 className="text-2xl font-semibold mb-3 mt-6">Request Flow</h2>
+                        <div className="mb-2">
+                            <span className="font-medium">Requested by:</span> {formData.requester_name || "N/A"}
+                        </div>
+                        <div className="mb-4">
+                            <span className="font-medium">Approved by:</span> {formData.approver_name || "N/A"}
+                        </div>
+
                         <div className="relative w-full">
-                            <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-start"> {/* Changed items-center to items-start */}
                                 {statusSteps.map((step, index) => (
                                     <div key={step} className="flex flex-col items-center justify-center flex-1">
                                         <div
@@ -373,7 +517,14 @@ export default function ChangeRequestDetails() {
                                         >
                                             {determineStatus(step) === 'completed' && <span className="text-white">✓</span>}
                                         </div>
-                                        <p className={`text-sm mt-1 text-center ${getTextColor(step)}`}>{step.replace("_", " ")}</p>
+                                        <p className={`text-sm mt-1 text-center ${getTextColor(step)}`}>
+                                            {step.replace("_", " ")}
+                                        </p>
+                                        {timestampMap[step as keyof typeof timestampMap] && (
+                                            <p className={`text-xs text-gray-400 mt-1 text-center`}>
+                                                {formatTimestamp(timestampMap[step])}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -482,36 +633,55 @@ export default function ChangeRequestDetails() {
 
                             {/* Column 2 */}
                             <div className="flex flex-col w-1/3 gap-6">
-                                {["compliance_checklist", "procedure_checklist", "rollback_checklist", "architecture_diagram", "captures", "completion_report"].map((field) => {
-                                    const fieldValue = formData && formData[field as keyof typeof formData];
-                                    const hasValue = !!fieldValue;
+                                {fileFields.map((field) => {
+                                    const backendFilename = formData[field] as string | null;
+                                    const fileFieldKey = `${field}_file` as keyof FormDataState;
+                                    const selectedFile = formData[fileFieldKey] as File | null;
+                                    const hasFile = !!backendFilename || !!selectedFile; // Check if there's a file on the backend OR client
+                                    const filename = selectedFile ? selectedFile.name : backendFilename;
+
 
                                     return (
                                         <div key={field} className="flex flex-col">
-                                            <label htmlFor={field} className="block text-sm font-medium text-gray-300">
+                                            <label
+                                                htmlFor={field}
+                                                className="block text-sm font-medium text-gray-300"
+                                            >
                                                 {field.replace("_", " ").toUpperCase()}:
                                             </label>
                                             <div className="flex items-center">
-                                                <input
-                                                    type="text"
-                                                    id={field}
-                                                    placeholder={field.replace("_", " ").toUpperCase()}
-                                                    className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 ${hasValue ? 'w-4/5' : ''}`}
-                                                    value={fieldValue || ""}
-                                                    onChange={handleChange}
-                                                />
-                                                {hasValue && (
-                                                    <button
-                                                        type="button"
+                                                <label
+                                                    htmlFor={field}
+                                                    className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasFile ? "w-4/5" : ""
+                                                        }`}
+                                                >
+                                                    <span
+                                                        className={`block truncate ${!filename ? "text-gray-400" : ""
+                                                            }`}
+                                                    >
+                                                        {selectedFile
+                                                            ? selectedFile.name
+                                                            : backendFilename
+                                                                ? backendFilename
+                                                                : `Choose ${field.replace("_", " ")}`}
+                                                    </span>
+                                                    <input
+                                                        type="file"
+                                                        id={field}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        onChange={(e) => handleFileChange(e, field)}
+                                                    />
+                                                </label>
+                                                {hasFile && (
+                                                    <a
+                                                        href={getDownloadURL(field) || undefined}
+                                                        download={filename || ""}
+                                                        target="_blank"
                                                         title={`Download ${field.replace("_", " ")}`}
                                                         className="ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
-                                                        onClick={() => {
-                                                            // Placeholder for download logic
-                                                            console.log(`Download ${field}`);
-                                                        }}
                                                     >
                                                         <FaDownload className="text-white" />
-                                                    </button>
+                                                    </a>
                                                 )}
                                             </div>
                                         </div>

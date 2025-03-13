@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
@@ -8,17 +8,17 @@ import Navbar from "@/components/Navbar";
 import { FaDownload } from 'react-icons/fa';
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-interface FormData {
+interface FormDataState {
   type: string;
   name: string;
   category: string;
   urgency: string;
   requested_migration_date: string;
-  compliance_checklist: string;
-  procedure_checklist: string;
-  rollback_checklist: string;
-  architecture_diagram: string;
-  captures: string;
+  compliance_checklist: File | null;
+  procedure_checklist: File | null;
+  rollback_checklist: File | null;
+  architecture_diagram: File | null;
+  captures: File | null;
   downtime_risk: number;
   integration_risk: number;
   uat_result: string;
@@ -26,17 +26,17 @@ interface FormData {
 }
 
 export default function ChangeRequestForm() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<FormDataState>({
     type: "software",
     name: "",
     category: "monitoring",
     urgency: "normal",
     requested_migration_date: "",
-    compliance_checklist: "",
-    procedure_checklist: "",
-    rollback_checklist: "",
-    architecture_diagram: "",
-    captures: "",
+    compliance_checklist: null,
+    procedure_checklist: null,
+    rollback_checklist: null,
+    architecture_diagram: null,
+    captures: null,
     downtime_risk: 0,
     integration_risk: 0,
     uat_result: "none",
@@ -46,18 +46,77 @@ export default function ChangeRequestForm() {
   const { token } = useAuth();
   const router = useRouter();
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: keyof FormDataState) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setFormData({ ...formData, [field]: event.target.files[0] });
+    } else {
+      setFormData({ ...formData, [field]: null });
+    }
+  };
+
+  const handleDownloadFile = (field: keyof FormDataState) => {
+    const file = formData[field];
+    if (file) {
+      if (file instanceof File) {
+        const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name || field;
+      document.body.appendChild(a);
+      a.click();
+        URL.revokeObjectURL(url);
+      }
+    } else {
+      toast.error('No file selected');
+    }
+  };
+
+  const truncateFilename = (filename: string, maxLength: number): string => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+
+    const extension = filename.split('.').pop();
+    const nameWithoutExtension = filename.substring(0, filename.length - (extension ? extension.length + 1 : 0));
+
+    if (nameWithoutExtension.length > maxLength) {
+      return nameWithoutExtension.substring(0, maxLength) + '...' + (extension ? `.${extension}` : '');
+    }
+
+    return nameWithoutExtension + '...' + (extension ? `.${extension}` : '');
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const loadingToast = toast.loading("Adding request...");
 
     try {
+      const formDataToSend = new FormData();
+
+      // Append text fields
+      for (const key in formData) {
+        if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number') {
+          formDataToSend.append(key, String(formData[key as keyof FormDataState]));
+        }
+      }
+
+      // Append file fields
+      formDataToSend.append('compliance_checklist', formData.compliance_checklist || '');
+      formDataToSend.append('procedure_checklist', formData.procedure_checklist || '');
+      formDataToSend.append('rollback_checklist', formData.rollback_checklist || '');
+      formDataToSend.append('architecture_diagram', formData.architecture_diagram || '');
+      formDataToSend.append('captures', formData.captures || '');
+
+      for (const key in formData) {
+        console.log(key, formData[key as keyof FormDataState]);
+      }
+
       const response = await fetch("http://localhost:8080/api/requests", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`, // Don't set Content-Type for FormData
         },
-        body: JSON.stringify(formData),
+        body: formDataToSend,
       });
 
       const result = await response.json();
@@ -77,11 +136,11 @@ export default function ChangeRequestForm() {
         category: "monitoring",
         urgency: "normal",
         requested_migration_date: "",
-        compliance_checklist: "",
-        procedure_checklist: "",
-        rollback_checklist: "",
-        architecture_diagram: "",
-        captures: "",
+        compliance_checklist: null,
+        procedure_checklist: null,
+        rollback_checklist: null,
+        architecture_diagram: null,
+        captures: null,
         downtime_risk: 0,
         integration_risk: 0,
         uat_result: "none",
@@ -191,31 +250,37 @@ export default function ChangeRequestForm() {
               {/* Column 2 */}
               <div className="flex flex-col w-1/3 gap-6">
                 {["compliance_checklist", "procedure_checklist", "rollback_checklist", "architecture_diagram", "captures"].map((field) => {
-                  const fieldValue = formData[field as keyof FormData];
-                  const hasValue = !!fieldValue;
+                  const typedField = field as keyof FormDataState;
+                  const hasValue = !!formData[typedField];
+                  const filename = formData[typedField] ? (formData[typedField] as File).name : `Choose ${field.replace("_", " ")}`;
+                  const truncatedFilename = hasValue ? truncateFilename(filename, 20) : filename; // Adjust maxLength as needed
+ 
                   return (
                     <div key={field} className="flex flex-col">
                       <label htmlFor={field} className="block text-sm font-medium text-gray-300">
                         {field.replace("_", " ").toUpperCase()}:
                       </label>
                       <div className="flex items-center">
-                        <input
-                          type="text"
-                          id={field}
-                          placeholder={field.replace("_", " ").toUpperCase()}
-                          className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 ${hasValue ? 'w-4/5' : ''}`}
-                          value={fieldValue || ""}
-                          onChange={(e) => setFormData({ ...formData, [field as keyof FormData]: e.target.value })}
-                        />
-                        {hasValue && (
+                        <label
+                          htmlFor={field}
+                          className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
+                        >
+                          <span className={`block truncate ${!formData[typedField] ? 'text-gray-400' : ''}`}>
+                            {truncatedFilename}
+                          </span>
+                          <input
+                            type="file"
+                            id={field}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e) => handleFileChange(e, typedField)}
+                          />
+                        </label>
+                        {formData[typedField] && (
                           <button
                             type="button"
                             title={`Download ${field.replace("_", " ")}`}
                             className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
-                            onClick={() => {
-                              // Placeholder for download logic
-                              console.log(`Download ${field}`);
-                            }}
+                            onClick={() => handleDownloadFile(typedField)}
                           >
                             <FaDownload className="text-white" />
                           </button>
