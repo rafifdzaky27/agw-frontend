@@ -173,8 +173,9 @@ export default function ChangeManagement() {
             {/* Filters and Export (Right) */}
             <div className="flex items-stretch space-x-4">
               <div className="flex flex-col justify-start">
-                <label className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
+                <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
                 <select
+                  id="timeReference"
                   className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                   value={timeReference}
                   onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
@@ -191,6 +192,8 @@ export default function ChangeManagement() {
                   className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="Select start date"
+                  title="Select start date"
                 />
               </div>
 
@@ -201,6 +204,8 @@ export default function ChangeManagement() {
                   className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="Select end date"
+                  title="Select end date"
                 />
               </div>
               {/* Export Button */}
@@ -255,7 +260,7 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
           Requested Date: {new Date(request.requested_migration_date).toLocaleString()}
         </p>
         <p className="text-gray-300">
-          Actual Date: {request.finished_at ? new Date(request.finished_at).toLocaleString() : "N/A"}
+          Migration Date: {request.finished_at ? new Date(request.finished_at).toLocaleString() : "N/A"}
         </p>
         <div className="mt-2">
           <span
