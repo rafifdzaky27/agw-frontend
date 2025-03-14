@@ -411,6 +411,21 @@ export default function ChangeRequestDetails() {
         return status === 'pending' ? 'text-gray-400' : 'text-white';
     };
 
+    const truncateFilename = (filename: string, maxLength: number): string => {
+        if (filename.length <= maxLength) {
+          return filename;
+        }
+    
+        const extension = filename.split('.').pop();
+        const nameWithoutExtension = filename.substring(0, filename.length - (extension ? extension.length + 1 : 0));
+    
+        if (nameWithoutExtension.length > maxLength) {
+          return nameWithoutExtension.substring(0, maxLength) + '...' + (extension ? `.${extension}` : '');
+        }
+    
+        return nameWithoutExtension + '...' + (extension ? `.${extension}` : '');
+      };
+
     const timestampMap: { [key in string]: string | null } = {
       "draft": formData?.created_at,
       "waiting_approval": formData?.approved_at,
@@ -640,7 +655,6 @@ export default function ChangeRequestDetails() {
                                     const hasFile = !!backendFilename || !!selectedFile; // Check if there's a file on the backend OR client
                                     const filename = selectedFile ? selectedFile.name : backendFilename;
 
-
                                     return (
                                         <div key={field} className="flex flex-col">
                                             <label
@@ -660,9 +674,9 @@ export default function ChangeRequestDetails() {
                                                             }`}
                                                     >
                                                         {selectedFile
-                                                            ? selectedFile.name
+                                                            ? truncateFilename(selectedFile.name, 40)
                                                             : backendFilename
-                                                                ? backendFilename
+                                                                ? truncateFilename(backendFilename, 40)
                                                                 : `Choose ${field.replace("_", " ")}`}
                                                     </span>
                                                     <input

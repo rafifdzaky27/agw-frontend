@@ -253,38 +253,39 @@ export default function ChangeRequestForm() {
                   const typedField = field as keyof FormDataState;
                   const hasValue = !!formData[typedField];
                   const filename = formData[typedField] ? (formData[typedField] as File).name : `Choose ${field.replace("_", " ")}`;
-                  const truncatedFilename = hasValue ? truncateFilename(filename, 20) : filename; // Adjust maxLength as needed
+                  const truncatedFilename = hasValue ? truncateFilename(filename, 40) : filename; // Adjust maxLength as needed
  
                   return (
                     <div key={field} className="flex flex-col">
                       <label htmlFor={field} className="block text-sm font-medium text-gray-300">
-                        {field.replace("_", " ").toUpperCase()}:
+                      {field.replace("_", " ").toUpperCase()}:
                       </label>
                       <div className="flex items-center">
-                        <label
-                          htmlFor={field}
-                          className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
+                      <label
+                        htmlFor={field}
+                        className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
+                      >
+                        <span className={`block truncate ${!formData[typedField] ? 'text-gray-400' : ''}`}>
+                        {truncatedFilename}
+                        </span>
+                        <input
+                        type="file"
+                        id={field}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={(e) => handleFileChange(e, typedField)}
+                        required={field === "compliance_checklist"}
+                        />
+                      </label>
+                      {formData[typedField] && (
+                        <button
+                        type="button"
+                        title={`Download ${field.replace("_", " ")}`}
+                        className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
+                        onClick={() => handleDownloadFile(typedField)}
                         >
-                          <span className={`block truncate ${!formData[typedField] ? 'text-gray-400' : ''}`}>
-                            {truncatedFilename}
-                          </span>
-                          <input
-                            type="file"
-                            id={field}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={(e) => handleFileChange(e, typedField)}
-                          />
-                        </label>
-                        {formData[typedField] && (
-                          <button
-                            type="button"
-                            title={`Download ${field.replace("_", " ")}`}
-                            className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
-                            onClick={() => handleDownloadFile(typedField)}
-                          >
-                            <FaDownload className="text-white" />
-                          </button>
-                        )}
+                        <FaDownload className="text-white" />
+                        </button>
+                      )}
                       </div>
                     </div>
                   );
