@@ -135,18 +135,17 @@ export default function ChangeManagement() {
         Type: request.type,
         Category: request.category,
         Urgency: request.urgency,
-        Requested_Migration_Date: request.requested_migration_date,
-        Actual_Migration_Date: request.actual_migration_date || "N/A",
-        Created_At: request.created_at,
-        Finished_At: request.finished_at || "N/A",
+        Created_At: new Date(request.created_at).toLocaleString(),
+        Requested_Migration_Date: new Date(request.requested_migration_date).toLocaleString(),
+        CAB_Meeting_Date: request.cab_meeting_date ? new Date(request.cab_meeting_date).toLocaleString() : "N/A",
+        Actual_Migration_Date: request.finished_at ? new Date(request.finished_at).toLocaleString() : "N/A",
         Status: request.status,
-        CAB_Meeting_Date: request.cab_meeting_date || "N/A",
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataForExcel);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Change Requests");
-      XLSX.writeFile(wb, "change_requests.xlsx"); // Corrected filename
+      XLSX.writeFile(wb, "CAB_Report.xlsx"); // Corrected filename
 
       toast.success("Change requests exported successfully", { id: toastId, duration: 1500 });
     } catch (error) {

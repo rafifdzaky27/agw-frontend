@@ -1,4 +1,3 @@
-// app/change-management/[id]/page.tsx
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -9,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getStatusColor } from '@/utils/status';
 import { FaDownload } from 'react-icons/fa';
+import ConfirmationModal from "@/components/ConfirmationModal"; // Import the new component
 
 interface ChangeRequest {
     id: number;
@@ -59,7 +59,10 @@ export default function ChangeRequestDetails() {
     const [formData, setFormData] = useState<FormDataState | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [isSucceed, setIsSucceed] = useState<boolean | null>(null);
     const { token } = useAuth();
+    const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false); // State for modal visibility
+
 
     useEffect(() => {
         async function fetchRequest() {
@@ -222,7 +225,10 @@ export default function ChangeRequestDetails() {
             if (!result.success) {
                 toast.dismiss(loadingToast);
                 toast.error(result.message || "Failed to approve change request.");
-                throw new Error(result.message || "Failed to approve change request.");
+                setTimeout(() => {
+                    toast.dismiss();
+                }, 1000);
+                return;
             }
 
             toast.dismiss(loadingToast);
@@ -278,7 +284,10 @@ export default function ChangeRequestDetails() {
             if (!result.success) {
                 toast.dismiss(loadingToast);
                 toast.error(result.message || "Failed to finalize change request.");
-                throw new Error(result.message || "Failed to finalize change request.");
+                setTimeout(() => {
+                    toast.dismiss();
+                }, 1000);
+                return;
             }
 
             toast.dismiss(loadingToast);
@@ -334,7 +343,10 @@ export default function ChangeRequestDetails() {
             if (!result.success) {
                 toast.dismiss(loadingToast);
                 toast.error(result.message || "Failed to complete change request.");
-                throw new Error(result.message || "Failed to complete change request.");
+                setTimeout(() => {
+                    toast.dismiss();
+                }, 1000);
+                return;
             }
 
             toast.dismiss(loadingToast);
@@ -352,6 +364,12 @@ export default function ChangeRequestDetails() {
 
     const handleSubmit = (isSucceed: boolean | null) => async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSucceed(isSucceed);
+        setIsConfirmationModalOpen(true);
+    };
+
+    const confirmSubmit = async () => {
+        setIsConfirmationModalOpen(false);
         if (formData?.status === "waiting_approval") {
             approveRequest();
         } else if (formData?.status === "waiting_finalization") {
@@ -415,14 +433,14 @@ export default function ChangeRequestDetails() {
         if (filename.length <= maxLength) {
           return filename;
         }
-    
+
         const extension = filename.split('.').pop();
         const nameWithoutExtension = filename.substring(0, filename.length - (extension ? extension.length + 1 : 0));
-    
+
         if (nameWithoutExtension.length > maxLength) {
           return nameWithoutExtension.substring(0, maxLength) + '...' + (extension ? `.${extension}` : '');
         }
-    
+
         return nameWithoutExtension + '...' + (extension ? `.${extension}` : '');
       };
 
@@ -439,6 +457,31 @@ export default function ChangeRequestDetails() {
         return new Date(timestamp).toLocaleString();
     };
 
+    const isFieldDisabled = (fieldName: string): boolean => {
+        const currentStatus = formData?.status;
+
+        if (currentStatus === "success" || currentStatus === "failed") {
+            return true; // All fields are locked
+        }
+
+        if (currentStatus === "waiting_approval") {
+            return fieldName !== "cab_meeting_date"; // Only cab_meeting_date is open
+        }
+
+        if (currentStatus === "waiting_finalization") {
+            return (
+                fieldName === "cab_meeting_date" ||
+                fieldName === "completion_report" ||
+                fieldName === "post_implementation_review"
+            ); // These are locked
+        }
+
+        if (currentStatus === "waiting_migration") {
+            return fieldName === "cab_meeting_date"; // cab_meeting_date is locked
+        }
+
+        return false; // Default: all fields open
+    };
 
     const getButton = () => {
         const status = formData?.status;
@@ -505,6 +548,10 @@ export default function ChangeRequestDetails() {
         );
     };
 
+    const cancelSubmit = () => {
+        setIsConfirmationModalOpen(false); // Close the modal
+    };
+
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-gray-900 text-white">
@@ -566,6 +613,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.name}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("name")}
                                     />
                                 </div>
 
@@ -578,6 +626,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.type}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("type")}
                                     >
                                         <option value="">Select Type</option>
                                         <option value="software">Software</option>
@@ -594,6 +643,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.category}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("category")}
                                     >
                                         <option value="">Select Category</option>
                                         <option value="monitoring">Monitoring</option>
@@ -612,6 +662,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.urgency}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("urgency")}
                                     >
                                         <option value="">Select Urgency</option>
                                         <option value="urgent">Urgent</option>
@@ -629,6 +680,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.actual_migration_date?.split('T')[0] || ''}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("actual_migration_date")}
                                     />
                                 </div>
 
@@ -642,6 +694,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.cab_meeting_date?.split('T')[0] || ''}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("cab_meeting_date")}
                                     />
                                 </div>
                             </div>
@@ -684,6 +737,7 @@ export default function ChangeRequestDetails() {
                                                         id={field}
                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                         onChange={(e) => handleFileChange(e, field)}
+                                                        disabled={isFieldDisabled(field)}
                                                     />
                                                 </label>
                                                 {hasFile && (
@@ -692,7 +746,7 @@ export default function ChangeRequestDetails() {
                                                         download={filename || ""}
                                                         target="_blank"
                                                         title={`Download ${field.replace("_", " ")}`}
-                                                        className="ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
+                                                        className="ml-2 mt-1 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
                                                     >
                                                         <FaDownload className="text-white" />
                                                     </a>
@@ -716,6 +770,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.downtime_risk}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("downtime_risk")}
                                     />
                                 </div>
 
@@ -731,6 +786,7 @@ export default function ChangeRequestDetails() {
                                         value={formData.integration_risk}
                                         onChange={handleChange}
                                         required
+                                        disabled={isFieldDisabled("integration_risk")}
                                     />
                                 </div>
 
@@ -742,6 +798,7 @@ export default function ChangeRequestDetails() {
                                         title="Urgency"
                                         value={formData.uat_result}
                                         onChange={handleChange}
+                                        disabled={isFieldDisabled("uat_result")}
                                     >
                                         <option value="none">None</option>
                                         <option value="done with notes">Done with Notes</option>
@@ -758,6 +815,7 @@ export default function ChangeRequestDetails() {
                                         className="mt-1 block w-full h-1/2 p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.description}
                                         onChange={handleChange}
+                                        disabled={isFieldDisabled("description")}
                                     />
 
                                     <label htmlFor="post_implementation_review" className="block text-sm font-medium text-gray-300 mt-4">Post Implementation Review:</label>
@@ -767,6 +825,7 @@ export default function ChangeRequestDetails() {
                                         className="mt-1 block w-full h-1/2 p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.post_implementation_review || ''}
                                         onChange={handleChange}
+                                        disabled={isFieldDisabled("post_implementation_review")}
                                     />
 
                                 </div>
@@ -777,6 +836,12 @@ export default function ChangeRequestDetails() {
                     </form>
                 </div>
             </div>
+            <ConfirmationModal
+                isOpen={isConfirmationModalOpen}
+                onConfirm={confirmSubmit}
+                onCancel={cancelSubmit}
+                message="Are you sure you want to submit this change request?"
+            />
         </ProtectedRoute>
     );
 }
