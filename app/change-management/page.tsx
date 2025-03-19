@@ -22,6 +22,9 @@ interface ChangeRequest {
   finished_at: string | null;
   status: string;
   cab_meeting_date: string | null;
+  downtime_risk: number;
+  requester_name: string;
+  approver_name: string | null;
 }
 
 type StatusOption = { value: string; label: string };
@@ -184,20 +187,24 @@ export default function ChangeManagement() {
       const dataForExcel = requests.map(request => ({
         ID: request.id,
         Name: request.name,
+        Migration: request.finished_at ? "Yes" : "No",
         Type: request.type,
         Category: request.category,
-        Urgency: request.urgency,
-        Created_At: new Date(request.created_at).toLocaleString(),
-        Requested_Migration_Date: new Date(request.requested_migration_date).toLocaleString(),
         CAB_Meeting_Date: request.cab_meeting_date ? new Date(request.cab_meeting_date).toLocaleString() : "N/A",
-        Actual_Migration_Date: request.finished_at ? new Date(request.finished_at).toLocaleString() : "N/A",
-        Status: request.status,
+        Requested_Migration_Date: new Date(request.requested_migration_date).toLocaleString(),
+        Project_Code: "",
+        RFC_Number: "",
+        Requester_Name: request.requester_name, // Assuming you will fill this later
+        Approver_Name: request.approver_name, // Assuming you will fill this later
+        Downtime: request.downtime_risk, // Assuming you will calculate this later
+        Time: "",
+        PIC: ""
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataForExcel);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Change Requests");
-      XLSX.writeFile(wb, "CAB_Report.xlsx"); // Corrected filename
+      XLSX.writeFile(wb, "CAB_Report.xlsx");
 
       toast.success("Change requests exported successfully", { id: toastId, duration: 1500 });
     } catch (error) {
@@ -217,135 +224,138 @@ export default function ChangeManagement() {
             Change Requests Management
           </h1>
 
-          <div className="flex justify-between items-stretch mb-4">
-            {/* Add Request Button (Left) */}
-            <button className="px-4 py-2 bg-blue-500 rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200" onClick={() => window.location.href = "/change-request-form"}>
-              <FaPlus />
-              <span>Add Request</span>
-            </button>
-
-            {/* Filters and Export (Right) */}
-            <div className="flex items-stretch space-x-4">
-              {/* Time Reference */}
-              <div className="flex flex-col justify-start">
-                <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
-                <select
-                  id="timeReference"
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                  value={timeReference}
-                  onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
-                >
-                  <option value="CAB">CAB</option>
-                  <option value="Migration">Migration</option>
-                </select>
+          <div className="bg-gray-800 rounded-lg p-4 mb-4"> {/* Card styling applied here */}
+            <div className="flex justify-between items-stretch">
+              <div className="flex items-stretch space-x-4">
+                {/* Add Request Button (Left) */}
+                <button className="px-4 py-2 bg-blue-500 rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200" onClick={() => window.location.href = "/change-request-form"}>
+                  <FaPlus />
+                  <span>Add Request</span>
+                </button>
+                {/* Export Button */}
+                <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
+                  <FaFileExport />
+                  <span>Export</span>
+                </button>
               </div>
 
-              {/* Start Date */}
-              <div className="flex flex-col justify-start">
-                <label className="block text-sm font-medium text-gray-300 h-1/2">Start Date:</label>
-                <input
-                  type="date"
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  placeholder="Select start date"
-                  title="Select start date"
-                />
-              </div>
-
-              {/* End Date */}
-              <div className="flex flex-col justify-start">
-                <label className="block text-sm font-medium text-gray-300 h-1/2">End Date:</label>
-                <input
-                  type="date"
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  placeholder="Select end date"
-                  title="Select end date"
-                />
-              </div>
-
-              {/* Status Filter (Modal) */}
-              <div className="flex flex-col justify-start relative">
-                <label className="block text-sm font-medium text-gray-300 h-1/2">Status:</label>
-                <div className="relative">
-                  <button
-                    type="button"
+              {/* Filters and Export (Right) */}
+              <div className="flex items-stretch space-x-4">
+                {/* Time Reference */}
+                <div className="flex flex-col justify-start">
+                  <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
+                  <select
+                    id="timeReference"
                     className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                    onClick={() => setIsStatusModalOpen(true)}
-                    style={{ width: '250px' }} // Increased Width
+                    value={timeReference}
+                    onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
                   >
-                    {statusText}
-                  </button>
+                    <option value="CAB">CAB</option>
+                    <option value="Migration">Migration</option>
+                  </select>
                 </div>
 
-                {/* Status Modal (Dropdown Style) */}
-                {isStatusModalOpen && (
-                  <div className="absolute left-0 top-full mt-1 z-10 bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
-                    <div className="py-1">
-                      {statusOptions.map((option) => (
-                        <label key={option.value} className="px-4 py-2 flex items-center text-gray-300 hover:bg-gray-700">
-                          <input
-                            type="checkbox"
-                            className="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
-                            value={option.value}
-                            checked={selectedStatuses.includes(option.value)}
-                            onChange={() => handleStatusChange(option.value)}
-                          />
-                          <span>{option.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="px-4 py-2 bg-gray-700 flex justify-between">
-                      <button
-                        type="button"
-                        className="text-sm text-gray-300 hover:text-white"
-                        onClick={handleClearAllStatuses}
-                      >
-                        Clear
-                      </button>
-                      <button
-                        type="button"
-                        className="text-sm text-gray-300 hover:text-white"
-                        onClick={handleSelectAllStatuses}
-                      >
-                        Select All
-                      </button>
-                    </div>
-                    <div className="px-4 py-2 bg-gray-700">
-                      <button
-                        type="button"
-                        className="w-full text-sm text-gray-300 hover:text-white"
-                        onClick={() => setIsStatusModalOpen(false)}
-                      >
-                        Close
-                      </button>
-                    </div>
+                {/* Start Date */}
+                <div className="flex flex-col justify-start">
+                  <label className="block text-sm font-medium text-gray-300 h-1/2">Start Date:</label>
+                  <input
+                    type="date"
+                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="Select start date"
+                    title="Select start date"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div className="flex flex-col justify-start">
+                  <label className="block text-sm font-medium text-gray-300 h-1/2">End Date:</label>
+                  <input
+                    type="date"
+                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="Select end date"
+                    title="Select end date"
+                  />
+                </div>
+
+                {/* Status Filter (Modal) */}
+                <div className="flex flex-col justify-start relative">
+                  <label className="block text-sm font-medium text-gray-300 h-1/2">Status:</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      onClick={() => setIsStatusModalOpen(true)}
+                      style={{ width: '250px' }} // Increased Width
+                    >
+                      {statusText}
+                    </button>
                   </div>
-                )}
-              </div>
 
-              {/* Sort By */}
-              <div className="flex flex-col justify-start">
-                <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
-                <select
-                  id="sortBy"
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  {sortOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
+                  {/* Status Modal (Dropdown Style) */}
+                  {isStatusModalOpen && (
+                    <div className="absolute left-0 top-full mt-1 z-10 bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
+                      <div className="py-1">
+                        {statusOptions.map((option) => (
+                          <label key={option.value} className="px-4 py-2 flex items-center text-gray-300 hover:bg-gray-700">
+                            <input
+                              type="checkbox"
+                              className="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
+                              value={option.value}
+                              checked={selectedStatuses.includes(option.value)}
+                              onChange={() => handleStatusChange(option.value)}
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="px-4 py-2 bg-gray-700 flex justify-between">
+                        <button
+                          type="button"
+                          className="text-sm text-gray-300 hover:text-white"
+                          onClick={handleClearAllStatuses}
+                        >
+                          Clear
+                        </button>
+                        <button
+                          type="button"
+                          className="text-sm text-gray-300 hover:text-white"
+                          onClick={handleSelectAllStatuses}
+                        >
+                          Select All
+                        </button>
+                      </div>
+                      <div className="px-4 py-2 bg-gray-700">
+                        <button
+                          type="button"
+                          className="w-full text-sm text-gray-300 hover:text-white"
+                          onClick={() => setIsStatusModalOpen(false)}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-              {/* Export Button */}
-              <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
-                <FaFileExport />
-                <span>Export</span>
-              </button>
+                {/* Sort By */}
+                <div className="flex flex-col justify-start">
+                  <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
+                  <select
+                    id="sortBy"
+                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    {sortOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
