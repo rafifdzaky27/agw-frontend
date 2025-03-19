@@ -24,6 +24,24 @@ interface ChangeRequest {
   cab_meeting_date: string | null;
 }
 
+type StatusOption = { value: string; label: string };
+
+const statusOptions: StatusOption[] = [
+  { value: "draft", label: "Draft" },
+  { value: "waiting_approval", label: "Waiting Approval" },
+  { value: "waiting_finalization", label: "Waiting Finalization" },
+  { value: "waiting_migration", label: "Waiting Migration" },
+  { value: "success", label: "Success" },
+  { value: "failed", label: "Failed" },
+];
+
+type SortOption = { value: string; label: string };
+
+const sortOptions: SortOption[] = [
+  { value: "status", label: "Status" },
+  { value: "created_at", label: "Created At" },
+];
+
 export default function ChangeManagement() {
   const [allRequests, setAllRequests] = useState<ChangeRequest[]>([]);
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
@@ -32,6 +50,9 @@ export default function ChangeManagement() {
   const [timeReference, setTimeReference] = useState<"CAB" | "Migration">("CAB");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]); // Use array of strings for status values
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
 
   const { token } = useAuth();
 
@@ -75,23 +96,24 @@ export default function ChangeManagement() {
   useEffect(() => {
     // Apply filters whenever filter criteria change
     applyFilters();
-  }, [timeReference, startDate, endDate, allRequests]);
+  }, [timeReference, startDate, endDate, selectedStatuses, sortBy, allRequests]);
 
   const applyFilters = () => {
     let filtered = [...allRequests];
 
+    // Time Reference Filtering
     if (timeReference === "CAB") {
       filtered = filtered.filter(request => {
-        const createdAt = new Date(request.created_at); // Convert to Date object
+        const createdAt = new Date(request.created_at);
         const start = startDate ? new Date(startDate) : null;
         const end = endDate ? new Date(endDate) : null;
 
         if (start) {
-          start.setHours(0, 0, 0, 0);  // Set time to beginning of day for inclusive
+          start.setHours(0, 0, 0, 0);
           if (createdAt < start) return false;
         }
         if (end) {
-          end.setHours(23, 59, 59, 999); // Set time to end of day for inclusive
+          end.setHours(23, 59, 59, 999);
           if (createdAt > end) return false;
         }
         return true;
@@ -99,18 +121,18 @@ export default function ChangeManagement() {
     } else if (timeReference === "Migration") {
       filtered = filtered.filter(request => {
         if (request.status !== "success" && request.status !== "failed") return false;
-        if (!request.finished_at) return false;  // Filter out if no finished_at
+        if (!request.finished_at) return false;
 
-        const finishedAt = new Date(request.finished_at); // Convert to Date object
+        const finishedAt = new Date(request.finished_at);
         const start = startDate ? new Date(startDate) : null;
         const end = endDate ? new Date(endDate) : null;
 
         if (start) {
-          start.setHours(0, 0, 0, 0); // Set time to beginning of day for inclusive
+          start.setHours(0, 0, 0, 0);
           if (finishedAt < start) return false;
         }
         if (end) {
-          end.setHours(23, 59, 59, 999); // Set time to end of day for inclusive
+          end.setHours(23, 59, 59, 999);
           if (finishedAt > end) return false;
         }
 
@@ -118,7 +140,37 @@ export default function ChangeManagement() {
       });
     }
 
+    // Status Filtering
+    if (selectedStatuses.length > 0) {
+      filtered = filtered.filter(request => selectedStatuses.includes(request.status));
+    }
+
+    // Sorting
+    if (sortBy === "status") {
+      filtered.sort((a, b) => a.status.localeCompare(b.status));
+    } else if (sortBy === "created_at") {
+      filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+
     setRequests(filtered);
+  };
+
+  const handleStatusChange = (statusValue: string) => {
+    setSelectedStatuses(prevStatuses => {
+      if (prevStatuses.includes(statusValue)) {
+        return prevStatuses.filter(s => s !== statusValue); // Unselect
+      } else {
+        return [...prevStatuses, statusValue]; // Select
+      }
+    });
+  };
+
+  const handleSelectAllStatuses = () => {
+    setSelectedStatuses(statusOptions.map(option => option.value));
+  };
+
+  const handleClearAllStatuses = () => {
+    setSelectedStatuses([]);
   };
 
   const exportToExcel = () => {
@@ -153,6 +205,9 @@ export default function ChangeManagement() {
     }
   };
 
+  const selectedStatusCount = selectedStatuses.length;
+  const statusText = selectedStatusCount === 0 ? "None Selected" : `${selectedStatusCount} Selected`;
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-900 text-white">
@@ -171,6 +226,7 @@ export default function ChangeManagement() {
 
             {/* Filters and Export (Right) */}
             <div className="flex items-stretch space-x-4">
+              {/* Time Reference */}
               <div className="flex flex-col justify-start">
                 <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
                 <select
@@ -184,6 +240,7 @@ export default function ChangeManagement() {
                 </select>
               </div>
 
+              {/* Start Date */}
               <div className="flex flex-col justify-start">
                 <label className="block text-sm font-medium text-gray-300 h-1/2">Start Date:</label>
                 <input
@@ -196,6 +253,7 @@ export default function ChangeManagement() {
                 />
               </div>
 
+              {/* End Date */}
               <div className="flex flex-col justify-start">
                 <label className="block text-sm font-medium text-gray-300 h-1/2">End Date:</label>
                 <input
@@ -207,6 +265,82 @@ export default function ChangeManagement() {
                   title="Select end date"
                 />
               </div>
+
+              {/* Status Filter (Modal) */}
+              <div className="flex flex-col justify-start relative">
+                <label className="block text-sm font-medium text-gray-300 h-1/2">Status:</label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                    onClick={() => setIsStatusModalOpen(true)}
+                    style={{ width: '250px' }} // Increased Width
+                  >
+                    {statusText}
+                  </button>
+                </div>
+
+                {/* Status Modal (Dropdown Style) */}
+                {isStatusModalOpen && (
+                  <div className="absolute left-0 top-full mt-1 z-10 bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
+                    <div className="py-1">
+                      {statusOptions.map((option) => (
+                        <label key={option.value} className="px-4 py-2 flex items-center text-gray-300 hover:bg-gray-700">
+                          <input
+                            type="checkbox"
+                            className="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
+                            value={option.value}
+                            checked={selectedStatuses.includes(option.value)}
+                            onChange={() => handleStatusChange(option.value)}
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="px-4 py-2 bg-gray-700 flex justify-between">
+                      <button
+                        type="button"
+                        className="text-sm text-gray-300 hover:text-white"
+                        onClick={handleClearAllStatuses}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        type="button"
+                        className="text-sm text-gray-300 hover:text-white"
+                        onClick={handleSelectAllStatuses}
+                      >
+                        Select All
+                      </button>
+                    </div>
+                    <div className="px-4 py-2 bg-gray-700">
+                      <button
+                        type="button"
+                        className="w-full text-sm text-gray-300 hover:text-white"
+                        onClick={() => setIsStatusModalOpen(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sort By */}
+              <div className="flex flex-col justify-start">
+                <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
+                <select
+                  id="sortBy"
+                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  {sortOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Export Button */}
               <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
                 <FaFileExport />

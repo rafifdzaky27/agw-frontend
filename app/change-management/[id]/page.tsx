@@ -53,6 +53,7 @@ interface MigrationHistory {
     id: number;
     change_request_id: number;
     migration_date: string;
+    pending_reason: string;
     status: string;
     recorded_at: string;
 }
@@ -421,9 +422,9 @@ export default function ChangeRequestDetails() {
         console.log(isPreviousMigrationsModalOpen)
     };
 
-    const confirmPending = async (selectedDate: string) => {
+    const confirmPending = async (selectedDate: string, pending_reason: string) => {
         setIsPendingModalOpen(false);
-        if (!selectedDate) return; // Ensure date is provided
+        if (!selectedDate || !pending_reason) return; // Ensure date and reason are provided
 
         const loadingToast = toast.loading("Updating migration request...");
 
@@ -434,7 +435,7 @@ export default function ChangeRequestDetails() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ new_migration_date: selectedDate }),
+                body: JSON.stringify({ new_migration_date: selectedDate, pending_reason: pending_reason }),
             });
 
             const data = await response.json();
@@ -672,7 +673,7 @@ export default function ChangeRequestDetails() {
                                 className="border font-medium border-white text-white rounded-full px-4 py-1 transition duration-300 hover:bg-white hover:text-gray-800"
                                 onClick={openModal} // Replace with your function
                             >
-                                Previous Migrations
+                                Scheduled Migrations
                             </button>
                         </div>
 
