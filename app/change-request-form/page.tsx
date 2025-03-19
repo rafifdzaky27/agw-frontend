@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import { FaDownload } from 'react-icons/fa';
 import ProtectedRoute from "@/components/ProtectedRoute";
-import ConfirmationModal from "@/components/ConfirmationModal"; // Import the new component
+import { ConfirmationModal } from "@/components/ConfirmationModal"; // Import the new component
 
 interface FormDataState {
     type: string;

@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getStatusColor } from '@/utils/status';
 import { FaDownload } from 'react-icons/fa';
-import ConfirmationModal from "@/components/ConfirmationModal"; // Import the new component
+import { ConfirmationModal, PendingModal, PreviousMigrationsModal } from "@/components/ConfirmationModal"; // Import the new component
 
 interface ChangeRequest {
     id: number;
@@ -26,7 +26,6 @@ interface ChangeRequest {
     description: string;
     post_implementation_review: string | null;
     requested_migration_date: string;
-    actual_migration_date: string | null;
     compliance_checklist: string;
     procedure_checklist: string;
     rollback_checklist: string;
@@ -50,6 +49,14 @@ interface FormDataState extends ChangeRequest {
     completion_report_file: File | null;
 }
 
+interface MigrationHistory {
+    id: number;
+    change_request_id: number;
+    migration_date: string;
+    status: string;
+    recorded_at: string;
+}
+
 const fileFields = ["compliance_checklist", "procedure_checklist", "rollback_checklist", "architecture_diagram", "captures", "completion_report"] as const;
 type FileFieldName = (typeof fileFields)[number];
 
@@ -57,12 +64,19 @@ export default function ChangeRequestDetails() {
     const params = useParams();
     const requestId = params.id as string; // Ensure requestId is a string
     const [formData, setFormData] = useState<FormDataState | null>(null);
+    const [migrationHistory, setMigrationHistory] = useState<MigrationHistory[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isSucceed, setIsSucceed] = useState<boolean | null>(null);
     const { token } = useAuth();
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false); // State for modal visibility
+    const [isPendingModalOpen, setIsPendingModalOpen] = useState(false); // State for modal visibility
+    const [isPreviousMigrationsModalOpen, setIsPreviousMigrationsModalOpen] = useState(false); // State for modal visibility
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
 
     useEffect(() => {
         async function fetchRequest() {
@@ -134,7 +148,35 @@ export default function ChangeRequestDetails() {
             }
         }
 
+        async function fetchMigrationHistory() {
+            if (!token) return;
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/requests/history/${requestId}`, {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error("Failed to fetch migration history.");
+                }
+
+                setMigrationHistory(result.data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Unknown error");
+            }
+        }
+
         fetchRequest();
+        fetchMigrationHistory();
     }, [requestId, token]);
 
     if (loading) {
@@ -368,6 +410,52 @@ export default function ChangeRequestDetails() {
         setIsConfirmationModalOpen(true);
     };
 
+    const handlePending = () => async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsPendingModalOpen(true);
+    };
+
+    const handlePreviousMigrations = () => async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsPreviousMigrationsModalOpen(true);
+        console.log(isPreviousMigrationsModalOpen)
+    };
+
+    const confirmPending = async (selectedDate: string) => {
+        setIsPendingModalOpen(false);
+        if (!selectedDate) return; // Ensure date is provided
+
+        const loadingToast = toast.loading("Updating migration request...");
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/requests/pending/${requestId}`, {
+                method: "POST", // Use POST since we're updating data
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ new_migration_date: selectedDate }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                toast.dismiss(loadingToast);
+                toast.success("Migration request updated successfully!");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                toast.dismiss(loadingToast);
+                toast.error(data.message || "Failed to update migration request.");
+            }
+        } catch (error) {
+            toast.dismiss(loadingToast);
+            toast.error("An error occurred while updating the migration request.");
+        }
+    };
+    
+
     const confirmSubmit = async () => {
         setIsConfirmationModalOpen(false);
         if (formData?.status === "waiting_approval") {
@@ -477,7 +565,7 @@ export default function ChangeRequestDetails() {
         }
 
         if (currentStatus === "waiting_migration") {
-            return fieldName === "cab_meeting_date"; // cab_meeting_date is locked
+            return ( fieldName === "cab_meeting_date" || fieldName === "requested_migration_date" ) ; // cab_meeting_date and requested_migration_date are locked
         }
 
         return false; // Default: all fields open
@@ -516,24 +604,32 @@ export default function ChangeRequestDetails() {
 
         if (status === "waiting_migration") {
             return (
-                <div className="flex gap-6">
-                    <button
-                        type="button"
-                        onClick={handleSubmit(true)}
-                        className={`${baseButtonStyle} flex-1`}
-                        style={{ backgroundColor: getStatusColor("success") }}
-                    >
-                        Complete Success
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSubmit(false)}
-                        className={`${baseButtonStyle} flex-1`}
-                        style={{ backgroundColor: getStatusColor("failed") }}
-                    >
-                        Complete Failed
-                    </button>
-                </div>
+            <div className="flex gap-6">
+                <button
+                    type="button"
+                    onClick={handleSubmit(true)}
+                    className={`${baseButtonStyle} flex-1`}
+                    style={{ backgroundColor: getStatusColor("success"), flexBasis: "40%" }}
+                >
+                Complete Success
+                </button>
+                <button
+                    type="button"
+                    onClick={handleSubmit(false)}
+                    className={`${baseButtonStyle} flex-1`}
+                    style={{ backgroundColor: getStatusColor("failed"), flexBasis: "40%" }}
+                >
+                Complete Failed
+                </button>
+                <button
+                    type="button"
+                    onClick={handlePending()}
+                    className={`${baseButtonStyle} flex-1`}
+                    style={{ backgroundColor: "purple", flexBasis: "20%" }}
+                >
+                Pending
+                </button>
+            </div>
             );
         }
 
@@ -552,6 +648,14 @@ export default function ChangeRequestDetails() {
         setIsConfirmationModalOpen(false); // Close the modal
     };
 
+    const cancelPending = () => {
+        setIsPendingModalOpen(false); // Close the modal
+    };
+
+    const cancelPreviousMigrations = () => {
+        setIsPreviousMigrationsModalOpen(false); // Close the modal
+    };
+
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-gray-900 text-white">
@@ -561,8 +665,17 @@ export default function ChangeRequestDetails() {
                         <h1 className="text-3xl font-bold text-center flex-grow">Edit Change Request</h1>
                     </div>
 
-                    <div className="mb-6 p-4 bg-gray-800 rounded">
-                        <h2 className="text-2xl font-semibold mb-3 mt-6">Request Flow</h2>
+                    <div className="mb-6 p-4 bg-gray-800 rounded relative">
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-2xl font-semibold">Request Flow</h2>
+                            <button
+                                className="border font-medium border-white text-white rounded-full px-4 py-1 transition duration-300 hover:bg-white hover:text-gray-800"
+                                onClick={openModal} // Replace with your function
+                            >
+                                Previous Migrations
+                            </button>
+                        </div>
+
                         <div className="mb-2">
                             <span className="font-medium">Requested by:</span> {formData.requester_name || "N/A"}
                         </div>
@@ -571,7 +684,7 @@ export default function ChangeRequestDetails() {
                         </div>
 
                         <div className="relative w-full">
-                            <div className="flex justify-between items-start"> {/* Changed items-center to items-start */}
+                            <div className="flex justify-between items-start">
                                 {statusSteps.map((step, index) => (
                                     <div key={step} className="flex flex-col items-center justify-center flex-1">
                                         <div
@@ -671,16 +784,16 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="actual_migration_date" className="block text-sm font-medium text-gray-300">Actual Migration Date:</label>
+                                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-300">Requested Migration Date:</label>
                                     <input
                                         type="date"
-                                        id="actual_migration_date"
-                                        title="Actual Migration Date"
+                                        id="requested_migration_date"
+                                        title="Requested Migration Date"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                                        value={formData.actual_migration_date?.split('T')[0] || ''}
+                                        value={formData.requested_migration_date?.split('T')[0] || ''}
                                         onChange={handleChange}
                                         required
-                                        disabled={isFieldDisabled("actual_migration_date")}
+                                        disabled={isFieldDisabled("requested_migration_date")}
                                     />
                                 </div>
 
@@ -836,6 +949,16 @@ export default function ChangeRequestDetails() {
                     </form>
                 </div>
             </div>
+            <PreviousMigrationsModal 
+                isOpen={isModalOpen} 
+                onClose={closeModal} 
+                history={migrationHistory}
+            />
+            <PendingModal
+                isOpen={isPendingModalOpen}
+                onConfirm={confirmPending}
+                onCancel={cancelPending}
+            />
             <ConfirmationModal
                 isOpen={isConfirmationModalOpen}
                 onConfirm={confirmSubmit}
