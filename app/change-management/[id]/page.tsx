@@ -7,7 +7,7 @@ import { toast } from "react-hot-toast";
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getStatusColor } from '@/utils/status';
-import { FaDownload } from 'react-icons/fa';
+import { FaDownload, FaExclamationCircle } from 'react-icons/fa';
 import { ConfirmationModal, PendingModal, PreviousMigrationsModal } from "@/components/ConfirmationModal"; // Import the new component
 
 interface ChangeRequest {
@@ -38,6 +38,7 @@ interface ChangeRequest {
     status: string;
     requester_name: string | null;
     approver_name: string | null;
+    pending_count: number;
 }
 
 interface FormDataState extends ChangeRequest {
@@ -247,6 +248,45 @@ export default function ChangeRequestDetails() {
             return `http://localhost:8080/files/${field}/${backendFilename}`;
         }
         return null;
+    };
+
+    const handleAlert = async () => {
+        if (!formData?.requester_id) {
+            toast.error("Requester ID is missing.");
+            return;
+        }
+    
+        const loadingToast = toast.loading("Sending alert email...");
+        try {
+            const response = await fetch(`http://localhost:8080/api/users/${formData.requester_id}/email`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+    
+            const result = await response.json();
+    
+            if (!result.success) {
+                toast.dismiss(loadingToast);
+                toast.error(result.message || "Failed to send alert email.");
+                setTimeout(() => {
+                    toast.dismiss();
+                }, 1000);
+                return;
+            }
+    
+            toast.dismiss(loadingToast);
+            toast.success("Email sent successfully.");
+    
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+    
+        } catch (err) {
+            toast.dismiss(loadingToast);
+            toast.error(err instanceof Error ? err.message : "Unknown error");
+        }
     };
 
     const approveRequest = async () => {
@@ -677,11 +717,18 @@ export default function ChangeRequestDetails() {
                             </button>
                         </div>
 
-                        <div className="mb-2">
-                            <span className="font-medium">Requested by:</span> {formData.requester_name || "N/A"}
+                        <div className="mb-2 flex items-center">
+                            <span className="font-medium mr-2">Requested by: </span> {formData.requester_name || "N/A"}
+                            <button
+                                className="ml-2 p-2 rounded-lg border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                                onClick={handleAlert}
+                                title="Send alert email to requester"
+                            >
+                                <FaExclamationCircle className="h-5 w-5" />
+                            </button>
                         </div>
-                        <div className="mb-4">
-                            <span className="font-medium">Approved by:</span> {formData.approver_name || "N/A"}
+                        <div className="mb-4">    
+                            <span className="font-medium mr-2">Approved by:</span> {formData.approver_name || "N/A"}
                         </div>
 
                         <div className="relative w-full">

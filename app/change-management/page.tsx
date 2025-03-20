@@ -23,6 +23,8 @@ interface ChangeRequest {
   status: string;
   cab_meeting_date: string | null;
   downtime_risk: number;
+  requester_id: number;
+  approver_id: number | null;
   requester_name: string;
   approver_name: string | null;
 }
