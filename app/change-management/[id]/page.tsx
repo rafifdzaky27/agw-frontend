@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getStatusColor } from '@/utils/status';
 import { FaDownload, FaExclamationCircle } from 'react-icons/fa';
-import { ConfirmationModal, PendingModal, PreviousMigrationsModal } from "@/components/ConfirmationModal"; // Import the new component
+import { ConfirmationModal, PendingModal, PreviousMigrationsModal, AlertModal } from "@/components/ConfirmationModal"; // Import the new component
 
 interface ChangeRequest {
     id: number;
@@ -38,7 +38,7 @@ interface ChangeRequest {
     status: string;
     requester_name: string | null;
     approver_name: string | null;
-    pending_count: number;
+    alert_count: number;
 }
 
 interface FormDataState extends ChangeRequest {
@@ -73,7 +73,7 @@ export default function ChangeRequestDetails() {
     const { token } = useAuth();
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false); // State for modal visibility
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false); // State for modal visibility
-    const [isPreviousMigrationsModalOpen, setIsPreviousMigrationsModalOpen] = useState(false); // State for modal visibility
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false); // State for modal visibility
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -250,42 +250,54 @@ export default function ChangeRequestDetails() {
         return null;
     };
 
-    const handleAlert = async () => {
+    const confirmAlert = async () => {
         if (!formData?.requester_id) {
             toast.error("Requester ID is missing.");
             return;
         }
-    
+
         const loadingToast = toast.loading("Sending alert email...");
         try {
-            const response = await fetch(`http://localhost:8080/api/users/${formData.requester_id}/email`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-    
-            const result = await response.json();
-    
-            if (!result.success) {
-                toast.dismiss(loadingToast);
-                toast.error(result.message || "Failed to send alert email.");
-                setTimeout(() => {
-                    toast.dismiss();
-                }, 1000);
-                return;
-            }
-    
+            await incrementAlertCount();
+            await sendAlertEmail(formData.requester_id);
             toast.dismiss(loadingToast);
             toast.success("Email sent successfully.");
-    
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
-    
         } catch (err) {
             toast.dismiss(loadingToast);
             toast.error(err instanceof Error ? err.message : "Unknown error");
+        }
+    };
+
+    const incrementAlertCount = async () => {
+        const response = await fetch(`http://localhost:8080/api/requests/alert/${requestId}`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || "Failed to increment alert count.");
+        }
+    };
+
+    const sendAlertEmail = async (requesterId: number) => {
+        const response = await fetch(`http://localhost:8080/api/users/${requesterId}/email`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || "Failed to send alert email.");
         }
     };
 
@@ -456,11 +468,7 @@ export default function ChangeRequestDetails() {
         setIsPendingModalOpen(true);
     };
 
-    const handlePreviousMigrations = () => async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsPreviousMigrationsModalOpen(true);
-        console.log(isPreviousMigrationsModalOpen)
-    };
+    const handleAlert = () => setIsAlertModalOpen(true);
 
     const confirmPending = async (selectedDate: string, pending_reason: string) => {
         setIsPendingModalOpen(false);
@@ -495,7 +503,6 @@ export default function ChangeRequestDetails() {
             toast.error("An error occurred while updating the migration request.");
         }
     };
-    
 
     const confirmSubmit = async () => {
         setIsConfirmationModalOpen(false);
@@ -693,9 +700,7 @@ export default function ChangeRequestDetails() {
         setIsPendingModalOpen(false); // Close the modal
     };
 
-    const cancelPreviousMigrations = () => {
-        setIsPreviousMigrationsModalOpen(false); // Close the modal
-    };
+    const cancelAlert = () => setIsAlertModalOpen(false);
 
     return (
         <ProtectedRoute>
@@ -997,6 +1002,12 @@ export default function ChangeRequestDetails() {
                     </form>
                 </div>
             </div>
+            <AlertModal
+                isOpen={isAlertModalOpen}
+                onConfirm={confirmAlert}
+                onCancel={cancelAlert}
+                alertCount={formData.alert_count}
+            />
             <PreviousMigrationsModal 
                 isOpen={isModalOpen} 
                 onClose={closeModal} 
@@ -1011,7 +1022,7 @@ export default function ChangeRequestDetails() {
                 isOpen={isConfirmationModalOpen}
                 onConfirm={confirmSubmit}
                 onCancel={cancelSubmit}
-                message="Are you sure you want to submit this change request?"
+                message="Are you sure you want to update this change request?"
             />
         </ProtectedRoute>
     );

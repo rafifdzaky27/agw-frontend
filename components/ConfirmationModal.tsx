@@ -30,6 +30,13 @@ interface PreviousMigrationsModalProps {
     history?: MigrationHistory[]; // Accept migration history data
 }
 
+interface AlertModalProps {
+    isOpen: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+    alertCount: number; // Number of times email alerts have been sent
+}
+
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
     return (
         <div className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 overflow-y-auto flex items-start justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
@@ -54,6 +61,17 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm
                 </div>
             </div>
         </div>
+    );
+};
+
+const AlertModal: React.FC<AlertModalProps> = ({ isOpen, onConfirm, onCancel, alertCount }) => {
+    return (
+        <ConfirmationModal 
+            isOpen={isOpen} 
+            onConfirm={onConfirm} 
+            onCancel={onCancel} 
+            message={`Are you sure to send email alerts? (${alertCount}/3)`} 
+        />
     );
 };
 
@@ -198,4 +216,4 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
     );
 };
 
-export { ConfirmationModal, PendingModal, PreviousMigrationsModal };
+export { ConfirmationModal, PendingModal, PreviousMigrationsModal, AlertModal };
