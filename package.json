@@ -12,6 +12,7 @@
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.1",
     "dotenv": "^16.4.7",
+    "framer-motion": "^12.5.0",
     "jsonwebtoken": "^9.0.2",
     "next": "15.1.7",
     "pg": "^8.13.3",

@@ -302,10 +302,15 @@ export default function ChangeRequestDetails() {
     };
 
     const approveRequest = async () => {
+        if (!formData?.cab_meeting_date) {
+            toast.error("CAB Meeting Date is required.");
+            return;
+        }
+
         const loadingToast = toast.loading("Approving request...");
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append("cab_meeting_date", formData?.cab_meeting_date || "");
+            formDataToSend.append("cab_meeting_date", formData.cab_meeting_date);
 
             const response = await fetch(`http://localhost:8080/api/requests/approve/${requestId}`, {
                 method: "PUT",
@@ -366,7 +371,8 @@ export default function ChangeRequestDetails() {
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/finalize/${requestId}`, {
+            const isEmergency = formData.urgency === "emergency";
+            const response = await fetch(`http://localhost:8080/api/requests/finalize/${requestId}?isEmergency=${isEmergency}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -517,13 +523,15 @@ export default function ChangeRequestDetails() {
         }
     };
 
-    const statusSteps = [
-        "draft",
-        "waiting_approval",
-        "waiting_finalization",
-        "waiting_migration",
-        "success/failed",
-    ];
+    const statusSteps = ["draft", "waiting_approval", "waiting_finalization", "waiting_migration", "success/failed"];
+
+    if (formData?.urgency === "emergency") {
+        if (formData?.type === "software") {
+            statusSteps.splice(3, 0, "waiting_dev_vdh_approval", "waiting_ops_vdh_approval");
+        } else if (formData?.type === "hardware") {
+            statusSteps.splice(3, 0, "waiting_ops_vdh_approval", "waiting_dev_vdh_approval");
+        }
+    }
 
     const completedSteps = () => {
         const statusIndex = statusSteps.indexOf(formData.status);
@@ -746,7 +754,7 @@ export default function ChangeRequestDetails() {
                                             {determineStatus(step) === 'completed' && <span className="text-white">✓</span>}
                                         </div>
                                         <p className={`text-sm mt-1 text-center ${getTextColor(step)}`}>
-                                            {step.replace("_", " ")}
+                                            {step.replace(/_/g, " ")}
                                         </p>
                                         {timestampMap[step as keyof typeof timestampMap] && (
                                             <p className={`text-xs text-gray-400 mt-1 text-center`}>
@@ -831,7 +839,7 @@ export default function ChangeRequestDetails() {
                                         disabled={isFieldDisabled("urgency")}
                                     >
                                         <option value="">Select Urgency</option>
-                                        <option value="urgent">Urgent</option>
+                                        <option value="emergency">Emergency</option>
                                         <option value="normal">Normal</option>
                                     </select>
                                 </div>

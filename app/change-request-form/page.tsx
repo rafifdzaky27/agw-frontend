@@ -239,7 +239,7 @@ export default function ChangeRequestForm() {
                                         required
                                     >
                                         <option value="">Select Urgency</option>
-                                        <option value="urgent">Urgent</option>
+                                        <option value="emergency">Emergency</option>
                                         <option value="normal">Normal</option>
                                     </select>
                                 </div>
@@ -339,7 +339,7 @@ export default function ChangeRequestForm() {
                                     <select
                                         id="uat_result"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                                        title="Urgency"
+                                        title="uat_result"
                                         value={formData.uat_result}
                                         onChange={(e) => setFormData({ ...formData, uat_result: e.target.value })}
                                     >
