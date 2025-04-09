@@ -17,21 +17,29 @@ interface ChangeRequest {
     created_at: string;
     approved_at: string | null;
     finalized_at: string | null;
+    vdh_operations_approved_at: string | null;
+    vdh_development_approved_at: string | null;
     finished_at: string | null;
     cab_meeting_date: string | null;
     type: string;
     name: string;
+    group: string;
+    division: string;
     category: string;
     urgency: string;
     description: string;
     post_implementation_review: string | null;
     requested_migration_date: string;
+    project_code: string;
+    rfc_number: string;
     compliance_checklist: string;
     procedure_checklist: string;
     rollback_checklist: string;
     architecture_diagram: string;
     captures: string;
     completion_report: string | null;
+    pic: string;
+    cab_meeting_link: string;
     downtime_risk: number;
     integration_risk: number;
     uat_result: string;
@@ -344,6 +352,47 @@ export default function ChangeRequestDetails() {
         }
     };
 
+    const approveVDHRequest = async () => {
+        if (!formData?.type) {
+            toast.error("Request Type is required.");
+            return;
+        }
+
+        const loadingToast = toast.loading("Approving VDH request...");
+        try {
+            const response = await fetch(`http://localhost:8080/api/requests/approve_vdh/${requestId}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ type: formData.type }),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                toast.dismiss(loadingToast);
+                toast.error(result.message || "Failed to approve VDH change request.");
+                setTimeout(() => {
+                    toast.dismiss();
+                }, 1000);
+                return;
+            }
+
+            toast.dismiss(loadingToast);
+            toast.success("VDH change request approved successfully.");
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (err) {
+            toast.dismiss(loadingToast);
+            toast.error(err instanceof Error ? err.message : "Unknown error");
+        }
+    };
+
     const finalizeRequest = async () => {
         const loadingToast = toast.loading("Finalizing request...");
         const formDataToSend = new FormData();
@@ -408,18 +457,16 @@ export default function ChangeRequestDetails() {
         const loadingToast = toast.loading("Completing request...");
         const formDataToSend = new FormData();
 
-        // Append text fields
-        for (const key in formData) {
-            if (key.endsWith('_file')) continue; // Skip file fields for now
-            if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number' || typeof formData[key as keyof FormDataState] === 'boolean' || formData[key as keyof FormDataState] === null) {
-                formDataToSend.append(key, String(formData[key as keyof FormDataState]));
-            }
-        }
-
-        // Append file fields
+        // Check if all file fields are filled and append them
         for (const field of fileFields) {
             const fileFieldKey = `${field}_file` as keyof FormDataState;
-            const file = formData[fileFieldKey];
+            const file = formData?.[fileFieldKey];
+            const backendFilename = formData?.[field];
+            if (!file && !backendFilename) {
+                toast.dismiss(loadingToast);
+                toast.error("All document fields are required.");
+                return;
+            }
             if (file) {
                 if (file instanceof File) {
                     formDataToSend.append(field, file);
@@ -427,6 +474,14 @@ export default function ChangeRequestDetails() {
             } else {
                 // If no new file is selected, keep the existing filename in the database
                 formDataToSend.append(field, formData[field] || ""); // Append the existing filename if no new file is selected
+            }
+        }
+
+        // Append text fields
+        for (const key in formData) {
+            if (key.endsWith('_file')) continue; // Skip file fields for now
+            if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number' || typeof formData[key as keyof FormDataState] === 'boolean' || formData[key as keyof FormDataState] === null) {
+                formDataToSend.append(key, String(formData[key as keyof FormDataState]));
             }
         }
 
@@ -518,6 +573,8 @@ export default function ChangeRequestDetails() {
             finalizeRequest();
         } else if (formData?.status === "waiting_migration" && isSucceed !== null) {
             completeRequest(isSucceed);
+        } else if (formData?.status === "waiting_dev_vdh_approval" || formData?.status === "waiting_ops_vdh_approval") {
+            approveVDHRequest();
         } else {
             // Default action does nothing
         }
@@ -592,6 +649,8 @@ export default function ChangeRequestDetails() {
       "draft": formData?.created_at,
       "waiting_approval": formData?.approved_at,
       "waiting_finalization": formData?.finalized_at,
+      "waiting_ops_vdh_approval": formData?.vdh_operations_approved_at,
+      "waiting_dev_vdh_approval": formData?.vdh_development_approved_at,
       "waiting_migration": formData?.finished_at,
       "success/failed": formData?.finished_at,
     };
@@ -686,6 +745,19 @@ export default function ChangeRequestDetails() {
                 Pending
                 </button>
             </div>
+            );
+        }
+
+        if (status === "waiting_ops_vdh_approval" || status === "waiting_dev_vdh_approval") {
+            return (
+                <button
+                    type="button"
+                    onClick={handleSubmit(null)}
+                    className={`${baseButtonStyle}`}
+                    style={{ backgroundColor: getStatusColor(status) }}
+                >
+                    Approve Request
+                </button>
             );
         }
 
@@ -792,6 +864,34 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
+                                    <label htmlFor="group" className="block text-sm font-medium text-gray-300">Group:</label>
+                                    <input
+                                        type="text"
+                                        id="group"
+                                        placeholder="Group"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.group}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("group")}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
+                                    <input
+                                        type="text"
+                                        id="division"
+                                        placeholder="Division"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.division}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("division")}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
                                     <label htmlFor="type" className="block text-sm font-medium text-gray-300">Request Type:</label>
                                     <select
                                         id="type"
@@ -875,6 +975,34 @@ export default function ChangeRequestDetails() {
 
                             {/* Column 2 */}
                             <div className="flex flex-col w-1/3 gap-6">
+                                <div className="flex flex-col">
+                                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-300">Project Code:</label>
+                                    <input
+                                        type="text"
+                                        id="project_code"
+                                        placeholder="Project Code"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.project_code}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("project_code")}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-300">RFC Number:</label>
+                                    <input
+                                        type="text"
+                                        id="rfc_number"
+                                        placeholder="RFC Number"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.rfc_number}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("rfc_number")}
+                                    />
+                                </div>
+
                                 {fileFields.map((field) => {
                                     const backendFilename = formData[field] as string | null;
                                     const fileFieldKey = `${field}_file` as keyof FormDataState;
@@ -933,6 +1061,34 @@ export default function ChangeRequestDetails() {
 
                             {/* Column 3 */}
                             <div className="flex flex-col w-1/3 gap-6">
+                                <div className="flex flex-col">
+                                    <label htmlFor="pic" className="block text-sm font-medium text-gray-300">PIC:</label>
+                                    <input
+                                        type="text"
+                                        id="pic"
+                                        placeholder="PIC"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.pic}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("downtime_risk")}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-300">CAB Meeting Link:</label>
+                                    <input
+                                        type="text"
+                                        id="cab_meeting_link"
+                                        placeholder="CAB Meeting Link"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.cab_meeting_link}
+                                        onChange={handleChange}
+                                        required
+                                        disabled={isFieldDisabled("cab_meeting_link")}
+                                    />
+                                </div>
+
                                 <div className="flex flex-col">
                                     <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-300">Downtime Risk:</label>
                                     <input

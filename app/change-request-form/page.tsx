@@ -11,16 +11,22 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { ConfirmationModal } from "@/components/ConfirmationModal"; // Import the new component
 
 interface FormDataState {
-    type: string;
     name: string;
+    group: string;
+    division: string;
+    type: string;
     category: string;
     urgency: string;
     requested_migration_date: string;
+    project_code: string;
+    rfc_number: string;
     compliance_checklist: File | null;
     procedure_checklist: File | null;
     rollback_checklist: File | null;
     architecture_diagram: File | null;
     captures: File | null;
+    pic: string;
+    cab_meeting_link: string;
     downtime_risk: number;
     integration_risk: number;
     uat_result: string;
@@ -29,16 +35,22 @@ interface FormDataState {
 
 export default function ChangeRequestForm() {
     const [formData, setFormData] = useState<FormDataState>({
-        type: "software",
         name: "",
+        group: "",
+        division: "",
+        type: "software",
         category: "monitoring",
         urgency: "normal",
         requested_migration_date: "",
+        project_code: "",
+        rfc_number: "",
         compliance_checklist: null,
         procedure_checklist: null,
         rollback_checklist: null,
         architecture_diagram: null,
         captures: null,
+        pic: "",
+        cab_meeting_link: "",
         downtime_risk: 0,
         integration_risk: 0,
         uat_result: "none",
@@ -138,16 +150,22 @@ export default function ChangeRequestForm() {
             toast.success("Change request created successfully.");
 
             setFormData({
-                type: "software",
                 name: "",
+                group: "",
+                division: "",
+                type: "software",
                 category: "monitoring",
                 urgency: "normal",
                 requested_migration_date: "",
+                project_code: "",
+                rfc_number: "",
                 compliance_checklist: null,
                 procedure_checklist: null,
                 rollback_checklist: null,
                 architecture_diagram: null,
                 captures: null,
+                pic: "",
+                cab_meeting_link: "",
                 downtime_risk: 0,
                 integration_risk: 0,
                 uat_result: "none",
@@ -190,6 +208,32 @@ export default function ChangeRequestForm() {
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="group" className="block text-sm font-medium text-gray-300">Group:</label>
+                                    <input
+                                        type="text"
+                                        id="group"
+                                        placeholder="Group"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.group}
+                                        onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
+                                    <input
+                                        type="text"
+                                        id="division"
+                                        placeholder="Division"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.division}
+                                        onChange={(e) => setFormData({ ...formData, division: e.target.value })}
                                         required
                                     />
                                 </div>
@@ -260,6 +304,30 @@ export default function ChangeRequestForm() {
 
                             {/* Column 2 */}
                             <div className="flex flex-col w-1/3 gap-6">
+                                <div className="flex flex-col">
+                                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-300">Project Code:</label>
+                                    <input
+                                        type="text"
+                                        id="project_code"
+                                        placeholder="Project Code"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.project_code}
+                                        onChange={(e) => setFormData({ ...formData, project_code: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-300">RFC Number:</label>
+                                    <input
+                                        type="text"
+                                        id="rfc_number"
+                                        placeholder="RFC Number"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.rfc_number}
+                                        onChange={(e) => setFormData({ ...formData, rfc_number: e.target.value })}
+                                    />
+                                </div>
+
                                 {["compliance_checklist", "procedure_checklist", "rollback_checklist", "architecture_diagram", "captures"].map((field) => {
                                     const typedField = field as keyof FormDataState;
                                     const hasValue = !!formData[typedField];
@@ -305,6 +373,30 @@ export default function ChangeRequestForm() {
 
                             {/* Column 3 */}
                             <div className="flex flex-col w-1/3 gap-6">
+                                <div className="flex flex-col">
+                                    <label htmlFor="pic" className="block text-sm font-medium text-gray-300">PIC:</label>
+                                    <input
+                                        type="text"
+                                        id="pic"
+                                        placeholder="PIC"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.pic}
+                                        onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="flex flex-col">
+                                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-300">CAB Meeting Link:</label>
+                                    <input
+                                        type="text"
+                                        id="cab_meeting_link"
+                                        placeholder="CAB Meeting Link"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        value={formData.cab_meeting_link}
+                                        onChange={(e) => setFormData({ ...formData, cab_meeting_link: e.target.value })}
+                                    />
+                                </div>
+
                                 <div className="flex flex-col">
                                     <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-300">Downtime Risk:</label>
                                     <input

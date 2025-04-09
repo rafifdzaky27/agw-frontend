@@ -8,7 +8,7 @@ import { getStatusColor } from "@/utils/status";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';  // npm install xlsx
 import { toast } from "react-hot-toast"; // Make sure you have react-hot-toast
-import { FaFileExport, FaPlus } from "react-icons/fa";
+import { FaExclamationTriangle, FaFileExport, FaPlus } from "react-icons/fa";
 
 interface ChangeRequest {
   id: number;
@@ -27,6 +27,11 @@ interface ChangeRequest {
   approver_id: number | null;
   requester_name: string;
   approver_name: string | null;
+  group: string;
+  division: string;
+  project_code: string;
+  rfc_number: string;
+  pic: string;
 }
 
 type StatusOption = { value: string; label: string };
@@ -35,6 +40,8 @@ const statusOptions: StatusOption[] = [
   { value: "draft", label: "Draft" },
   { value: "waiting_approval", label: "Waiting Approval" },
   { value: "waiting_finalization", label: "Waiting Finalization" },
+  { value: "waiting_ops_vdh_approval", label: "Waiting OPS VDH Approval" },
+  { value: "waiting_dev_vdh_approval", label: "Waiting DEV VDH Approval" },
   { value: "waiting_migration", label: "Waiting Migration" },
   { value: "success", label: "Success" },
   { value: "failed", label: "Failed" },
@@ -47,6 +54,12 @@ const sortOptions: SortOption[] = [
   { value: "created_at", label: "Created At" },
 ];
 
+// Type to hold both name and ID
+type RequesterInfo = {
+  name: string;
+  id: number;
+};
+
 export default function ChangeManagement() {
   const [allRequests, setAllRequests] = useState<ChangeRequest[]>([]);
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
@@ -58,6 +71,8 @@ export default function ChangeManagement() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]); // Use array of strings for status values
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
+  const [alertRequesters, setAlertRequesters] = useState<RequesterInfo[]>([]); // Store both name and ID
 
   const { token } = useAuth();
 
@@ -194,13 +209,13 @@ export default function ChangeManagement() {
         Category: request.category,
         CAB_Meeting_Date: request.cab_meeting_date ? new Date(request.cab_meeting_date).toLocaleString() : "N/A",
         Requested_Migration_Date: new Date(request.requested_migration_date).toLocaleString(),
-        Project_Code: "",
-        RFC_Number: "",
+        Project_Code: request.project_code,
+        RFC_Number: request.rfc_number,
         Requester_Name: request.requester_name, // Assuming you will fill this later
         Approver_Name: request.approver_name, // Assuming you will fill this later
         Downtime: request.downtime_risk, // Assuming you will calculate this later
         Time: "",
-        PIC: ""
+        PIC: request.pic
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataForExcel);
@@ -211,6 +226,56 @@ export default function ChangeManagement() {
       toast.success("Change requests exported successfully", { id: toastId, duration: 1500 });
     } catch (error) {
       toast.error("Failed to export change requests", { id: toastId, duration: 1500 });
+    }
+  };
+
+  const sendAlertEmail = async (requesterIds: number[]) => {
+    try {
+      console.log(requesterIds); // Log the IDs to check if they are correct
+        const response = await fetch("http://localhost:8080/api/users/email", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json", // Important: Tell the server you're sending JSON
+            },
+            body: JSON.stringify({ ids: requesterIds }), // Send the IDs in the request body
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            console.error("Email error:", result); // Log the entire response for debugging
+            throw new Error(result.error || result.message || "Failed to send alert emails.");
+        }
+        return true;
+    } catch (error: any) {
+        console.error("Error sending emails:", error);
+        throw error; // Re-throw to be caught by the caller
+    }
+  };
+
+  const handleAlertClick = () => {
+    // Store both name and ID
+    const uniqueRequesters = [
+      ...new Map(requests.map((request) => [request.requester_id, { name: request.requester_name, id: request.requester_id }])).values(),
+    ];
+    setAlertRequesters(uniqueRequesters);
+    setIsAlertModalOpen(true);
+  };
+
+  const handleSendAlerts = async () => {
+    const requesterIds = alertRequesters.map(r => r.id);
+    const toastId = toast.loading("Sending alert emails...");
+
+    try {
+        // Send all emails at once
+        await sendAlertEmail(requesterIds);
+        toast.success("Alert emails sent successfully!", {id: toastId, duration: 5000});
+
+    } catch (error: any) {
+      toast.error(`An error occurred while sending alerts: ${error.message}`, {id: toastId, duration: 5000});
+    } finally {
+      setIsAlertModalOpen(false); // Close the modal after attempting to send alerts
     }
   };
 
@@ -238,6 +303,11 @@ export default function ChangeManagement() {
                 <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
                   <FaFileExport />
                   <span>Export</span>
+                </button>
+                {/* Alert Button */}
+                <button className="px-4 py-2 bg-yellow-500 rounded flex items-center space-x-2 hover:bg-yellow-700 transition duration-200" onClick={handleAlertClick}>
+                  <FaExclamationTriangle />
+                  <span>Alert</span>
                 </button>
               </div>
 
@@ -343,7 +413,62 @@ export default function ChangeManagement() {
                   )}
                 </div>
 
-                {/* Sort By */}
+                {/* Alert Modal (Alert Style) */}
+                {isAlertModalOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md">
+                      <h2 className="text-lg font-bold text-gray-300 mb-4 text-center">Request Alert</h2>
+                      <p className="text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
+
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {/* Display Requester Names */}
+                        {alertRequesters.map(requester => (
+                          <div key={requester.id} className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center">
+                            {requester.name}
+                            <button
+                              className="ml-2 focus:outline-none"
+                              onClick={() => {
+                                // Remove requester from the alertRequesters state
+                                setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+
+                        <button className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
+                                onClick={() => {
+                                  //TODO: implement add request functionality
+                                  console.log("Add request clicked")
+                                }}>
+                          +
+                        </button>
+                      </div>
+
+
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          type="button"
+                          className="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700 transition duration-200"
+                          onClick={handleSendAlerts}
+                        >
+                          Send
+                        </button>
+                        <button
+                          type="button"
+                          className="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
+                          onClick={() => setIsAlertModalOpen(false)}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col justify-start">
                   <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
                   <select
