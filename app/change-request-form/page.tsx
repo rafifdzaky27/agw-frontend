@@ -36,8 +36,8 @@ interface FormDataState {
 export default function ChangeRequestForm() {
     const [formData, setFormData] = useState<FormDataState>({
         name: "",
-        group: "",
-        division: "",
+        group: "group 1",
+        division: "IT",
         type: "software",
         category: "monitoring",
         urgency: "normal",
@@ -214,28 +214,32 @@ export default function ChangeRequestForm() {
 
                                 <div className="flex flex-col">
                                     <label htmlFor="group" className="block text-sm font-medium text-gray-300">Group:</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         id="group"
-                                        placeholder="Group"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.group}
                                         onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                                         required
-                                    />
+                                    >
+                                        <option value="group 1">Group 1</option>
+                                        <option value="group 2">Group 2</option>
+                                        <option value="group 3">Group 3</option>
+                                    </select>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         id="division"
-                                        placeholder="Division"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.division}
                                         onChange={(e) => setFormData({ ...formData, division: e.target.value })}
                                         required
-                                    />
+                                    >
+                                        <option value="IT">IT</option>
+                                        <option value="ITS">ITS</option>
+                                        <option value="DDB">DDB</option>
+                                    </select>
                                 </div>
 
                                 <div className="flex flex-col">
@@ -248,7 +252,6 @@ export default function ChangeRequestForm() {
                                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                                         required
                                     >
-                                        <option value="">Select Type</option>
                                         <option value="software">Software</option>
                                         <option value="hardware">Hardware</option>
                                     </select>
@@ -264,7 +267,6 @@ export default function ChangeRequestForm() {
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                         required
                                     >
-                                        <option value="">Select Category</option>
                                         <option value="monitoring">Monitoring</option>
                                         <option value="transactional">Transactional</option>
                                         <option value="regulatory">Regulatory</option>
@@ -282,16 +284,15 @@ export default function ChangeRequestForm() {
                                         onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
                                         required
                                     >
-                                        <option value="">Select Urgency</option>
-                                        <option value="emergency">Emergency</option>
                                         <option value="normal">Normal</option>
+                                        <option value="emergency">Emergency</option>
                                     </select>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-300">Requested Migration Date:</label>
                                     <input
-                                        type="date"
+                                        type="datetime-local"
                                         id="requested_migration_date"
                                         title="Requested Migration Date"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"

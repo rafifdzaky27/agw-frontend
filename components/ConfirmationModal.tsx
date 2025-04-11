@@ -93,7 +93,7 @@ const PendingModal: React.FC<PendingModalProps> = ({ isOpen, onConfirm, onCancel
                 <div className="mt-2">
                     <label className="block text-sm text-gray-500">New Migration Date</label>
                     <input 
-                        type="date" 
+                        type="datetime-local" 
                         className="p-2 border rounded w-full mt-1" 
                         value={selectedDate} 
                         onChange={(e) => setSelectedDate(e.target.value)}
@@ -134,6 +134,14 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
     const sortedHistory = [...history].sort(
         (a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()
     );
+
+    const formatUTCStringToInput = (utcString: string | null) => {
+        if (!utcString) return "N/A"; // Handle null case
+        const [datePart, timePart] = utcString.split('T');
+        const [time] = timePart.split('.'); // remove .000Z
+        const date_string = `${datePart}T${time}`;
+        return new Date(date_string).toLocaleString();
+    };
 
     return (
         <div
@@ -186,7 +194,7 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
                                     )}
                                     <p className="text-md">
                                         <strong>Date:</strong>{' '}
-                                        {new Date(entry.migration_date).toLocaleString()}
+                                        {formatUTCStringToInput(entry.migration_date)}
                                     </p>
                                     {/* Show status only for the latest migration */}
                                     {isLatest && (
@@ -202,7 +210,7 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
                                     )}
                                     <p className="text-sm text-gray-500">
                                         <strong>Recorded At:</strong>{' '}
-                                        {new Date(entry.recorded_at).toLocaleString()}
+                                        {formatUTCStringToInput(entry.recorded_at)}
                                     </p>
                                 </li>
                             );

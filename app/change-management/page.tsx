@@ -44,7 +44,7 @@ const statusOptions: StatusOption[] = [
   { value: "waiting_dev_vdh_approval", label: "Waiting DEV VDH Approval" },
   { value: "waiting_migration", label: "Waiting Migration" },
   { value: "success", label: "Success" },
-  { value: "failed", label: "Failed" },
+  { value: "failed", label : "Failed" },
 ];
 
 type SortOption = { value: string; label: string };
@@ -60,6 +60,15 @@ type RequesterInfo = {
   id: number;
 };
 
+interface User {
+    id: number;
+    name: string;
+    username: string;
+    role: string;
+    division: string;
+    email: string;
+}
+
 export default function ChangeManagement() {
   const [allRequests, setAllRequests] = useState<ChangeRequest[]>([]);
   const [requests, setRequests] = useState<ChangeRequest[]>([]);
@@ -73,6 +82,8 @@ export default function ChangeManagement() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
   const [alertRequesters, setAlertRequesters] = useState<RequesterInfo[]>([]); // Store both name and ID
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
 
   const { token } = useAuth();
 
@@ -117,6 +128,41 @@ export default function ChangeManagement() {
     // Apply filters whenever filter criteria change
     applyFilters();
   }, [timeReference, startDate, endDate, selectedStatuses, sortBy, allRequests]);
+
+    useEffect(() => {
+        async function fetchUsers() {
+            if (!token) return;
+
+            try {
+                const response = await fetch("http://localhost:8080/api/users", {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    setAvailableUsers(result.data);
+                } else {
+                    console.error("Failed to fetch users:", result.error || result.message);
+                    toast.error("Failed to fetch users");
+                }
+            } catch (err) {
+                console.error("Error fetching users:", err);
+                toast.error("Error fetching users");
+            }
+        }
+
+        if (isAddUserModalOpen) {
+            fetchUsers();
+        }
+    }, [token, isAddUserModalOpen]);
 
   const applyFilters = () => {
     let filtered = [...allRequests];
@@ -193,6 +239,14 @@ export default function ChangeManagement() {
     setSelectedStatuses([]);
   };
 
+  const formatUTCStringToInput = (utcString: string | null) => {
+    if (!utcString) return "N/A"; // Handle null case
+    const [datePart, timePart] = utcString.split('T');
+    const [time] = timePart.split('.'); // remove .000Z
+    const date_string = `${datePart}T${time}`;
+    return new Date(date_string).toLocaleString();
+};
+
   const exportToExcel = () => {
     const toastId = toast.loading("Exporting change requests...");
     try {
@@ -207,8 +261,8 @@ export default function ChangeManagement() {
         Migration: request.finished_at ? "Yes" : "No",
         Type: request.type,
         Category: request.category,
-        CAB_Meeting_Date: request.cab_meeting_date ? new Date(request.cab_meeting_date).toLocaleString() : "N/A",
-        Requested_Migration_Date: new Date(request.requested_migration_date).toLocaleString(),
+        CAB_Meeting_Date: formatUTCStringToInput(request.cab_meeting_date),
+        Requested_Migration_Date: formatUTCStringToInput(request.requested_migration_date),
         Project_Code: request.project_code,
         RFC_Number: request.rfc_number,
         Requester_Name: request.requester_name, // Assuming you will fill this later
@@ -231,26 +285,25 @@ export default function ChangeManagement() {
 
   const sendAlertEmail = async (requesterIds: number[]) => {
     try {
-      console.log(requesterIds); // Log the IDs to check if they are correct
-        const response = await fetch("http://localhost:8080/api/users/email", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json", // Important: Tell the server you're sending JSON
-            },
-            body: JSON.stringify({ ids: requesterIds }), // Send the IDs in the request body
-        });
+      const response = await fetch("http://localhost:8080/api/users/email", {
+          method: "POST",
+          headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json", // Important: Tell the server you're sending JSON
+          },
+          body: JSON.stringify({ ids: requesterIds }), // Send the IDs in the request body
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (!response.ok || !result.success) {
-            console.error("Email error:", result); // Log the entire response for debugging
-            throw new Error(result.error || result.message || "Failed to send alert emails.");
-        }
-        return true;
+      if (!response.ok || !result.success) {
+          console.error("Email error:", result); // Log the entire response for debugging
+          throw new Error(result.error || result.message || "Failed to send alert emails.");
+      }
+      return true;
     } catch (error: any) {
-        console.error("Error sending emails:", error);
-        throw error; // Re-throw to be caught by the caller
+      console.error("Error sending emails:", error);
+      throw error; // Re-throw to be caught by the caller
     }
   };
 
@@ -263,8 +316,27 @@ export default function ChangeManagement() {
     setIsAlertModalOpen(true);
   };
 
+  const handleAddRequester = (user: User) => {
+    const isAlreadyAdded = alertRequesters.some(requester => requester.id === user.id);
+    if (isAlreadyAdded) {
+        toast.error("User is already added to the alert list.");
+        return;
+    }
+    setAlertRequesters(prevRequesters => [
+        ...prevRequesters,
+        { name: user.name, id: user.id }
+    ]);
+    setIsAddUserModalOpen(false); // Close the modal after adding
+  };
+
   const handleSendAlerts = async () => {
     const requesterIds = alertRequesters.map(r => r.id);
+
+    if (requesterIds.length === 0) {
+      toast.error("No requesters selected for alert emails.");
+      return;
+    }
+
     const toastId = toast.loading("Sending alert emails...");
 
     try {
@@ -441,8 +513,7 @@ export default function ChangeManagement() {
 
                         <button className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
                                 onClick={() => {
-                                  //TODO: implement add request functionality
-                                  console.log("Add request clicked")
+                                    setIsAddUserModalOpen(true);
                                 }}>
                           +
                         </button>
@@ -468,6 +539,44 @@ export default function ChangeManagement() {
                     </div>
                   </div>
                 )}
+
+                {/* Add User Modal */}
+                {isAddUserModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                        <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md">
+                            <h2 className="text-lg font-bold text-gray-300 mb-4 text-center">Add User</h2>
+                            {loading ? (
+                                <p className="text-center text-gray-300">Loading users...</p>
+                            ) : error ? (
+                                <p className="text-red-500 text-center">{error}</p>
+                            ) : (
+                                <div className="max-h-60 overflow-y-auto">
+                                    {availableUsers.map(user => (
+                                        <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-700">
+                                            <span className="text-gray-300">{user.name}</span>
+                                            <button
+                                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
+                                                onClick={() => handleAddRequester(user)}
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="mt-4">
+                                <button
+                                    type="button"
+                                    className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
+                                    onClick={() => setIsAddUserModalOpen(false)}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
                 <div className="flex flex-col justify-start">
                   <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
@@ -516,26 +625,35 @@ function ChangeRequestList({ requests }: { requests: ChangeRequest[] }) {
 function ChangeRequestCard({ request }: { request: ChangeRequest }) {
   const statusColor = getStatusColor(request.status);
 
+  const formatUTCStringToInput = (utcString: string | null) => {
+    if (!utcString) return "N/A"; // Handle null case
+    const [datePart, timePart] = utcString.split('T');
+    const [time] = timePart.split('.'); // remove .000Z
+    const date_string = `${datePart}T${time}`;
+    return new Date(date_string).toLocaleString();
+};
+
   return (
     <Link href={`/change-management/${request.id}`} key={request.id}>
-      <div className={`bg-gray-800 hover:bg-gray-700 cursor-pointer rounded-lg p-4 transition duration-200 border-l-8`} style={{ borderColor: statusColor }}>
+      <div
+        className="bg-gray-800 hover:bg-gray-700 cursor-pointer rounded-lg p-4 transition duration-200 border-l-8"
+        style={{ borderColor: statusColor }}
+      >
         <h2 className="text-xl font-semibold mb-2">{request.name}</h2>
         <p className="text-gray-300">Type: {request.type}</p>
         <p className="text-gray-300">Category: {request.category}</p>
         <p className="text-gray-300">Urgency: {request.urgency}</p>
         <p className="text-gray-300">
-          Creation Date: {request.created_at ? new Date(request.created_at).toLocaleString() : "N/A"}
+          Creation Date: {formatUTCStringToInput(request.created_at)}
         </p>
         <p className="text-gray-300">
-          Requested Date: {new Date(request.requested_migration_date).toLocaleString()}
+          Requested Date: {formatUTCStringToInput(request.requested_migration_date)}
         </p>
         <p className="text-gray-300">
-          Migration Date: {request.finished_at ? new Date(request.finished_at).toLocaleString() : "N/A"}
+          Migration Date: {formatUTCStringToInput(request.finished_at)}
         </p>
         <div className="mt-2">
-          <span
-            className="text-gray-400"
-          >
+          <span className="text-gray-400">
             {request.status?.replace("_", " ")}
           </span>
         </div>

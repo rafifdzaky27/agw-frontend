@@ -519,6 +519,7 @@ export default function ChangeRequestDetails() {
     };
 
     const handleSubmit = (isSucceed: boolean | null) => async (e: React.FormEvent) => {
+        console.log(formData.requested_migration_date, formData.cab_meeting_date);
         e.preventDefault();
         setIsSucceed(isSucceed);
         setIsConfirmationModalOpen(true);
@@ -658,6 +659,12 @@ export default function ChangeRequestDetails() {
     const formatTimestamp = (timestamp: string | null | undefined) => {
         if (!timestamp) return "";
         return new Date(timestamp).toLocaleString();
+    };
+
+    const formatUTCStringToInput = (utcString: string) => {
+        const [datePart, timePart] = utcString.split('T');
+        const [time] = timePart.split('.'); // remove .000Z
+        return `${datePart}T${time}`;
     };
 
     const isFieldDisabled = (fieldName: string): boolean => {
@@ -865,30 +872,35 @@ export default function ChangeRequestDetails() {
 
                                 <div className="flex flex-col">
                                     <label htmlFor="group" className="block text-sm font-medium text-gray-300">Group:</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         id="group"
-                                        placeholder="Group"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.group}
                                         onChange={handleChange}
                                         required
                                         disabled={isFieldDisabled("group")}
-                                    />
+                                    >
+                                        <option value="group 1">Group 1</option>
+                                        <option value="group 2">Group 2</option>
+                                        <option value="group 3">Group 3</option>
+                                    </select>
                                 </div>
 
                                 <div className="flex flex-col">
                                     <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
-                                    <input
-                                        type="text"
+                                    <select
                                         id="division"
-                                        placeholder="Division"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                         value={formData.division}
                                         onChange={handleChange}
                                         required
                                         disabled={isFieldDisabled("division")}
-                                    />
+                                    >
+                                        <option value="">Select Division</option>
+                                        <option value="IT">IT</option>
+                                        <option value="ITS">ITS</option>
+                                        <option value="DDB">DDB</option>
+                                    </select>
                                 </div>
 
                                 <div className="flex flex-col">
@@ -947,11 +959,14 @@ export default function ChangeRequestDetails() {
                                 <div className="flex flex-col">
                                     <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-300">Requested Migration Date:</label>
                                     <input
-                                        type="date"
+                                        type="datetime-local"
                                         id="requested_migration_date"
                                         title="Requested Migration Date"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                                        value={formData.requested_migration_date?.split('T')[0] || ''}
+                                        value={formData.requested_migration_date 
+                                            ? formatUTCStringToInput(formData.requested_migration_date)
+                                            : ''
+                                          }
                                         onChange={handleChange}
                                         required
                                         disabled={isFieldDisabled("requested_migration_date")}
@@ -961,11 +976,14 @@ export default function ChangeRequestDetails() {
                                 <div className="flex flex-col">
                                     <label htmlFor="cab_meeting_date" className="block text-sm font-medium text-gray-300">CAB Meeting Date:</label>
                                     <input
-                                        type="date"
+                                        type="datetime-local"
                                         id="cab_meeting_date"
                                         title="CAB Meeting Date"
                                         className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
-                                        value={formData.cab_meeting_date?.split('T')[0] || ''}
+                                        value={formData.cab_meeting_date 
+                                            ? formatUTCStringToInput(formData.cab_meeting_date)
+                                            : ''
+                                          }
                                         onChange={handleChange}
                                         required
                                         disabled={isFieldDisabled("cab_meeting_date")}
@@ -1063,16 +1081,15 @@ export default function ChangeRequestDetails() {
                             <div className="flex flex-col w-1/3 gap-6">
                                 <div className="flex flex-col">
                                     <label htmlFor="pic" className="block text-sm font-medium text-gray-300">PIC:</label>
-                                    <input
-                                        type="text"
+                                    <textarea
                                         id="pic"
                                         placeholder="PIC"
-                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 h-10"
                                         value={formData.pic}
                                         onChange={handleChange}
                                         required
                                         disabled={isFieldDisabled("downtime_risk")}
-                                    />
+                                />
                                 </div>
 
                                 <div className="flex flex-col">
