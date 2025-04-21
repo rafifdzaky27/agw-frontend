@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 const NAV_LINKS = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Change Management", href: "/change-management" },
+  { name: "Admin Config", href: "/admin-config" },
 ];
 
 export default function Navbar() {

@@ -78,15 +78,35 @@ export default function ChangeRequestDetails() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isSucceed, setIsSucceed] = useState<boolean | null>(null);
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false); // State for modal visibility
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false); // State for modal visibility
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false); // State for modal visibility
+    const [alertSubject, setAlertSubject] = useState<string>(''); // State for subject
+    const [alertText, setAlertText] = useState<string>(''); // State for text
+    const [alertLimit, setAlertLimit] = useState<number>(3); // State for alert limit
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+    const closeModal = () => setIsModalOpen(false); 
+
+    const replaceVariables = (template: string) => {
+        const currentDate = new Date().toLocaleDateString();
+    
+        return template
+            .replace(/{{currentDate}}/g, currentDate)
+            .replace(/{{currentUser}}/g, user?.name || "Admin")
+            .replace(/{{formData\.name}}/g, formData?.name || "Change Request")
+            .replace(/{{formData\.requesterName}}/g, formData?.requester_name || "Requester")
+            .replace(/{{formData\.ComplianceChecklist}}/g, formData?.compliance_checklist ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.ProcedureChecklist}}/g, formData?.procedure_checklist ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.RollbackChecklist}}/g, formData?.rollback_checklist ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.ArchitectureDiagram}}/g, formData?.architecture_diagram ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.Captures}}/g, formData?.captures ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.FinalReport}}/g, formData?.completion_report ? "Lengkap" : "Belum Lengkap")
+            .replace(/{{formData\.approverName}}/g, formData?.approver_name || "Approver");
+    };
 
     useEffect(() => {
         async function fetchRequest() {
@@ -189,6 +209,78 @@ export default function ChangeRequestDetails() {
         fetchMigrationHistory();
     }, [requestId, token]);
 
+    useEffect(() => {
+        const loadAlertConfig = async () => {
+            if (!token || !user || !formData) return;
+    
+            try {
+                const [subjectResponse, textResponse, limitResponse] = await Promise.all([
+                    fetch(`http://localhost:8080/api/config?key=request_email_alert_subject`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                    fetch(`http://localhost:8080/api/config?key=request_email_alert_text`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                    fetch(`http://localhost:8080/api/config?key=request_email_alert_limit`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                ]);
+    
+                if (!subjectResponse.ok || !textResponse.ok || !limitResponse.ok) {
+                    throw new Error("Failed to load alert configuration");
+                }
+    
+                const subjectData = await subjectResponse.json();
+                const textData = await textResponse.json();
+                const limitData = await limitResponse.json();
+    
+                let loadedSubject = "";
+                let loadedText = "";
+                let loadedLimit = 3; // Default limit
+    
+                if (subjectData.success && subjectData.data && subjectData.data.length > 0) {
+                    loadedSubject = subjectData.data[0].value;
+                } else {
+                    console.warn("request_email_alert_subject not found, using default");
+                    loadedSubject = "Placeholder Subject"; // Default subject if not found
+                }
+    
+                if (textData.success && textData.data && textData.data.length > 0) {
+                    loadedText = textData.data[0].value;
+                } else {
+                    console.warn("request_email_alert_text not found, using default");
+                    loadedText = "Placeholder Text"; // Default text if not found
+                }
+
+                if (limitData.success && limitData.data && limitData.data.length > 0) {
+                    loadedLimit = parseInt(limitData.data[0].value);
+                }
+    
+                // Replace variables after loading
+                setAlertSubject(replaceVariables(loadedSubject)); // pass empty object since it doesnt need to be parse here
+                setAlertText(replaceVariables(loadedText)); // pass empty object since it doesnt need to be parse here
+                setAlertLimit(loadedLimit); // Set the alert limit
+
+                console.log(limitData.data[0].value);
+    
+            } catch (error: any) {
+                console.error("Error loading alert configuration:", error);
+                toast.error(`Error loading alert configuration: ${error.message}`);
+            }
+        };
+    
+        loadAlertConfig();
+    }, [token, user, formData]);
+
     if (loading) {
         return (
             <ProtectedRoute>
@@ -284,7 +376,9 @@ export default function ChangeRequestDetails() {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
             },
+            body: JSON.stringify({ alert_limit: alertLimit }),
         });
 
         const result = await response.json();
@@ -295,11 +389,20 @@ export default function ChangeRequestDetails() {
     };
 
     const sendAlertEmail = async (requesterId: number) => {
+        if (!formData) {
+            throw new Error("Form data is missing.");
+        }
+
+        const subject = alertSubject || "Change Request Alert Subject";
+        const text = alertText || "Change Request Alert Text";
+
         const response = await fetch(`http://localhost:8080/api/users/${requesterId}/email`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
             },
+            body: JSON.stringify({ subject, text }),
         });
 
         const result = await response.json();
@@ -1188,6 +1291,7 @@ export default function ChangeRequestDetails() {
                 onConfirm={confirmAlert}
                 onCancel={cancelAlert}
                 alertCount={formData.alert_count}
+                alertLimit={alertLimit}
             />
             <PreviousMigrationsModal 
                 isOpen={isModalOpen} 

@@ -35,6 +35,7 @@ interface AlertModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     alertCount: number; // Number of times email alerts have been sent
+    alertLimit: number; // Maximum number of email alerts allowed
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
@@ -64,13 +65,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm
     );
 };
 
-const AlertModal: React.FC<AlertModalProps> = ({ isOpen, onConfirm, onCancel, alertCount }) => {
+const AlertModal: React.FC<AlertModalProps> = ({ isOpen, onConfirm, onCancel, alertCount, alertLimit }) => {
     return (
         <ConfirmationModal 
             isOpen={isOpen} 
             onConfirm={onConfirm} 
             onCancel={onCancel} 
-            message={`Are you sure to send email alerts? (${alertCount}/3)`} 
+            message={`Are you sure to send email alerts? (${alertCount}/${alertLimit})`} 
         />
     );
 };

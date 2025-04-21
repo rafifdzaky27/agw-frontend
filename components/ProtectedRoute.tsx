@@ -1,34 +1,38 @@
+// components/ProtectedRoute.tsx
 "use client";
 
+import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
+  children: React.ReactNode;
+  allowedRoles?: string[];  // Optional: Roles that are allowed to access this route
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { token, loading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !token) {
-      router.push("/");
+    if (!loading) {
+      if (!user) {
+        // Not logged in, redirect to login page
+        router.push('/login');
+      } else if (allowedRoles && !allowedRoles.includes(user.role)) {
+        // Logged in, but role not allowed, redirect to unauthorized page (or homepage)
+        router.push('/unauthorized'); // or router.push('/');
+      }
     }
-  }, [token, loading, router]);
+  }, [user, loading, router, allowedRoles]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-        <p className="text-lg">Loading...</p>
-      </div>
-    ); // Show loading screen while checking authentication
+    // Optionally, show a loading indicator
+    return <div>Loading...</div>;
   }
 
-  if (!token) {
-    return null; // Prevent rendering if not authenticated
-  }
-
+  // If user is authenticated and has the correct role (or no role is required), render the children
   return <>{children}</>;
-}
+};
+
+export default ProtectedRoute;
