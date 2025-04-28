@@ -156,7 +156,6 @@ export default function Dashboard() {
             }
 
             const data = await response.json();
-            console.log("Configuration saved successfully:", data);
 
             toast.dismiss(loadingToast); // Dismiss loading toast
             toast.success("Configuration saved successfully!");

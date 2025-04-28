@@ -8,7 +8,7 @@ import { getStatusColor } from "@/utils/status";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';  // npm install xlsx
 import { toast } from "react-hot-toast"; // Make sure you have react-hot-toast
-import { FaExclamationTriangle, FaFileExport, FaPlus } from "react-icons/fa";
+import { FaExclamationTriangle, FaFileExport, FaPlus, FaTimes } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 interface ChangeRequest {
@@ -599,79 +599,87 @@ export default function ChangeManagement() {
             {/* Alert Modal (Alert Style) */}
             {isAlertModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-xl">
-                        <h2 className="text-lg font-bold text-gray-300 mb-4 text-center">Request Alert</h2>
-                        <p className="text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
-
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {/* Display Requester Names */}
-                            {alertRequesters.map(requester => (
-                                <div key={requester.id} className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center">
-                                    {requester.name}
-                                    <button
-                                        className="ml-2 focus:outline-none"
-                                        title="Remove requester"
-                                        onClick={() => {
-                                            // Remove requester from the alertRequesters state
-                                            setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
-                                        }}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            ))}
-
-                            <button className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
-                                onClick={() => {
-                                    setIsAddUserModalOpen(true);
-                                }}>
-                                +
+                    <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden w-full max-w-2xl">
+                        {/* Header Section */}
+                        <div className="p-4 border-b border-gray-600 flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-gray-300">Request Alert</h2>
+                            <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-400 hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
+                                <FaTimes className="h-6 w-6" />
                             </button>
                         </div>
 
-                        {/* Subject Text Box */}
-                        <div className="mb-4">
-                            <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-300">Subject:</label>
-                            <input
-                                type="text"
-                                id="alertSubject"
-                                className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
-                                value={alertSubject}
-                                onChange={(e) => setAlertSubject(e.target.value)}
-                                placeholder="Enter subject"
-                            />
+                        {/* Content Section */}
+                        <div className="p-6">
+                            <p className="text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
+
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {/* Display Requester Names */}
+                                {alertRequesters.map(requester => (
+                                    <div key={requester.id} className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center">
+                                        {requester.name}
+                                        <button
+                                            className="ml-2 focus:outline-none"
+                                            title="Remove requester"
+                                            onClick={() => {
+                                                // Remove requester from the alertRequesters state
+                                                setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
+                                    onClick={() => {
+                                        setIsAddUserModalOpen(true);
+                                    }}>
+                                    +
+                                </button>
+                            </div>
+
+                            {/* Subject Text Box */}
+                            <div className="mb-4 flex flex-col">
+                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-300">Subject:</label>
+                                <input
+                                    type="text"
+                                    id="alertSubject"
+                                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
+                                    value={alertSubject}
+                                    onChange={(e) => setAlertSubject(e.target.value)}
+                                    placeholder="Enter subject"
+                                />
+                            </div>
+
+                            {/* Text Text Box */}
+                            <div className="mb-4 flex flex-col">
+                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-300">Message:</label>
+                                <textarea
+                                    id="alertText"
+                                    rows={18} // Increased rows for more height
+                                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
+                                    value={alertText}
+                                    onChange={(e) => setAlertText(e.target.value)}
+                                    placeholder="Enter your message"
+                                ></textarea>
+                            </div>
                         </div>
 
-                        {/* Text Text Box */}
-                        <div className="mb-4">
-                            <label htmlFor="alertText" className="block text-sm font-medium text-gray-300">Message:</label>
-                            <textarea
-                                id="alertText"
-                                rows={24} // Increased rows for more height
-                                className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
-                                value={alertText}
-                                onChange={(e) => setAlertText(e.target.value)}
-                                placeholder="Enter your message"
-                            ></textarea>
-                        </div>
-
-
-                        <div className="mt-4 flex gap-2">
+                        {/* Footer Section */}
+                        <div className="p-4 border-t border-gray-600 flex justify-end gap-2">
                             <button
-                                type="button"
-                                className="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700 transition duration-200"
+                                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                                onClick={() => setIsAlertModalOpen(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
                                 onClick={handleSendAlerts}
                             >
                                 Send
-                            </button>
-                            <button
-                                type="button"
-                                className="w-1/2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
-                                onClick={() => setIsAlertModalOpen(false)}
-                            >
-                                Close
                             </button>
                         </div>
                     </div>

@@ -269,8 +269,6 @@ export default function ChangeRequestDetails() {
                 setAlertSubject(replaceVariables(loadedSubject)); // pass empty object since it doesnt need to be parse here
                 setAlertText(replaceVariables(loadedText)); // pass empty object since it doesnt need to be parse here
                 setAlertLimit(loadedLimit); // Set the alert limit
-
-                console.log(limitData.data[0].value);
     
             } catch (error: any) {
                 console.error("Error loading alert configuration:", error);
@@ -622,7 +620,6 @@ export default function ChangeRequestDetails() {
     };
 
     const handleSubmit = (isSucceed: boolean | null) => async (e: React.FormEvent) => {
-        console.log(formData.requested_migration_date, formData.cab_meeting_date);
         e.preventDefault();
         setIsSucceed(isSucceed);
         setIsConfirmationModalOpen(true);
