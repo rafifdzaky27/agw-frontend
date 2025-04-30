@@ -105,13 +105,13 @@ export default function ChangeManagement() {
   
           try {
               const [subjectResponse, textResponse] = await Promise.all([
-                  fetch(`http://localhost:8080/api/config?key=blast_email_alert_subject`, {
+                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=blast_email_alert_subject`, {
                       method: "GET",
                       headers: {
                           Authorization: `Bearer ${token}`,
                       },
                   }),
-                  fetch(`http://localhost:8080/api/config?key=blast_email_alert_text`, {
+                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=blast_email_alert_text`, {
                       method: "GET",
                       headers: {
                           Authorization: `Bearer ${token}`,
@@ -164,7 +164,7 @@ export default function ChangeManagement() {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch("http://localhost:8080/api/requests", {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -203,7 +203,7 @@ export default function ChangeManagement() {
             if (!token) return;
 
             try {
-                const response = await fetch("http://localhost:8080/api/users", {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -366,7 +366,7 @@ export default function ChangeManagement() {
                 body.text = text; // Include the text if not null
             }
 
-            const response = await fetch("http://localhost:8080/api/users/email", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/email`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

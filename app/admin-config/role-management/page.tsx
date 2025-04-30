@@ -62,7 +62,7 @@ export default function RoleManagement() {
             setLoading(true);
             setError(null);
 
-            const response = await fetch("http://localhost:8080/api/users", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -102,7 +102,7 @@ export default function RoleManagement() {
 
     const handleUpdateUser = async (updatedUser: User) => {
       try {
-        const response = await fetch(`http://localhost:8080/api/users/${updatedUser.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/${updatedUser.id}`, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -145,7 +145,7 @@ export default function RoleManagement() {
 
     const handleAddUser = async (newUser: any) => {
         try {
-            const response = await fetch("http://localhost:8080/api/users", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,

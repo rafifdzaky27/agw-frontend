@@ -17,7 +17,7 @@ export default function Home() {
     toast.loading("Logging in...");
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

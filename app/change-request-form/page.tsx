@@ -130,7 +130,7 @@ export default function ChangeRequestForm() {
       formDataToSend.append('architecture_diagram', formData.architecture_diagram || '');
       formDataToSend.append('captures', formData.captures || '');
 
-      const response = await fetch("http://localhost:8080/api/requests", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests`, {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`,

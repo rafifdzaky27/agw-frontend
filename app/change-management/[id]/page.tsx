@@ -116,7 +116,7 @@ export default function ChangeRequestDetails() {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`http://localhost:8080/api/requests/${requestId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/${requestId}`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -160,7 +160,7 @@ export default function ChangeRequestDetails() {
                     fileFields.map(async (field) => {
                         const backendFilename = initialFormData[field];
                         if (backendFilename) {
-                            const downloadURL = `http://localhost:8080/files/${field}/${backendFilename}`;
+                            const downloadURL = `${process.env.NEXT_PUBLIC_BACKEND_IP}/files/${field}/${backendFilename}`;
                             const file = await downloadFile(downloadURL, backendFilename);
 
                             if (file) {
@@ -182,7 +182,7 @@ export default function ChangeRequestDetails() {
             if (!token) return;
 
             try {
-                const response = await fetch(`http://localhost:8080/api/requests/history/${requestId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/history/${requestId}`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -215,19 +215,19 @@ export default function ChangeRequestDetails() {
     
             try {
                 const [subjectResponse, textResponse, limitResponse] = await Promise.all([
-                    fetch(`http://localhost:8080/api/config?key=request_email_alert_subject`, {
+                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_subject`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }),
-                    fetch(`http://localhost:8080/api/config?key=request_email_alert_text`, {
+                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_text`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }),
-                    fetch(`http://localhost:8080/api/config?key=request_email_alert_limit`, {
+                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_limit`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -343,7 +343,7 @@ export default function ChangeRequestDetails() {
         }
         const backendFilename = formData[field];
         if (backendFilename) {
-            return `http://localhost:8080/files/${field}/${backendFilename}`;
+            return `${process.env.NEXT_PUBLIC_BACKEND_IP}/files/${field}/${backendFilename}`;
         }
         return null;
     };
@@ -370,7 +370,7 @@ export default function ChangeRequestDetails() {
     };
 
     const incrementAlertCount = async () => {
-        const response = await fetch(`http://localhost:8080/api/requests/alert/${requestId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/alert/${requestId}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -394,7 +394,7 @@ export default function ChangeRequestDetails() {
         const subject = alertSubject || "Change Request Alert Subject";
         const text = alertText || "Change Request Alert Text";
 
-        const response = await fetch(`http://localhost:8080/api/users/${requesterId}/email`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/${requesterId}/email`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -421,7 +421,7 @@ export default function ChangeRequestDetails() {
             const formDataToSend = new FormData();
             formDataToSend.append("cab_meeting_date", formData.cab_meeting_date);
 
-            const response = await fetch(`http://localhost:8080/api/requests/approve/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/approve/${requestId}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -461,7 +461,7 @@ export default function ChangeRequestDetails() {
 
         const loadingToast = toast.loading("Approving VDH request...");
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/approve_vdh/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/approve_vdh/${requestId}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -527,7 +527,7 @@ export default function ChangeRequestDetails() {
 
         try {
             const isEmergency = formData.urgency === "emergency";
-            const response = await fetch(`http://localhost:8080/api/requests/finalize/${requestId}?isEmergency=${isEmergency}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/finalize/${requestId}?isEmergency=${isEmergency}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -597,7 +597,7 @@ export default function ChangeRequestDetails() {
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/complete/${requestId}?isSucceed=${isSucceed}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/complete/${requestId}?isSucceed=${isSucceed}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -653,7 +653,7 @@ export default function ChangeRequestDetails() {
         const loadingToast = toast.loading("Updating migration request...");
 
         try {
-            const response = await fetch(`http://localhost:8080/api/requests/pending/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/pending/${requestId}`, {
                 method: "POST", // Use POST since we're updating data
                 headers: {
                     "Content-Type": "application/json",
