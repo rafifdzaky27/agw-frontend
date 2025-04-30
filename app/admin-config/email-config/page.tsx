@@ -5,7 +5,6 @@ import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useState, useEffect } from "react";
 import { toast } from 'react-hot-toast';
-import { request } from "http";
 
 // Define default configuration values
 const defaultConfig = {
@@ -68,9 +67,8 @@ Change Request Advisory Board`
 };
 
 export default function Dashboard() {
-    const { user, token } = useAuth();
+    const { token } = useAuth();
     const [config, setConfig] = useState({ ...defaultConfig });
-    const [originalConfig, setOriginalConfig] = useState({ ...defaultConfig });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -155,12 +153,8 @@ export default function Dashboard() {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const data = await response.json();
-
             toast.dismiss(loadingToast); // Dismiss loading toast
             toast.success("Configuration saved successfully!");
-
-            setOriginalConfig({ ...config }); // after saved, keep the current value as original
 
         } catch (error) {
             console.error("Error saving configuration:", error);
@@ -171,7 +165,6 @@ export default function Dashboard() {
 
     const handleReset = () => {
         setConfig({ ...defaultConfig });
-        setOriginalConfig({ ...defaultConfig });
     };
 
     if (loading) {

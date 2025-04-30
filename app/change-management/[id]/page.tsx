@@ -91,23 +91,6 @@ export default function ChangeRequestDetails() {
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false); 
 
-    const replaceVariables = (template: string) => {
-        const currentDate = new Date().toLocaleDateString();
-    
-        return template
-            .replace(/{{currentDate}}/g, currentDate)
-            .replace(/{{currentUser}}/g, user?.name || "Admin")
-            .replace(/{{formData\.name}}/g, formData?.name || "Change Request")
-            .replace(/{{formData\.requesterName}}/g, formData?.requester_name || "Requester")
-            .replace(/{{formData\.ComplianceChecklist}}/g, formData?.compliance_checklist ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.ProcedureChecklist}}/g, formData?.procedure_checklist ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.RollbackChecklist}}/g, formData?.rollback_checklist ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.ArchitectureDiagram}}/g, formData?.architecture_diagram ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.Captures}}/g, formData?.captures ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.FinalReport}}/g, formData?.completion_report ? "Lengkap" : "Belum Lengkap")
-            .replace(/{{formData\.approverName}}/g, formData?.approver_name || "Approver");
-    };
-
     useEffect(() => {
         async function fetchRequest() {
             if (!token) return;
@@ -164,7 +147,7 @@ export default function ChangeRequestDetails() {
                             const file = await downloadFile(downloadURL, backendFilename);
 
                             if (file) {
-                                (initialFormData as any)[`${field}_file`] = file;
+                                (initialFormData as FormDataState)[`${field}_file`] = file;
                             }
                         }
                     })
@@ -210,6 +193,23 @@ export default function ChangeRequestDetails() {
     }, [requestId, token]);
 
     useEffect(() => {
+        const replaceVariables = (template: string) => {
+            const currentDate = new Date().toLocaleDateString();
+        
+            return template
+                .replace(/{{currentDate}}/g, currentDate)
+                .replace(/{{currentUser}}/g, user?.name || "Admin")
+                .replace(/{{formData\.name}}/g, formData?.name || "Change Request")
+                .replace(/{{formData\.requesterName}}/g, formData?.requester_name || "Requester")
+                .replace(/{{formData\.ComplianceChecklist}}/g, formData?.compliance_checklist ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.ProcedureChecklist}}/g, formData?.procedure_checklist ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.RollbackChecklist}}/g, formData?.rollback_checklist ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.ArchitectureDiagram}}/g, formData?.architecture_diagram ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.Captures}}/g, formData?.captures ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.FinalReport}}/g, formData?.completion_report ? "Lengkap" : "Belum Lengkap")
+                .replace(/{{formData\.approverName}}/g, formData?.approver_name || "Approver");
+        };
+
         const loadAlertConfig = async () => {
             if (!token || !user || !formData) return;
     
@@ -270,9 +270,13 @@ export default function ChangeRequestDetails() {
                 setAlertText(replaceVariables(loadedText)); // pass empty object since it doesnt need to be parse here
                 setAlertLimit(loadedLimit); // Set the alert limit
     
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Error loading alert configuration:", error);
-                toast.error(`Error loading alert configuration: ${error.message}`);
+                if (error instanceof Error) {
+                    toast.error(`Error loading alert configuration: ${error.message}`);
+                } else {
+                    toast.error("Error loading alert configuration: Unknown error");
+                }
             }
         };
     
@@ -320,7 +324,7 @@ export default function ChangeRequestDetails() {
         );
     }
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         if (formData) {
             setFormData({ ...formData, [e.target.id]: e.target.value });
         }
@@ -674,9 +678,13 @@ export default function ChangeRequestDetails() {
                 toast.dismiss(loadingToast);
                 toast.error(data.message || "Failed to update migration request.");
             }
-        } catch (error) {
+        } catch (error: unknown) {
             toast.dismiss(loadingToast);
-            toast.error("An error occurred while updating the migration request.");
+            if (error instanceof Error) {
+                toast.error(`An error occurred: ${error.message}`);
+            } else {
+                toast.error("An unknown error occurred while updating the migration request.");
+            }
         }
     };
 
@@ -939,7 +947,7 @@ export default function ChangeRequestDetails() {
 
                         <div className="relative w-full">
                             <div className="flex justify-between items-start">
-                                {statusSteps.map((step, index) => (
+                                {statusSteps.map((step) => (
                                     <div key={step} className="flex flex-col items-center justify-center flex-1">
                                         <div
                                             className={`rounded-full h-8 w-8 flex items-center justify-center z-10 ${getNodeColor(step)}`}

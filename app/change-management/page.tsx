@@ -91,16 +91,15 @@ export default function ChangeManagement() {
 
     const { token, user } = useAuth();
 
-    const replaceVariables = (template: string) => {
-      const currentDate = new Date().toLocaleDateString();
-      return template
-          .replace(/{{currentDate}}/g, currentDate)  // Global replacement for all occurrences
-          .replace(/{{currentUser}}/g, user?.name || "Admin")
-          ;
-    };
-
     useEffect(() => {
-      const loadAlertConfig = async () => {
+        const replaceVariables = (template: string) => {
+            const currentDate = new Date().toLocaleDateString();
+            return template
+                .replace(/{{currentDate}}/g, currentDate)  // Global replacement for all occurrences
+                .replace(/{{currentUser}}/g, user?.name || "Admin")
+                ;
+          };
+        const loadAlertConfig = async () => {
           if (!token || !user) return; // also check for user, since we use user variable
   
           try {
@@ -147,9 +146,13 @@ export default function ChangeManagement() {
               setAlertSubject(replaceVariables(loadedSubject ));
               setAlertText(replaceVariables(loadedText));
   
-          } catch (error: any) {
+          } catch (error: unknown) {
               console.error("Error loading alert configuration:", error);
-              toast.error(`Error loading alert configuration: ${error.message}`);
+              if (error instanceof Error) {
+                  toast.error(`Error loading alert configuration: ${error.message}`);
+              } else {
+                  toast.error("Error loading alert configuration: Unknown error");
+              }
           }
       };
   
@@ -194,6 +197,62 @@ export default function ChangeManagement() {
     }, [token]);
 
     useEffect(() => {
+        const applyFilters = () => {
+            let filtered = [...allRequests];
+    
+            // Time Reference Filtering
+            if (timeReference === "CAB") {
+                filtered = filtered.filter(request => {
+                    const createdAt = new Date(request.created_at);
+                    const start = startDate ? new Date(startDate) : null;
+                    const end = endDate ? new Date(endDate) : null;
+    
+                    if (start) {
+                        start.setHours(0, 0, 0, 0);
+                        if (createdAt < start) return false;
+                    }
+                    if (end) {
+                        end.setHours(23, 59, 59, 999);
+                        if (createdAt > end) return false;
+                    }
+                    return true;
+                });
+            } else if (timeReference === "Migration") {
+                filtered = filtered.filter(request => {
+                    if (request.status !== "success" && request.status !== "failed") return false;
+                    if (!request.finished_at) return false;
+    
+                    const finishedAt = new Date(request.finished_at);
+                    const start = startDate ? new Date(startDate) : null;
+                    const end = endDate ? new Date(endDate) : null;
+    
+                    if (start) {
+                        start.setHours(0, 0, 0, 0);
+                        if (finishedAt < start) return false;
+                    }
+                    if (end) {
+                        end.setHours(23, 59, 59, 999);
+                        if (finishedAt > end) return false;
+                    }
+    
+                    return true;
+                });
+            }
+    
+            // Status Filtering
+            if (selectedStatuses.length > 0) {
+                filtered = filtered.filter(request => selectedStatuses.includes(request.status));
+            }
+    
+            // Sorting
+            if (sortBy === "status") {
+                filtered.sort((a, b) => a.status.localeCompare(b.status));
+            } else if (sortBy === "created_at") {
+                filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+            }
+    
+            setRequests(filtered);
+        };
         // Apply filters whenever filter criteria change
         applyFilters();
     }, [timeReference, startDate, endDate, selectedStatuses, sortBy, allRequests]);
@@ -232,63 +291,6 @@ export default function ChangeManagement() {
             fetchUsers();
         }
     }, [token, isAddUserModalOpen]);
-
-    const applyFilters = () => {
-        let filtered = [...allRequests];
-
-        // Time Reference Filtering
-        if (timeReference === "CAB") {
-            filtered = filtered.filter(request => {
-                const createdAt = new Date(request.created_at);
-                const start = startDate ? new Date(startDate) : null;
-                const end = endDate ? new Date(endDate) : null;
-
-                if (start) {
-                    start.setHours(0, 0, 0, 0);
-                    if (createdAt < start) return false;
-                }
-                if (end) {
-                    end.setHours(23, 59, 59, 999);
-                    if (createdAt > end) return false;
-                }
-                return true;
-            });
-        } else if (timeReference === "Migration") {
-            filtered = filtered.filter(request => {
-                if (request.status !== "success" && request.status !== "failed") return false;
-                if (!request.finished_at) return false;
-
-                const finishedAt = new Date(request.finished_at);
-                const start = startDate ? new Date(startDate) : null;
-                const end = endDate ? new Date(endDate) : null;
-
-                if (start) {
-                    start.setHours(0, 0, 0, 0);
-                    if (finishedAt < start) return false;
-                }
-                if (end) {
-                    end.setHours(23, 59, 59, 999);
-                    if (finishedAt > end) return false;
-                }
-
-                return true;
-            });
-        }
-
-        // Status Filtering
-        if (selectedStatuses.length > 0) {
-            filtered = filtered.filter(request => selectedStatuses.includes(request.status));
-        }
-
-        // Sorting
-        if (sortBy === "status") {
-            filtered.sort((a, b) => a.status.localeCompare(b.status));
-        } else if (sortBy === "created_at") {
-            filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        }
-
-        setRequests(filtered);
-    };
 
     const handleStatusChange = (statusValue: string) => {
         setSelectedStatuses(prevStatuses => {
@@ -347,14 +349,14 @@ export default function ChangeManagement() {
             XLSX.writeFile(wb, "CAB_Report.xlsx");
 
             toast.success("Change requests exported successfully", { id: toastId, duration: 1500 });
-        } catch (error) {
+        } catch {
             toast.error("Failed to export change requests", { id: toastId, duration: 1500 });
         }
     };
 
     const sendAlertEmail = async (requesterIds: number[], subject: string | null, text: string | null) => {
         try {
-            const body: any = {
+            const body: { ids: number[]; subject?: string; text?: string } = {
                 ids: requesterIds // Send the IDs in the request body
             };
 
@@ -382,7 +384,7 @@ export default function ChangeManagement() {
                 throw new Error(result.error || result.message || "Failed to send alert emails.");
             }
             return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error sending emails:", error);
             throw error; // Re-throw to be caught by the caller
         }
@@ -425,8 +427,12 @@ export default function ChangeManagement() {
             await sendAlertEmail(requesterIds, alertSubject, alertText);
             toast.success("Alert emails sent successfully!", { id: toastId, duration: 5000 });
 
-        } catch (error: any) {
-            toast.error(`An error occurred while sending alerts: ${error.message}`, { id: toastId, duration: 5000 });
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(`An error occurred while sending alerts: ${error.message}`, { id: toastId, duration: 5000 });
+            } else {
+                toast.error("An unknown error occurred while sending alerts.", { id: toastId, duration: 5000 });
+            }
         } finally {
             setIsAlertModalOpen(false); // Close the modal after attempting to send alerts
         }

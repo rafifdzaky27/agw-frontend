@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { toast } from "react-hot-toast";
-import { FaTimes, FaCheck, FaPlus } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 
 interface User {
   id: number;
@@ -143,7 +143,7 @@ export default function RoleManagement() {
         setIsAddUserModalOpen(false);
     };
 
-    const handleAddUser = async (newUser: any) => {
+    const handleAddUser = async (newUser: Omit<User, "id"> & { password: string }) => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
                 method: "POST",
@@ -339,8 +339,7 @@ function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => voi
     );
 }
 
-function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser: any) => void }) {
-    const { token } = useAuth();
+function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser: Omit<User, "id"> & { password: string }) => void }) {
     const [newUser, setNewUser] = useState({
         name: "",
         username: "",
@@ -355,7 +354,7 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
         setNewUser((prev) => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         onAdd(newUser); // Call the parent component's onAdd function
     };
