@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider> {/* Wrap the entire app in the AuthProvider */}
-          <Toaster />
+          <Toaster position="bottom-right" />
           {children}
         </AuthProvider>
       </body>

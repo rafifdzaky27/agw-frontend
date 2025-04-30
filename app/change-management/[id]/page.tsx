@@ -495,6 +495,11 @@ export default function ChangeRequestDetails() {
     };
 
     const finalizeRequest = async () => {
+        if (user?.name !== formData?.approver_name) {
+            toast.error("You are not authorized to finalize this request.");
+            return;
+        }
+
         const loadingToast = toast.loading("Finalizing request...");
         const formDataToSend = new FormData();
 
@@ -555,6 +560,11 @@ export default function ChangeRequestDetails() {
     };
 
     const completeRequest = async (isSucceed: boolean) => {
+        if (user?.name !== formData?.requester_name) {
+            toast.error("You are not authorized to finalize this request.");
+            return;
+        }
+
         const loadingToast = toast.loading("Completing request...");
         const formDataToSend = new FormData();
 
@@ -635,6 +645,10 @@ export default function ChangeRequestDetails() {
     const confirmPending = async (selectedDate: string, pending_reason: string) => {
         setIsPendingModalOpen(false);
         if (!selectedDate || !pending_reason) return; // Ensure date and reason are provided
+        if (user?.name !== formData?.requester_name) {
+            toast.error("You are not authorized to finalize this request.");
+            return;
+        }
 
         const loadingToast = toast.loading("Updating migration request...");
 
