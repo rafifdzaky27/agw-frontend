@@ -11,27 +11,29 @@ export default function Dashboard() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-900 text-white">
         <Navbar />
-        <div className="flex flex-col items-center justify-center p-6">
-          <h1 className="text-3xl font-bold">Welcome to Dashboard</h1>
+        <div className="container mx-auto p-6">
+          <div className="flex flex-col items-center justify-centermx-auto">
+            <h1 className="text-3xl font-bold mb-6 text-center">Welcome to Dashboard</h1>
 
-          {user ? (
-            <div className="mt-6 text-center bg-gray-800 p-6 rounded-lg shadow-lg">
-              <p className="text-xl font-semibold">Hello, {user.name}!</p>
-              <p className="text-gray-400">Username: {user.username}</p>
-              <p className="text-gray-400">Role: {user.role}</p>
-              <p className="text-gray-400">Division: {user.division}</p>
+            {user ? (
+              <div className="text-center bg-gray-800 p-4 rounded-lg shadow-lg">
+                <p className="text-xl font-semibold">Hello, {user.name}!</p>
+                <p className="text-gray-400">Username: {user.username}</p>
+                <p className="text-gray-400">Role: {user.role}</p>
+                <p className="text-gray-400">Division: {user.division}</p>
 
-              {/* Token Section */}
-              {token && (
-                <div className="mt-4 p-3 bg-gray-700 rounded-lg text-sm break-all">
-                  <p className="text-gray-400">Token:</p>
-                  <p className="text-green-400">{token}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-red-500 mt-6">No user data found. Please log in.</p>
-          )}
+                {/* Token Section */}
+                {token && (
+                  <div className="mt-4 p-3 bg-gray-700 rounded-lg text-sm break-all">
+                    <p className="text-gray-400">Token:</p>
+                    <p className="text-green-400">{token}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-red-500 mt-6">No user data found. Please log in.</p>
+            )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>
