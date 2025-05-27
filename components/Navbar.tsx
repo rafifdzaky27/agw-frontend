@@ -26,7 +26,7 @@ export default function Navbar() {
   return (
     <nav className="bg-gray-800 text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold">Change Advisory Board</h1>
+        <h1 className="text-xl font-bold">Architecture and Governance Workspace</h1>
         <ul className="flex gap-6">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
