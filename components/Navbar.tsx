@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { FaSun, FaMoon } from "react-icons/fa"; // Import icons for theme toggle
+import { useTheme } from "@/context/ThemeContext"; // Import useTheme hook
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -14,6 +16,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme(); // Use the theme context
   const router = useRouter();
 
   const handleLogout = () => {
@@ -41,7 +44,15 @@ export default function Navbar() {
         </ul>
         {user && (
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-300">Welcome, {user.name}!</span>
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition duration-200"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <FaSun className="text-yellow-400" /> : <FaMoon className="text-gray-300" />}
+            </button>
+            <span className="text-sm text-gray-300 hidden md:inline">Welcome, {user.name}!</span> {/* Hide on small screens */}
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition"
