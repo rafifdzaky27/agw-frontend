@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 const NAV_LINKS = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Change Management", href: "/change-management" },
+  { name: "Governance Tasks", href: "/governance-tasks" },
+  { name: "Audit Findings", href: "/audit-findings" },
   { name: "Admin Config", href: "/admin-config" },
 ];
 
