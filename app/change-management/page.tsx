@@ -1,5 +1,7 @@
+// page.tsx
 "use client";
 
+import { JSX } from 'react'; // Import JSX
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -8,7 +10,7 @@ import { getStatusColor } from "@/utils/status";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';  // npm install xlsx
 import { toast } from "react-hot-toast"; // Make sure you have react-hot-toast
-import { FaExclamationTriangle, FaFileExport, FaPlus, FaTimes } from "react-icons/fa";
+import { FaExclamationTriangle, FaFileExport, FaPlus, FaTimes, FaCalendarAlt, FaRocket, FaTag, FaLayerGroup, FaInfoCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 interface ChangeRequest {
@@ -101,7 +103,7 @@ export default function ChangeManagement() {
           };
         const loadAlertConfig = async () => {
           if (!token || !user) return; // also check for user, since we use user variable
-  
+
           try {
               const [subjectResponse, textResponse] = await Promise.all([
                   fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=blast_email_alert_subject`, {
@@ -117,35 +119,35 @@ export default function ChangeManagement() {
                       },
                   }),
               ]);
-  
+
               if (!subjectResponse.ok || !textResponse.ok) {
                   throw new Error("Failed to load alert configuration");
               }
-  
+
               const subjectData = await subjectResponse.json();
               const textData = await textResponse.json();
-  
+
               let loadedSubject = "";
               let loadedText = "";
-  
+
               if (subjectData.success && subjectData.data && subjectData.data.length > 0) {
                   loadedSubject = subjectData.data[0].value;
               } else {
                   console.warn("blast_email_alert_subject not found, using default");
                   loadedSubject = "Placeholder Subject"; // Default subject if not found
               }
-  
+
               if (textData.success && textData.data && textData.data.length > 0) {
                   loadedText = textData.data[0].value;
               } else {
                   console.warn("blast_email_alert_text not found, using default");
                   loadedText = "Placeholder Text"; // Default text if not found
               }
-  
+
               // Replace variables after loading
               setAlertSubject(replaceVariables(loadedSubject ));
               setAlertText(replaceVariables(loadedText));
-  
+
           } catch (error: unknown) {
               console.error("Error loading alert configuration:", error);
               if (error instanceof Error) {
@@ -155,7 +157,7 @@ export default function ChangeManagement() {
               }
           }
       };
-  
+
         loadAlertConfig();
     }, [token, user]); // Added user as a dependency
 
@@ -199,14 +201,14 @@ export default function ChangeManagement() {
     useEffect(() => {
         const applyFilters = () => {
             let filtered = [...allRequests];
-    
+
             // Time Reference Filtering
             if (timeReference === "CAB") {
                 filtered = filtered.filter(request => {
                     const createdAt = new Date(request.created_at);
                     const start = startDate ? new Date(startDate) : null;
                     const end = endDate ? new Date(endDate) : null;
-    
+
                     if (start) {
                         start.setHours(0, 0, 0, 0);
                         if (createdAt < start) return false;
@@ -221,11 +223,11 @@ export default function ChangeManagement() {
                 filtered = filtered.filter(request => {
                     if (request.status !== "success" && request.status !== "failed") return false;
                     if (!request.finished_at) return false;
-    
+
                     const finishedAt = new Date(request.finished_at);
                     const start = startDate ? new Date(startDate) : null;
                     const end = endDate ? new Date(endDate) : null;
-    
+
                     if (start) {
                         start.setHours(0, 0, 0, 0);
                         if (finishedAt < start) return false;
@@ -234,23 +236,23 @@ export default function ChangeManagement() {
                         end.setHours(23, 59, 59, 999);
                         if (finishedAt > end) return false;
                     }
-    
+
                     return true;
                 });
             }
-    
+
             // Status Filtering
             if (selectedStatuses.length > 0) {
                 filtered = filtered.filter(request => selectedStatuses.includes(request.status));
             }
-    
+
             // Sorting
             if (sortBy === "status") {
                 filtered.sort((a, b) => a.status.localeCompare(b.status));
             } else if (sortBy === "created_at") {
                 filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             }
-    
+
             setRequests(filtered);
         };
         // Apply filters whenever filter criteria change
@@ -336,9 +338,9 @@ export default function ChangeManagement() {
                 Requested_Migration_Date: formatUTCStringToInput(request.requested_migration_date),
                 Project_Code: request.project_code,
                 RFC_Number: request.rfc_number,
-                Requester_Name: request.requester_name, // Assuming you will fill this later
-                Approver_Name: request.approver_name, // Assuming you will fill this later
-                Downtime: request.downtime_risk, // Assuming you will calculate this later
+                Requester_Name: request.requester_name,
+                Approver_Name: request.approver_name,
+                Downtime: request.downtime_risk,
                 Time: "",
                 PIC: request.pic
             }));
@@ -357,22 +359,22 @@ export default function ChangeManagement() {
     const sendAlertEmail = async (requesterIds: number[], subject: string | null, text: string | null) => {
         try {
             const body: { ids: number[]; subject?: string; text?: string } = {
-                ids: requesterIds // Send the IDs in the request body
+                ids: requesterIds
             };
 
             if (subject !== null && subject.trim() !== '') {
-                body.subject = subject; // Include the subject if not null
+                body.subject = subject;
             }
 
             if (text !== null && text.trim() !== '') {
-                body.text = text; // Include the text if not null
+                body.text = text;
             }
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/email`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json", // Important: Tell the server you're sending JSON
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify(body),
             });
@@ -380,18 +382,17 @@ export default function ChangeManagement() {
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                console.error("Email error:", result); // Log the entire response for debugging
+                console.error("Email error:", result);
                 throw new Error(result.error || result.message || "Failed to send alert emails.");
             }
             return true;
         } catch (error: unknown) {
             console.error("Error sending emails:", error);
-            throw error; // Re-throw to be caught by the caller
+            throw error;
         }
     };
 
     const handleAlertClick = () => {
-        // Store both name and ID
         const uniqueRequesters = [
             ...new Map(requests.map((request) => [request.requester_id, { name: request.requester_name, id: request.requester_id }])).values(),
         ];
@@ -409,7 +410,7 @@ export default function ChangeManagement() {
             ...prevRequesters,
             { name: user.name, id: user.id }
         ]);
-        setIsAddUserModalOpen(false); // Close the modal after adding
+        setIsAddUserModalOpen(false);
     };
 
     const handleSendAlerts = async () => {
@@ -423,7 +424,6 @@ export default function ChangeManagement() {
         const toastId = toast.loading("Sending alert emails...");
 
         try {
-            // Send all emails at once
             await sendAlertEmail(requesterIds, alertSubject, alertText);
             toast.success("Alert emails sent successfully!", { id: toastId, duration: 5000 });
 
@@ -434,7 +434,7 @@ export default function ChangeManagement() {
                 toast.error("An unknown error occurred while sending alerts.", { id: toastId, duration: 5000 });
             }
         } finally {
-            setIsAlertModalOpen(false); // Close the modal after attempting to send alerts
+            setIsAlertModalOpen(false);
         }
     };
 
@@ -450,10 +450,9 @@ export default function ChangeManagement() {
                         Change Requests Management
                     </h1>
 
-                    <div className="bg-gray-800 rounded-lg p-4 mb-4"> {/* Card styling applied here */}
+                    <div className="bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-stretch">
                             <div className="flex items-stretch space-x-4">
-                                {/* Add Request Button (Left) */}
                                 <button
                                     className="px-4 py-2 bg-blue-500 rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200"
                                     onClick={() => router.push("/change-request-form")}
@@ -461,21 +460,17 @@ export default function ChangeManagement() {
                                     <FaPlus />
                                     <span>Add Request</span>
                                 </button>
-                                {/* Export Button */}
                                 <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
                                     <FaFileExport />
                                     <span>Export</span>
                                 </button>
-                                {/* Alert Button */}
                                 <button className="px-4 py-2 bg-yellow-500 rounded flex items-center space-x-2 hover:bg-yellow-700 transition duration-200" onClick={handleAlertClick}>
                                     <FaExclamationTriangle />
                                     <span>Alert</span>
                                 </button>
                             </div>
 
-                            {/* Filters and Export (Right) */}
                             <div className="flex items-stretch space-x-4">
-                                {/* Time Reference */}
                                 <div className="flex flex-col justify-start">
                                     <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
                                     <select
@@ -489,7 +484,6 @@ export default function ChangeManagement() {
                                     </select>
                                 </div>
 
-                                {/* Start Date */}
                                 <div className="flex flex-col justify-start">
                                     <label className="block text-sm font-medium text-gray-300 h-1/2">Start Date:</label>
                                     <input
@@ -502,7 +496,6 @@ export default function ChangeManagement() {
                                     />
                                 </div>
 
-                                {/* End Date */}
                                 <div className="flex flex-col justify-start">
                                     <label className="block text-sm font-medium text-gray-300 h-1/2">End Date:</label>
                                     <input
@@ -515,7 +508,6 @@ export default function ChangeManagement() {
                                     />
                                 </div>
 
-                                {/* Status Filter (Modal) */}
                                 <div className="flex flex-col justify-start relative">
                                     <label className="block text-sm font-medium text-gray-300 h-1/2">Status:</label>
                                     <div className="relative">
@@ -523,13 +515,12 @@ export default function ChangeManagement() {
                                             type="button"
                                             className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
                                             onClick={() => setIsStatusModalOpen(true)}
-                                            style={{ width: '250px' }} // Increased Width
+                                            style={{ width: '250px' }}
                                         >
                                             {statusText}
                                         </button>
                                     </div>
 
-                                    {/* Status Modal (Dropdown Style) */}
                                     {isStatusModalOpen && (
                                         <div className="absolute left-0 top-full mt-1 z-10 bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
                                             <div className="py-1">
@@ -575,7 +566,6 @@ export default function ChangeManagement() {
                                     )}
                                 </div>
 
-                                {/* Sort By */}
                                 <div className="flex flex-col justify-start">
                                     <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
                                     <select
@@ -602,11 +592,9 @@ export default function ChangeManagement() {
                     )}
                 </div>
             </div>
-            {/* Alert Modal (Alert Style) */}
             {isAlertModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden w-full max-w-2xl">
-                        {/* Header Section */}
                         <div className="p-4 border-b border-gray-600 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-gray-300">Request Alert</h2>
                             <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-400 hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
@@ -614,12 +602,10 @@ export default function ChangeManagement() {
                             </button>
                         </div>
 
-                        {/* Content Section */}
                         <div className="p-6">
                             <p className="text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
 
                             <div className="flex flex-wrap gap-2 mb-4">
-                                {/* Display Requester Names */}
                                 {alertRequesters.map(requester => (
                                     <div key={requester.id} className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center">
                                         {requester.name}
@@ -627,7 +613,6 @@ export default function ChangeManagement() {
                                             className="ml-2 focus:outline-none"
                                             title="Remove requester"
                                             onClick={() => {
-                                                // Remove requester from the alertRequesters state
                                                 setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
                                             }}
                                         >
@@ -646,7 +631,6 @@ export default function ChangeManagement() {
                                 </button>
                             </div>
 
-                            {/* Subject Text Box */}
                             <div className="mb-4 flex flex-col">
                                 <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-300">Subject:</label>
                                 <input
@@ -659,12 +643,11 @@ export default function ChangeManagement() {
                                 />
                             </div>
 
-                            {/* Text Text Box */}
                             <div className="mb-4 flex flex-col">
                                 <label htmlFor="alertText" className="block text-sm font-medium text-gray-300">Message:</label>
                                 <textarea
                                     id="alertText"
-                                    rows={18} // Increased rows for more height
+                                    rows={18}
                                     className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
                                     value={alertText}
                                     onChange={(e) => setAlertText(e.target.value)}
@@ -673,7 +656,6 @@ export default function ChangeManagement() {
                             </div>
                         </div>
 
-                        {/* Footer Section */}
                         <div className="p-4 border-t border-gray-600 flex justify-end gap-2">
                             <button
                                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
@@ -692,7 +674,6 @@ export default function ChangeManagement() {
                 </div>
             )}
 
-            {/* Add User Modal */}
             {isAddUserModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md">
@@ -734,9 +715,9 @@ export default function ChangeManagement() {
 
 function ChangeRequestList({ requests }: { requests: ChangeRequest[] }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap */}
             {requests.length === 0 ? (
-                <p className="text-center text-gray-400">No change requests found.</p>
+                <p className="col-span-full text-center text-gray-400">No change requests found.</p>
             ) : (
                 requests.map((request) => (
                     <ChangeRequestCard key={request.id} request={request} />
@@ -749,39 +730,118 @@ function ChangeRequestList({ requests }: { requests: ChangeRequest[] }) {
 function ChangeRequestCard({ request }: { request: ChangeRequest }) {
   const statusColor = getStatusColor(request.status);
 
-  const formatUTCStringToInput = (utcString: string | null) => {
-    if (!utcString) return "N/A"; // Handle null case
-    const [datePart, timePart] = utcString.split('T');
-    const [time] = timePart.split('.'); // remove .000Z
-    const date_string = `${datePart}T${time}`;
-    return new Date(date_string).toLocaleString();
-};
+  const formatDateForDisplay = (dateIsoString: string | null): string => {
+    if (!dateIsoString) return "N/A";
+    const date = new Date(dateIsoString);
+    if (isNaN(date.getTime())) {
+        return "N/A";
+    }
+    return date.toLocaleDateString(undefined, {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+  };
+
+  const getUrgencyStyles = (urgency: string | null): { badge: string; iconColor: string } => {
+    switch (urgency?.toLowerCase()) {
+      case 'high':
+        return { badge: 'bg-red-600 text-red-100', iconColor: 'text-red-400' };
+      case 'medium':
+        return { badge: 'bg-yellow-600 text-yellow-100', iconColor: 'text-yellow-400' };
+      case 'low':
+        return { badge: 'bg-green-600 text-green-100', iconColor: 'text-green-400' };
+      default:
+        return { badge: 'bg-gray-600 text-gray-100', iconColor: 'text-gray-400' };
+    }
+  };
+
+  const urgencyStyles = getUrgencyStyles(request.urgency);
+
+  const getStatusDisplay = (status: string | null): { text: string; style: string; icon: JSX.Element } => {
+    const formattedStatus = status?.replace(/_/g, " ") || "Unknown";
+    const capitalizedStatus = formattedStatus.charAt(0).toUpperCase() + formattedStatus.slice(1);
+
+    let style = "text-gray-400";
+    let icon = <FaInfoCircle className={`mr-1.5 h-3.5 w-3.5 ${style}`} />;
+
+    if (status === "success") {
+        style = "text-green-400";
+        icon = <FaInfoCircle className={`mr-1.5 h-3.5 w-3.5 ${style}`} />; // Or FaCheckCircle
+    } else if (status === "failed") {
+        style = "text-red-400";
+        icon = <FaInfoCircle className={`mr-1.5 h-3.5 w-3.5 ${style}`} />; // Or FaTimesCircle
+    } else if (status?.includes("waiting")) {
+        style = "text-yellow-400";
+        icon = <FaInfoCircle className={`mr-1.5 h-3.5 w-3.5 ${style}`} />; // Or FaHourglassHalf
+    } else if (status === "draft") {
+        style = "text-blue-400";
+         icon = <FaInfoCircle className={`mr-1.5 h-3.5 w-3.5 ${style}`} />; // Or FaPen
+    }
+    return { text: capitalizedStatus, style, icon };
+  };
+
+  const statusDisplay = getStatusDisplay(request.status);
 
   return (
-    <Link href={`/change-management/${request.id}`} key={request.id}>
-      <div
-        className="bg-gray-800 hover:bg-gray-700 cursor-pointer rounded-lg p-4 transition duration-200 border-l-8"
-        style={{ borderColor: statusColor }}
+    <Link
+      href={`/change-management/${request.id}`}
+      className="block bg-gray-800 hover:bg-gray-750 rounded-lg p-5 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out border-l-4 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+      style={{ borderColor: statusColor }}
       >
-        <h2 className="text-xl font-semibold mb-2">{request.name}</h2>
-        <p className="text-gray-300">Type: {request.type}</p>
-        <p className="text-gray-300">Category: {request.category}</p>
-        <p className="text-gray-300">Urgency: {request.urgency}</p>
-        <p className="text-gray-300">
-          Creation Date: {formatUTCStringToInput(request.created_at)}
-        </p>
-        <p className="text-gray-300">
-          Requested Date: {formatUTCStringToInput(request.requested_migration_date)}
-        </p>
-        <p className="text-gray-300">
-          Migration Date: {formatUTCStringToInput(request.finished_at)}
-        </p>
-        <div className="mt-2">
-          <span className="text-gray-400">
-            {request.status?.replace("_", " ")}
-          </span>
+        <div className="flex flex-col h-full justify-between">
+          {/* Top section: Name and basic info */}
+          <div>
+            <h2 className="text-lg font-semibold text-blue-300 mb-3 truncate" title={request.name}>
+              {request.name || "Untitled Request"}
+            </h2>
+
+            <div className="space-y-1.5 text-xs text-gray-400 mb-4">
+              <div className="flex items-center">
+                <FaLayerGroup className="mr-2 text-gray-500 flex-shrink-0" />
+                <span>Type: {request.type || "N/A"}</span>
+              </div>
+              <div className="flex items-center">
+                <FaTag className="mr-2 text-gray-500 flex-shrink-0" />
+                <span>Category: {request.category || "N/A"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle section: Dates */}
+          <div className="mb-4 space-y-1.5">
+             <div className="flex items-center text-xs text-gray-300">
+                <FaCalendarAlt className="mr-2 text-teal-400 flex-shrink-0" />
+                <span>CAB: {formatDateForDisplay(request.cab_meeting_date)}</span>
+            </div>
+            {request.finished_at && (
+                 <div className="flex items-center text-xs text-gray-300">
+                    <FaRocket className="mr-2 text-purple-400 flex-shrink-0" />
+                    <span>Migrated: {formatDateForDisplay(request.finished_at)}</span>
+                </div>
+            )}
+          </div>
+
+          {/* Bottom section: Urgency and Status */}
+          <div className="mt-auto pt-3 border-t border-gray-700">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center" title={`Urgency: ${request.urgency || 'N/A'}`}>
+                    <FaExclamationTriangle className={`mr-1.5 h-4 w-4 ${urgencyStyles.iconColor} flex-shrink-0`} />
+                    <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold leading-tight ${urgencyStyles.badge}`}
+                    >
+                        {request.urgency || 'N/A'}
+                    </span>
+                </div>
+                <div className="flex items-center" title={`Status: ${statusDisplay.text}`}>
+                    {statusDisplay.icon}
+                    <span className={`text-xs font-medium ${statusDisplay.style}`}>
+                        {statusDisplay.text}
+                    </span>
+                </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
   );
 }

@@ -1,4 +1,4 @@
-// components/ConfirmationModal.tsx
+// ConfirmationModal.tsx
 import React, { useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa'; // Import Font Awesome
 
@@ -34,8 +34,8 @@ interface AlertModalProps {
     isOpen: boolean;
     onConfirm: () => void;
     onCancel: () => void;
-    alertCount: number; // Number of times email alerts have been sent
-    alertLimit: number; // Maximum number of email alerts allowed
+    alertCount?: number; // Make optional
+    alertLimit?: number; // Make optional
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
@@ -66,12 +66,20 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm
 };
 
 const AlertModal: React.FC<AlertModalProps> = ({ isOpen, onConfirm, onCancel, alertCount, alertLimit }) => {
+    // Construct the message based on available props
+    let message = "Are you sure to send email alerts?";
+    if (typeof alertCount === 'number' && typeof alertLimit === 'number') {
+        message += ` (${alertCount}/${alertLimit})`;
+    } else if (typeof alertCount === 'number') {
+        message += ` (${alertCount} selected)`; // Show only count if limit is not provided
+    }
+
     return (
-        <ConfirmationModal 
-            isOpen={isOpen} 
-            onConfirm={onConfirm} 
-            onCancel={onCancel} 
-            message={`Are you sure to send email alerts? (${alertCount}/${alertLimit})`} 
+        <ConfirmationModal
+            isOpen={isOpen}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+            message={message}
         />
     );
 };
@@ -93,10 +101,10 @@ const PendingModal: React.FC<PendingModalProps> = ({ isOpen, onConfirm, onCancel
                 <h3 className="text-lg font-medium leading-6 text-gray-900">Pending Request</h3>
                 <div className="mt-2">
                     <label className="block text-sm text-gray-500">New Migration Date</label>
-                    <input 
-                        type="datetime-local" 
-                        className="p-2 border rounded w-full mt-1" 
-                        value={selectedDate} 
+                    <input
+                        type="datetime-local"
+                        className="p-2 border rounded w-full mt-1"
+                        value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         placeholder="Select a date"
                     />
@@ -146,7 +154,7 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
 
     return (
         <div
-            className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 flex items-center justify-center transition-opacity duration-300 z-50 
+            className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 flex items-center justify-center transition-opacity duration-300 z-50
                 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
             <div className="bg-white p-6 rounded-lg shadow-lg w-[500px] max-h-[80vh] overflow-y-auto relative">
@@ -166,7 +174,7 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
                     <ul className="space-y-2">
                         {sortedHistory.map((entry, index) => {
                             const isLatest = index === 0;
-                            
+
                             // Determine status color and text
                             let statusColor = "text-gray-600";
                             let statusText = "⚪ Unknown";
