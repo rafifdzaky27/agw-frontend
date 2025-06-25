@@ -1,7 +1,7 @@
 // app/admin-config/role-management/page.tsx
 "use client";
 
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect, useCallback } from "react"; // Import useCallback
@@ -178,11 +178,10 @@ export default function RoleManagement() {
 
     return (
         <ProtectedRoute allowedRoles={['approver', 'master']}>
-            <div>
-                <Navbar />
-                <div className="container mx-auto p-6">
+            <div className="min-h-screen bg-gray-900 text-white flex">
+                <Sidebar />
+                <div className="flex-1 md:ml-60 p-6">
                     <h1 className="text-3xl font-bold mb-4 text-center text-gray-900 dark:text-white">Role Management</h1>
-
                     <div className="bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex items-stretch space-x-4">
                             <button

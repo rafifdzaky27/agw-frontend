@@ -3,7 +3,7 @@
 
 import { JSX } from 'react'; // Import JSX
 import { useEffect, useState } from "react";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { getStatusColor } from "@/utils/status";
@@ -443,9 +443,9 @@ export default function ChangeManagement() {
 
     return (
         <ProtectedRoute>
-            <div>
-                <Navbar />
-                <div className="container mx-auto p-6 text-gray-900 dark:text-white">
+            <div className="min-h-screen text-gray-900 dark:text-white flex">
+                <Sidebar />
+                <div className="flex-1 md:ml-60 p-6">   
                     <h1 className="text-3xl font-bold mb-6 text-center">
                         Change Requests Management
                     </h1>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useState, useEffect } from "react";
 import { toast } from 'react-hot-toast';
+import Navbar from "@/components/Navbar";
 
 // Define default configuration values
 const defaultConfig = {
@@ -189,9 +190,9 @@ export default function Dashboard() {
 
     return (
         <ProtectedRoute allowedRoles={['approver', 'master']}>
-            <div>
-                <Navbar />
-                <div className="container mx-auto p-6">
+            <div className="min-h-screen bg-gray-900 text-white flex">
+                <Sidebar />
+                <div className="flex-1 md:ml-60 p-6">
                     <div className="flex items-center mb-6">
                         <h1 className="text-3xl font-bold text-center flex-grow">Email Configuration</h1>
                     </div>

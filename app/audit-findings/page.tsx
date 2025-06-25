@@ -3,15 +3,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
+
+// Define interfaces for type safety
+interface AuditFinding {
+  id: string;
+  kategoriAudit: string;
+  namaTemuan: string;
+  penyebab: string;
+  rekomendasi: string;
+  komitmenTindakLanjut: string;
+  batasAkhirKomitmen: string;
+  pic: string;
+  status: string;
+}
 
 export default function AuditFindings() {
   const { user } = useAuth();
-  const [auditFindings, setAuditFindings] = useState([]);
+  const [auditFindings, setAuditFindings] = useState<AuditFinding[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [currentFinding, setCurrentFinding] = useState(null);
+  const [currentFinding, setCurrentFinding] = useState<AuditFinding | null>(null);
 
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
@@ -28,7 +41,9 @@ export default function AuditFindings() {
         const data = await response.json();
         
         // Sort by deadline
-        const sortedData = data.sort((a, b) => new Date(a.batasAkhirKomitmen) - new Date(b.batasAkhirKomitmen));
+        const sortedData = data.sort((a: AuditFinding, b: AuditFinding) => 
+          new Date(a.batasAkhirKomitmen).getTime() - new Date(b.batasAkhirKomitmen).getTime()
+        );
         setAuditFindings(sortedData);
         setLoading(false);
       } catch (error) {
@@ -41,7 +56,7 @@ export default function AuditFindings() {
   }, [API_BASE_URL]);
 
   // Function to save new audit finding
-  const handlePost = useCallback(async (finding) => {
+  const handlePost = useCallback(async (finding: Partial<AuditFinding>) => {
     try {
       const response = await fetch(`${API_BASE_URL}/findings`, {
         method: "POST",
@@ -62,7 +77,7 @@ export default function AuditFindings() {
   }, [API_BASE_URL]);
 
   // Function to update existing audit finding
-  const handleSave = useCallback(async (finding) => {
+  const handleSave = useCallback(async (finding: AuditFinding) => {
     try {
       const response = await fetch(`${API_BASE_URL}/findings/${finding.id}`, {
         method: "PUT",
@@ -85,7 +100,7 @@ export default function AuditFindings() {
   }, [API_BASE_URL]);
 
   // Function to delete audit finding
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/findings/${id}`, { 
         method: "DELETE" 
@@ -103,14 +118,14 @@ export default function AuditFindings() {
   }, [API_BASE_URL]);
 
   // Function to show audit finding details
-  const handleShow = useCallback((id) => {
+  const handleShow = useCallback((id: string) => {
     const finding = auditFindings.find((item) => item.id === id);
-    setCurrentFinding(finding);
+    setCurrentFinding(finding || null);
     setShowDialog(true);
   }, [auditFindings]);
 
   // Format date for display
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       day: "2-digit",
@@ -120,7 +135,7 @@ export default function AuditFindings() {
   };
 
   // Get badge color based on status
-  const getBadgeClass = (status) => {
+  const getBadgeClass = (status: string) => {
     switch(status) {
       case 'done':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
@@ -132,7 +147,7 @@ export default function AuditFindings() {
   };
 
   // Get status display text
-  const getStatusText = (status) => {
+  const getStatusText = (status: string) => {
     switch(status) {
       case 'done':
         return 'Done';
@@ -145,9 +160,9 @@ export default function AuditFindings() {
 
   return (
     <ProtectedRoute>
-      <div>
-        <Navbar />
-        <div className="container mx-auto p-6">
+      <div className="min-h-screen bg-gray-900 text-white flex">
+        <Sidebar />
+        <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-center">Audit Findings</h1>
             <button
@@ -229,23 +244,34 @@ export default function AuditFindings() {
   );
 }
 
+// Define props interface for FindingDialog
+interface FindingDialogProps {
+  finding: AuditFinding | null;
+  onClose: () => void;
+  onSave: (finding: AuditFinding) => void;
+  onDelete: (id: string) => void;
+  formatDate: (dateString: string) => string;
+  getBadgeClass: (status: string) => string;
+  getStatusText: (status: string) => string;
+}
+
 // Finding Dialog Component
-function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }) {
-  const [formState, setFormState] = useState({
-    id: finding.id || "",
-    kategoriAudit: finding.kategoriAudit || "",
-    namaTemuan: finding.namaTemuan || "",
-    penyebab: finding.penyebab || "",
-    rekomendasi: finding.rekomendasi || "",
-    komitmenTindakLanjut: finding.komitmenTindakLanjut || "",
-    batasAkhirKomitmen: finding.batasAkhirKomitmen || "",
-    pic: finding.pic || "",
-    status: finding.status || "not yet",
+function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: FindingDialogProps) {
+  const [formState, setFormState] = useState<AuditFinding>({
+    id: finding?.id || "",
+    kategoriAudit: finding?.kategoriAudit || "",
+    namaTemuan: finding?.namaTemuan || "",
+    penyebab: finding?.penyebab || "",
+    rekomendasi: finding?.rekomendasi || "",
+    komitmenTindakLanjut: finding?.komitmenTindakLanjut || "",
+    batasAkhirKomitmen: finding?.batasAkhirKomitmen || "",
+    pic: finding?.pic || "",
+    status: finding?.status || "not yet",
   });
 
   const [isEdit, setIsEdit] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -421,7 +447,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={() => onDelete(finding.id)}
+                onClick={() => finding && onDelete(finding.id)}
               >
                 Delete
               </button>
@@ -433,9 +459,15 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
   );
 }
 
+// Define props interface for FindingCreateDialog
+interface FindingCreateDialogProps {
+  onClose: () => void;
+  onSave: (finding: Partial<AuditFinding>) => void;
+}
+
 // Finding Create Dialog Component
-function FindingCreateDialog({ onClose, onSave }) {
-  const [formState, setFormState] = useState({
+function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
+  const [formState, setFormState] = useState<Partial<AuditFinding>>({
     kategoriAudit: "",
     namaTemuan: "",
     penyebab: "",
@@ -446,7 +478,7 @@ function FindingCreateDialog({ onClose, onSave }) {
     pic: ""
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
