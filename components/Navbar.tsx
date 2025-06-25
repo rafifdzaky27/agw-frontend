@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FaSun, FaMoon } from "react-icons/fa"; // Import icons for theme toggle
-import { useTheme } from "@/context/ThemeContext"; // Import useTheme hook
+import { FaSun, FaMoon } from "react-icons/fa";
+import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
@@ -18,7 +18,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme(); // Use the theme context
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -27,16 +27,16 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-gray-800 text-white p-4 shadow-md">
+    <nav className="bg-gray-100 text-gray-900 shadow-md p-4 dark:bg-gray-800 dark:text-white transition-colors duration-300">
       <div className="container mx-auto flex justify-between items-center">
         <h1 className="text-xl font-bold">Architecture and Governance Workspace</h1>
-        <ul className="flex gap-6">
+        <ul className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className={`hover:text-gray-300 ${
-                  pathname === link.href ? "underline" : ""
+                className={`transition-colors hover:text-blue-600 dark:hover:text-blue-400 ${
+                  pathname === link.href ? "underline text-blue-600 dark:text-blue-400" : ""
                 }`}
               >
                 {link.name}
@@ -49,12 +49,16 @@ export default function Navbar() {
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition duration-200"
+              className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200"
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? <FaSun className="text-yellow-400" /> : <FaMoon className="text-gray-300" />}
+              {theme === "dark" ? (
+                <FaSun className="text-yellow-400" />
+              ) : (
+                <FaMoon className="text-gray-800" />
+              )}
             </button>
-            <span className="text-sm text-gray-300 hidden md:inline">Welcome, {user.name}!</span> {/* Hide on small screens */}
+            <span className="text-sm hidden md:inline">Welcome, {user.name}!</span>
             <button
               onClick={handleLogout}
               className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition"
@@ -65,5 +69,4 @@ export default function Navbar() {
         )}
       </div>
     </nav>
-  );
-}
+  );}

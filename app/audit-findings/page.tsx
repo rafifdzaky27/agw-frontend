@@ -138,11 +138,11 @@ export default function AuditFindings() {
   const getBadgeClass = (status: string) => {
     switch(status) {
       case 'done':
-        return 'bg-green-900 text-green-200';
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'on progress':
-        return 'bg-yellow-900 text-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       default:
-        return 'bg-gray-700 text-gray-300';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
@@ -178,22 +178,22 @@ export default function AuditFindings() {
           
           {loading ? (
             <div className="flex justify-center">
-              <p className="text-gray-400">Loading audit findings...</p>
+              <p className="text-gray-500 dark:text-gray-400">Loading audit findings...</p>
             </div>
           ) : (
             <div className="grid gap-4">
               {auditFindings.map((finding) => (
                 <div 
                   key={finding.id}
-                  className="bg-gray-800 rounded-lg p-4 shadow-lg hover:bg-gray-750 transition cursor-pointer"
+                  className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition cursor-pointer"
                   onClick={() => handleShow(finding.id)}
                 >
                   <div className="flex flex-col md:flex-row justify-between mb-2">
                     <div className="font-semibold text-lg">{finding.namaTemuan}</div>
-                    <div className="text-gray-300">{formatDate(finding.batasAkhirKomitmen)}</div>
+                    <div className="text-gray-600 dark:text-gray-300">{formatDate(finding.batasAkhirKomitmen)}</div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-gray-400">
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd"></path>
                       </svg>
@@ -203,7 +203,7 @@ export default function AuditFindings() {
                       {getStatusText(finding.status)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 text-gray-400">
+                  <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
                     </svg>
@@ -215,8 +215,8 @@ export default function AuditFindings() {
           )}
           
           {!loading && auditFindings.length === 0 && (
-            <div className="text-center bg-gray-800 p-8 rounded-lg shadow-lg">
-              <p className="text-gray-400">No audit findings available.</p>
+            <div className="text-center bg-gray-100 dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+              <p className="text-gray-500 dark:text-gray-400">No audit findings available.</p>
             </div>
           )}
           
@@ -282,15 +282,15 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
         <div className="flex justify-between items-center mb-4">
           {!isEdit ? (
-            <h3 className="text-xl font-bold text-white">{formState.kategoriAudit}</h3>
+            <h3 className="text-xl font-bold">{formState.kategoriAudit}</h3>
           ) : (
-            <h3 className="text-xl font-bold text-white">Edit Audit Finding</h3>
+            <h3 className="text-xl font-bold">Edit Audit Finding</h3>
           )}
           <button
-            className="bg-gray-700 text-gray-300 p-2 rounded-full hover:bg-gray-600"
+            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
             ✕
@@ -299,13 +299,13 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
         
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="col-span-2">
-            <div className="font-bold text-gray-300 mb-1">Finding Name</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Finding Name</div>
             {!isEdit ? (
-              <div className="text-white">{formState.namaTemuan}</div>
+              <div>{formState.namaTemuan}</div>
             ) : (
               <input
                 name="namaTemuan"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.namaTemuan}
                 onChange={handleChange}
               />
@@ -314,10 +314,10 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           
           {isEdit && (
             <div>
-              <div className="font-bold text-gray-300 mb-1">Audit Category</div>
+              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Audit Category</div>
               <input
                 name="kategoriAudit"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.kategoriAudit}
                 onChange={handleChange}
               />
@@ -325,14 +325,14 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           )}
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Deadline</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
             {!isEdit ? (
-              <div className="text-white">{formatDate(formState.batasAkhirKomitmen)}</div>
+              <div>{formatDate(formState.batasAkhirKomitmen)}</div>
             ) : (
               <input
                 type="date"
                 name="batasAkhirKomitmen"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.batasAkhirKomitmen}
                 onChange={handleChange}
               />
@@ -340,7 +340,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Status</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             {!isEdit ? (
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(formState.status)}`}>
                 {getStatusText(formState.status)}
@@ -348,7 +348,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
             ) : (
               <select
                 name="status"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.status}
                 onChange={handleChange}
               >
@@ -362,13 +362,13 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
-            <div className="font-bold text-gray-300 mb-1">Root Cause</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Root Cause</div>
             {!isEdit ? (
-              <div className="text-white">{formState.penyebab}</div>
+              <div>{formState.penyebab}</div>
             ) : (
               <textarea
                 name="penyebab"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 rows={4}
                 value={formState.penyebab}
                 onChange={handleChange}
@@ -377,13 +377,13 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Recommendation</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Recommendation</div>
             {!isEdit ? (
-              <div className="text-white">{formState.rekomendasi}</div>
+              <div>{formState.rekomendasi}</div>
             ) : (
               <textarea
                 name="rekomendasi"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 rows={4}
                 value={formState.rekomendasi}
                 onChange={handleChange}
@@ -392,13 +392,13 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Action Plan</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Action Plan</div>
             {!isEdit ? (
-              <div className="text-white">{formState.komitmenTindakLanjut}</div>
+              <div>{formState.komitmenTindakLanjut}</div>
             ) : (
               <textarea
                 name="komitmenTindakLanjut"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 rows={4}
                 value={formState.komitmenTindakLanjut}
                 onChange={handleChange}
@@ -408,13 +408,13 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Person in Charge</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
           {!isEdit ? (
-            <div className="text-white">{formState.pic}</div>
+            <div>{formState.pic}</div>
           ) : (
             <input
               name="pic"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.pic}
               onChange={handleChange}
             />
@@ -431,7 +431,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
                 Save
               </button>
               <button
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
                 onClick={() => setIsEdit(false)}
               >
                 Cancel
@@ -489,11 +489,11 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-white">Add New Audit Finding</h3>
+          <h3 className="text-xl font-bold">Add New Audit Finding</h3>
           <button
-            className="bg-gray-700 text-gray-300 p-2 rounded-full hover:bg-gray-600"
+            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
             ✕
@@ -502,10 +502,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
         
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="col-span-2">
-            <div className="font-bold text-gray-300 mb-1">Finding Name</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Finding Name</div>
             <input
               name="namaTemuan"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Enter finding name"
               value={formState.namaTemuan}
               onChange={handleChange}
@@ -513,10 +513,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Audit Category</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Audit Category</div>
             <input
               name="kategoriAudit"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Enter category"
               value={formState.kategoriAudit}
               onChange={handleChange}
@@ -524,21 +524,21 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Deadline</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
             <input
               type="date"
               name="batasAkhirKomitmen"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.batasAkhirKomitmen}
               onChange={handleChange}
             />
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Status</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             <select
               name="status"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.status}
               onChange={handleChange}
             >
@@ -551,10 +551,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
-            <div className="font-bold text-gray-300 mb-1">Root Cause</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Root Cause</div>
             <textarea
               name="penyebab"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Describe the root cause"
               rows={4}
               value={formState.penyebab}
@@ -563,10 +563,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Recommendation</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Recommendation</div>
             <textarea
               name="rekomendasi"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Enter recommendations"
               rows={4}
               value={formState.rekomendasi}
@@ -575,10 +575,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Action Plan</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Action Plan</div>
             <textarea
               name="komitmenTindakLanjut"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Describe the action plan"
               rows={4}
               value={formState.komitmenTindakLanjut}
@@ -588,10 +588,10 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Person in Charge</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
           <input
             name="pic"
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
             placeholder="Enter person or team responsible"
             value={formState.pic}
             onChange={handleChange}
@@ -606,7 +606,7 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
             Save
           </button>
           <button
-            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
             onClick={onClose}
           >
             Cancel

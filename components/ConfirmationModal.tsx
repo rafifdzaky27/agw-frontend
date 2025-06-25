@@ -40,11 +40,11 @@ interface AlertModalProps {
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
     return (
-        <div className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 overflow-y-auto flex items-start justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
-            <div className={`relative p-5 border w-96 shadow-lg rounded-md bg-white transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-                <h3 className="text-lg font-medium leading-6 text-gray-900">Confirmation</h3>
+        <div className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 overflow-y-auto flex items-start justify-center transition-opacity duration-300 z-50 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
+            <div className={`relative p-5 border border-gray-300 dark:border-gray-600 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
+                <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Confirmation</h3>
                 <div className="mt-2">
-                    <p className="text-sm text-gray-500">{message}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">{message}</p>
                 </div>
                 <div className="flex justify-center items-center px-4 py-3 mt-4"> {/* Centered buttons */}
                     <button
@@ -96,23 +96,23 @@ const PendingModal: React.FC<PendingModalProps> = ({ isOpen, onConfirm, onCancel
     }, [isOpen]);
 
     return (
-        <div className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 overflow-y-auto flex items-start justify-center transition-opacity duration-300 z-50 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
-            <div className={`relative p-5 border w-96 shadow-lg rounded-md bg-white transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-                <h3 className="text-lg font-medium leading-6 text-gray-900">Pending Request</h3>
+        <div className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 overflow-y-auto flex items-start justify-center transition-opacity duration-300 z-50 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
+            <div className={`relative p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
+                <h3 className="text-lg font-medium leading-6">Pending Request</h3>
                 <div className="mt-2">
-                    <label className="block text-sm text-gray-500">New Migration Date</label>
+                    <label className="block text-sm text-gray-700 dark:text-gray-300">New Migration Date</label>
                     <input
                         type="datetime-local"
-                        className="p-2 border rounded w-full mt-1"
+                        className="p-2 border border-gray-300 dark:border-gray-600 rounded w-full mt-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
                         placeholder="Select a date"
                     />
                 </div>
                 <div className="mt-2">
-                    <label className="block text-sm text-gray-500">Pending Reason</label>
+                    <label className="block text-sm text-gray-500 dark:text-gray-300">Pending Reason</label>
                     <textarea
-                        className="p-2 border rounded w-full mt-1"
+                        className="p-2 border border-gray-300 dark:border-gray-600 rounded w-full mt-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         placeholder="Enter pending reason"
                         value={pendingReason}
                         onChange={(e) => setPendingReason(e.target.value)}
@@ -155,9 +155,9 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
     return (
         <div
             className={`fixed top-0 left-0 w-full h-full bg-gray-600 bg-opacity-50 flex items-center justify-center transition-opacity duration-300 z-50
-                ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} // Background is handled by the parent component
         >
-            <div className="bg-white p-6 rounded-lg shadow-lg w-[500px] max-h-[80vh] overflow-y-auto relative">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-[500px] max-h-[80vh] overflow-y-auto relative text-gray-900 dark:text-white">
                 {/* Left Arrow Button on Top Left */}
                 <button
                     className="absolute top-3 left-3 text-white bg-red-500 p-2 rounded-full hover:bg-red-700 transition"
@@ -191,9 +191,9 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
 
                             return (
                                 <li
-                                    key={entry.id}
-                                    className={`p-4 border rounded-md bg-gray-100 relative ${
-                                        isLatest ? 'border-2 border-blue-500' : ''
+                                    key={entry.id} // Added theme-aware background
+                                    className={`p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-100 dark:bg-gray-700 relative ${
+                                        isLatest ? 'border-2 border-blue-500 dark:border-blue-500' : ''
                                     }`}
                                 >
                                     {isLatest && (
@@ -213,11 +213,11 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
                                     )}
                                     {/* Show Pending Reason for non-latest pending migrations */}
                                     {!isLatest && entry.status === "pending" && entry.pending_reason && (
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
                                             <strong>Pending Reason:</strong> {entry.pending_reason}
                                         </p>
                                     )}
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
                                         <strong>Recorded At:</strong>{' '}
                                         {formatUTCStringToInput(entry.recorded_at)}
                                     </p>
@@ -226,7 +226,7 @@ const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpe
                         })}
                     </ul>
                 ) : (
-                    <p className="text-gray-500 text-center">No Migrations Scheduled.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-center">No Migrations Scheduled.</p>
                 )}
             </div>
         </div>

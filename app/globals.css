@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Define CSS variables for light and dark themes */
+:root {
+  --background: #ffffff;
+  --foreground: #1a202c;
+}
+
+.dark {
+  --background: #1a202c;
+  --foreground: #edf2f7;
+}
+
+/* Apply variables to body */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utility classes using CSS variables (with Tailwind config) */
+.bg-background {
+  background-color: var(--background) !important;
+}
+.text-foreground {
+  color: var(--foreground) !important;
+}

@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "../context/AuthContext";
-import { ThemeProvider } from "@/context/ThemeContext"; // Import ThemeProvider
+import { ThemeProvider } from "@/context/ThemeContext";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,16 +21,14 @@ export const metadata: Metadata = {
   description: "Application for managing architecture and governance tasks",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider> {/* Wrap the entire app in the AuthProvider */}
-          <ThemeProvider> {/* Wrap the entire app in the ThemeProvider */}
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300`}
+      >
+        <AuthProvider>
+          <ThemeProvider>
             <Toaster position="bottom-right" />
             {children}
           </ThemeProvider>

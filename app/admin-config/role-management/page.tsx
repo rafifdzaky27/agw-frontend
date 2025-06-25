@@ -181,8 +181,7 @@ export default function RoleManagement() {
             <div className="min-h-screen bg-gray-900 text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
-                    <h1 className="text-3xl font-bold mb-4 text-center">Role Management</h1>
-
+                    <h1 className="text-3xl font-bold mb-4 text-center text-gray-900 dark:text-white">Role Management</h1>
                     <div className="bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex items-stretch space-x-4">
                             <button
@@ -194,11 +193,11 @@ export default function RoleManagement() {
                         </div>
                     </div>
 
-                    {loading && <div className="text-center text-gray-300">Loading users...</div>}
+                    {loading && <div className="text-center text-gray-500 dark:text-gray-300">Loading users...</div>}
                     {error && <div className="text-center text-red-500">{error}</div>}
 
                     {!loading && !error && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-900 dark:text-white">
                             {users.map((user) => (
                                 <UserCard key={user.id} user={user} onSelect={handleSelectUser} />
                             ))}
@@ -220,19 +219,18 @@ export default function RoleManagement() {
 
 function UserCard({ user, onSelect }: { user: User; onSelect: (user: User) => void }) {
   const roleColorClass = (roleColors[user.role] || "bg-gray-700");
-
   return (
-    <div
-      className="bg-gray-800 rounded-lg flex overflow-hidden shadow-md cursor-pointer hover:bg-gray-700 transition duration-200"
+    <div // Added theme-aware background and hover
+      className="bg-white dark:bg-gray-800 rounded-lg flex overflow-hidden shadow-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200"
       onClick={() => onSelect(user)}
     >
       <div className={`${roleColorClass} w-2`}></div>
-      <div className="p-4">
-        <h2 className="text-xl font-semibold mb-2">{user.name}</h2>
-        <p className="text-gray-300">Username: {user.username}</p>
-        <p className="text-gray-300">Role: {user.role}</p>
-        <p className="text-gray-300">Division: {user.division}</p>
-        <p className="text-gray-300">Email: {user.email}</p>
+      <div className="p-4 text-gray-900 dark:text-white"> {/* Added theme-aware text */}
+        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">{user.name}</h2>
+        <p className="text-gray-700 dark:text-gray-300">Username: {user.username}</p>
+        <p className="text-gray-700 dark:text-gray-300">Role: {user.role}</p>
+        <p className="text-gray-700 dark:text-gray-300">Division: {user.division}</p>
+        <p className="text-gray-700 dark:text-gray-300">Email: {user.email}</p>
       </div>
     </div>
   );
@@ -248,11 +246,11 @@ function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => voi
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-xl w-full max-w-2xl">
+            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl w-full max-w-2xl text-gray-900 dark:text-white">
                 {/* Header Section */}
-                <div className="p-4 border-b border-gray-600 flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-300">Edit User</h2>
-                    <button onClick={onClose} title="Close" className="text-gray-400 hover:text-gray-300 focus:outline-none">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Edit User</h2>
+                    <button onClick={onClose} title="Close" className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none">
                         <FaTimes className="h-6 w-6" />
                     </button>
                 </div>
@@ -261,25 +259,25 @@ function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => voi
                 <div className="p-6">
                     {/* User Information Form */}
                     <div className="flex flex-col mb-4">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name:</label>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
                         <input
                             type="text"
                             id="name"
                             placeholder="Name"
                             value={editedUser.name}
                             onChange={handleChange}
-                            className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                            className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                             required
                         />
                     </div>
 
                     <div className="flex flex-col mb-4">
-                        <label htmlFor="role" className="block text-sm font-medium text-gray-300">Role:</label>
+                        <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role:</label>
                         <select
                             id="role"
                             value={editedUser.role}
                             onChange={handleChange}
-                            className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                            className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                             required
                         >
                             {roles.map((role) => (
@@ -289,12 +287,12 @@ function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => voi
                     </div>
 
                     <div className="flex flex-col mb-4">
-                        <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
+                        <label htmlFor="division" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Division:</label>
                         <select
                             id="division"
                             value={editedUser.division}
                             onChange={handleChange}
-                            className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                            className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                             required
                         >
                             {divisions.map((division) => (
@@ -304,32 +302,32 @@ function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => voi
                     </div>
 
                     <div className="flex flex-col mb-4">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email:</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email:</label>
                         <input
                             type="email"
                             id="email"
                             placeholder="Email"
                             value={editedUser.email}
                             onChange={handleChange}
-                            className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                            className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                             required
                         />
                     </div>
                 </div>
 
                 {/* Footer Section */}
-                <div className="p-4 border-t border-gray-600 flex justify-end gap-2">
+                <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex justify-end gap-2">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-700 transition duration-200"
+                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-500 dark:hover:bg-gray-700 dark:text-white rounded transition duration-200"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={() => onUpdate(editedUser)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition duration-200"
                     >
                         Update
                     </button>
@@ -361,11 +359,11 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-xl w-full max-w-2xl">
+        <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl w-full max-w-2xl text-gray-900 dark:text-white">
           {/* Header Section */}
-          <div className="p-4 border-b border-gray-600 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-300">Add User</h2>
-            <button onClick={onClose} title="Close" className="text-gray-400 hover:text-gray-300 focus:outline-none">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Add User</h2>
+            <button onClick={onClose} title="Close" className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none">
               <FaTimes className="h-6 w-6" />
             </button>
           </div>
@@ -375,51 +373,51 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
             <div className="p-6">
               {/* User Information Form */}
               <div className="flex flex-col mb-4">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name:</label>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
                 <input
                   type="text"
                   id="name"
                   placeholder="Name"
                   value={newUser.name}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 />
               </div>
 
               <div className="flex flex-col mb-4">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300">Username:</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Username:</label>
                 <input
                   type="text"
                   id="username"
                   placeholder="Username"
                   value={newUser.username}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 />
               </div>
 
               <div className="flex flex-col mb-4">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300">Password:</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password:</label>
                 <input
                   type="password"
                   id="password"
                   placeholder="Password"
                   value={newUser.password}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 />
               </div>
 
               <div className="flex flex-col mb-4">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-300">Role:</label>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Role:</label>
                 <select
                   id="role"
                   value={newUser.role}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 >
                   <option value="">Select Role</option>
@@ -430,12 +428,12 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
               </div>
 
               <div className="flex flex-col mb-4">
-                <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
+                <label htmlFor="division" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Division:</label>
                 <select
                   id="division"
                   value={newUser.division}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 >
                   <option value="">Select Division</option>
@@ -446,31 +444,31 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
               </div>
 
               <div className="flex flex-col mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300">Email:</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email:</label>
                 <input
                   type="email"
                   id="email"
                   placeholder="Email"
                   value={newUser.email}
                   onChange={handleChange}
-                  className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-white"
+                  className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                   required
                 />
               </div>
             </div>
 
             {/* Footer Section */}
-            <div className="p-4 border-t border-gray-600 flex justify-end gap-2">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-700 transition duration-200"
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-500 dark:hover:bg-gray-700 dark:text-white rounded transition duration-200"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition duration-200"
               >
                 Add
               </button>

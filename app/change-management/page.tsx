@@ -443,28 +443,28 @@ export default function ChangeManagement() {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-gray-900 text-white flex">
+            <div className="min-h-screen text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">   
                     <h1 className="text-3xl font-bold mb-6 text-center">
                         Change Requests Management
                     </h1>
 
-                    <div className="bg-gray-800 rounded-lg p-4 mb-4">
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-stretch">
                             <div className="flex items-stretch space-x-4">
                                 <button
-                                    className="px-4 py-2 bg-blue-500 rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200"
+                                    className="px-4 py-2 bg-blue-500 text-white rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200"
                                     onClick={() => router.push("/change-request-form")}
                                     >
                                     <FaPlus />
                                     <span>Add Request</span>
                                 </button>
-                                <button className="px-4 py-2 bg-green-500 rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
+                                <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
                                     <FaFileExport />
                                     <span>Export</span>
                                 </button>
-                                <button className="px-4 py-2 bg-yellow-500 rounded flex items-center space-x-2 hover:bg-yellow-700 transition duration-200" onClick={handleAlertClick}>
+                                <button className="px-4 py-2 bg-yellow-500 text-white rounded flex items-center space-x-2 hover:bg-yellow-700 transition duration-200" onClick={handleAlertClick}>
                                     <FaExclamationTriangle />
                                     <span>Alert</span>
                                 </button>
@@ -472,10 +472,10 @@ export default function ChangeManagement() {
 
                             <div className="flex items-stretch space-x-4">
                                 <div className="flex flex-col justify-start">
-                                    <label htmlFor="timeReference" className="block text-sm font-medium text-gray-300 h-1/2">Reference:</label>
+                                    <label htmlFor="timeReference" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Reference:</label>
                                     <select
                                         id="timeReference"
-                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                         value={timeReference}
                                         onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
                                     >
@@ -485,10 +485,10 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-300 h-1/2">Start Date:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Start Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         placeholder="Select start date"
@@ -497,10 +497,10 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-300 h-1/2">End Date:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">End Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         placeholder="Select end date"
@@ -509,11 +509,11 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start relative">
-                                    <label className="block text-sm font-medium text-gray-300 h-1/2">Status:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Status:</label>
                                     <div className="relative">
                                         <button
                                             type="button"
-                                            className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                            className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                             onClick={() => setIsStatusModalOpen(true)}
                                             style={{ width: '250px' }}
                                         >
@@ -522,13 +522,13 @@ export default function ChangeManagement() {
                                     </div>
 
                                     {isStatusModalOpen && (
-                                        <div className="absolute left-0 top-full mt-1 z-10 bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
+                                        <div className="absolute left-0 top-full mt-1 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
                                             <div className="py-1">
                                                 {statusOptions.map((option) => (
-                                                    <label key={option.value} className="px-4 py-2 flex items-center text-gray-300 hover:bg-gray-700">
+                                                    <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                         <input
                                                             type="checkbox"
-                                                            className="form-checkbox h-5 w-5 text-blue-500 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
+                                                            className="form-checkbox h-5 w-5 text-blue-500 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
                                                             value={option.value}
                                                             checked={selectedStatuses.includes(option.value)}
                                                             onChange={() => handleStatusChange(option.value)}
@@ -537,26 +537,26 @@ export default function ChangeManagement() {
                                                     </label>
                                                 ))}
                                             </div>
-                                            <div className="px-4 py-2 bg-gray-700 flex justify-between">
+                                            <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700 flex justify-between">
                                                 <button
                                                     type="button"
-                                                    className="text-sm text-gray-300 hover:text-white"
+                                                    className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
                                                     onClick={handleClearAllStatuses}
                                                 >
                                                     Clear
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="text-sm text-gray-300 hover:text-white"
+                                                    className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
                                                     onClick={handleSelectAllStatuses}
                                                 >
                                                     Select All
                                                 </button>
                                             </div>
-                                            <div className="px-4 py-2 bg-gray-700">
+                                            <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700">
                                                 <button
                                                     type="button"
-                                                    className="w-full text-sm text-gray-300 hover:text-white"
+                                                    className="w-full text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
                                                     onClick={() => setIsStatusModalOpen(false)}
                                                 >
                                                     Close
@@ -567,10 +567,10 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start">
-                                    <label htmlFor="sortBy" className="block text-sm font-medium text-gray-300 h-1/2">Sort By:</label>
+                                    <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Sort By:</label>
                                     <select
                                         id="sortBy"
-                                        className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
                                     >
@@ -584,7 +584,7 @@ export default function ChangeManagement() {
                     </div>
 
                     {loading ? (
-                        <p className="text-center text-gray-300">Loading...</p>
+                        <p className="text-center text-gray-500 dark:text-gray-300">Loading...</p>
                     ) : error ? (
                         <p className="text-red-500 text-center">{error}</p>
                     ) : (
@@ -594,20 +594,20 @@ export default function ChangeManagement() {
             </div>
             {isAlertModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden w-full max-w-2xl">
-                        <div className="p-4 border-b border-gray-600 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-gray-300">Request Alert</h2>
-                            <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-400 hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden w-full max-w-2xl text-gray-900 dark:text-white">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+                            <h2 className="text-lg font-bold">Request Alert</h2>
+                            <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
                                 <FaTimes className="h-6 w-6" />
                             </button>
                         </div>
 
                         <div className="p-6">
-                            <p className="text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
+                            <p className="text-gray-600 dark:text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
 
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {alertRequesters.map(requester => (
-                                    <div key={requester.id} className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center">
+                                    <div key={requester.id} className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center">
                                         {requester.name}
                                         <button
                                             className="ml-2 focus:outline-none"
@@ -623,7 +623,7 @@ export default function ChangeManagement() {
                                     </div>
                                 ))}
 
-                                <button className="bg-gray-700 text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
+                                <button className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
                                     onClick={() => {
                                         setIsAddUserModalOpen(true);
                                     }}>
@@ -632,11 +632,11 @@ export default function ChangeManagement() {
                             </div>
 
                             <div className="mb-4 flex flex-col">
-                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-300">Subject:</label>
+                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject:</label>
                                 <input
                                     type="text"
                                     id="alertSubject"
-                                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
+                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                     value={alertSubject}
                                     onChange={(e) => setAlertSubject(e.target.value)}
                                     placeholder="Enter subject"
@@ -644,11 +644,11 @@ export default function ChangeManagement() {
                             </div>
 
                             <div className="mb-4 flex flex-col">
-                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-300">Message:</label>
+                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message:</label>
                                 <textarea
                                     id="alertText"
                                     rows={18}
-                                    className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-300"
+                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                     value={alertText}
                                     onChange={(e) => setAlertText(e.target.value)}
                                     placeholder="Enter your message"
@@ -656,7 +656,7 @@ export default function ChangeManagement() {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-gray-600 flex justify-end gap-2">
+                        <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex justify-end gap-2">
                             <button
                                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
                                 onClick={() => setIsAlertModalOpen(false)}
@@ -676,17 +676,17 @@ export default function ChangeManagement() {
 
             {isAddUserModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-gray-800 border border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md">
-                        <h2 className="text-lg font-bold text-gray-300 mb-4 text-center">Add User</h2>
+                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md text-gray-900 dark:text-white">
+                        <h2 className="text-lg font-bold mb-4 text-center">Add User</h2>
                         {loading ? (
-                            <p className="text-center text-gray-300">Loading users...</p>
+                            <p className="text-center text-gray-500 dark:text-gray-300">Loading users...</p>
                         ) : error ? (
                             <p className="text-red-500 text-center">{error}</p>
                         ) : (
                             <div className="max-h-60 overflow-y-auto">
                                 {availableUsers.map(user => (
-                                    <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-700">
-                                        <span className="text-gray-300">{user.name}</span>
+                                    <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-200 dark:border-gray-700">
+                                        <span>{user.name}</span>
                                         <button
                                             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
                                             onClick={() => handleAddRequester(user)}
@@ -717,7 +717,7 @@ function ChangeRequestList({ requests }: { requests: ChangeRequest[] }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Increased gap */}
             {requests.length === 0 ? (
-                <p className="col-span-full text-center text-gray-400">No change requests found.</p>
+                <p className="col-span-full text-center text-gray-500 dark:text-gray-400">No change requests found.</p>
             ) : (
                 requests.map((request) => (
                     <ChangeRequestCard key={request.id} request={request} />
@@ -786,23 +786,23 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
   return (
     <Link
       href={`/change-management/${request.id}`}
-      className="block bg-gray-800 hover:bg-gray-750 rounded-lg p-5 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out border-l-4 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+      className="block bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg p-5 shadow-md hover:shadow-xl transition-all duration-300 ease-in-out border-l-4 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
       style={{ borderColor: statusColor }}
       >
         <div className="flex flex-col h-full justify-between">
           {/* Top section: Name and basic info */}
           <div>
-            <h2 className="text-lg font-semibold text-blue-300 mb-3 truncate" title={request.name}>
+            <h2 className="text-lg font-semibold text-blue-600 dark:text-blue-300 mb-3 truncate" title={request.name}>
               {request.name || "Untitled Request"}
             </h2>
 
-            <div className="space-y-1.5 text-xs text-gray-400 mb-4">
+            <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400 mb-4">
               <div className="flex items-center">
-                <FaLayerGroup className="mr-2 text-gray-500 flex-shrink-0" />
+                <FaLayerGroup className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <span>Type: {request.type || "N/A"}</span>
               </div>
               <div className="flex items-center">
-                <FaTag className="mr-2 text-gray-500 flex-shrink-0" />
+                <FaTag className="mr-2 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <span>Category: {request.category || "N/A"}</span>
               </div>
             </div>
@@ -810,12 +810,12 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
 
           {/* Middle section: Dates */}
           <div className="mb-4 space-y-1.5">
-             <div className="flex items-center text-xs text-gray-300">
+             <div className="flex items-center text-xs text-gray-600 dark:text-gray-300">
                 <FaCalendarAlt className="mr-2 text-teal-400 flex-shrink-0" />
                 <span>CAB: {formatDateForDisplay(request.cab_meeting_date)}</span>
             </div>
             {request.finished_at && (
-                 <div className="flex items-center text-xs text-gray-300">
+                 <div className="flex items-center text-xs text-gray-600 dark:text-gray-300">
                     <FaRocket className="mr-2 text-purple-400 flex-shrink-0" />
                     <span>Migrated: {formatDateForDisplay(request.finished_at)}</span>
                 </div>
@@ -823,7 +823,7 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
           </div>
 
           {/* Bottom section: Urgency and Status */}
-          <div className="mt-auto pt-3 border-t border-gray-700">
+          <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
                 <div className="flex items-center" title={`Urgency: ${request.urgency || 'N/A'}`}>
                     <FaExclamationTriangle className={`mr-1.5 h-4 w-4 ${urgencyStyles.iconColor} flex-shrink-0`} />
