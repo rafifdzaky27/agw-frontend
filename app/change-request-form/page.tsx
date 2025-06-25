@@ -195,15 +195,15 @@ export default function ChangeRequestForm() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
         <Navbar />
         <div className="container mx-auto p-6">
           <div className="flex items-center mb-6">
             <h1 className="text-3xl font-bold text-center flex-grow">Create Change Request</h1>
           </div>
 
-          {loading && <div className="text-center text-gray-300">Loading...</div>}
-          {error && <div className="text-center text-red-500">{error}</div>}
+          {loading && <div className="text-center text-gray-500 dark:text-gray-300">Loading...</div>}
+          {error && <div className="text-center text-red-500 dark:text-red-400">{error}</div>}
 
           {(!loading && !error) && (
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -211,12 +211,12 @@ export default function ChangeRequestForm() {
                 {/* Column 1 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-300">Name:</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
                     <input
                       type="text"
                       id="name"
                       placeholder="Request Name"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
@@ -224,10 +224,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="group" className="block text-sm font-medium text-gray-300">Group:</label>
+                    <label htmlFor="group" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Group:</label>
                     <select
                       id="group"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.group}
                       onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                       required
@@ -239,10 +239,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="division" className="block text-sm font-medium text-gray-300">Division:</label>
+                    <label htmlFor="division" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Division:</label>
                     <select
                       id="division"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.division}
                       onChange={(e) => setFormData({ ...formData, division: e.target.value })}
                       required
@@ -254,10 +254,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="type" className="block text-sm font-medium text-gray-300">Request Type:</label>
+                    <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Type:</label>
                     <select
                       id="type"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       title="Request Type"
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -269,10 +269,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-300">Request Category:</label>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Category:</label>
                     <select
                       id="category"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       title="Request Category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -286,10 +286,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="urgency" className="block text-sm font-medium text-gray-300">Urgency:</label>
+                    <label htmlFor="urgency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Urgency:</label>
                     <select
                       id="urgency"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       title="Urgency"
                       value={formData.urgency}
                       onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
@@ -301,12 +301,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-300">Requested Migration Date:</label>
+                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requested Migration Date:</label>
                     <input
                       type="datetime-local"
                       id="requested_migration_date"
                       title="Requested Migration Date"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.requested_migration_date}
                       onChange={(e) => setFormData({ ...formData, requested_migration_date: e.target.value })}
                       required
@@ -317,24 +317,24 @@ export default function ChangeRequestForm() {
                 {/* Column 2 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-300">Project Code:</label>
+                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Code:</label>
                     <input
                       type="text"
                       id="project_code"
                       placeholder="Project Code"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.project_code}
                       onChange={(e) => setFormData({ ...formData, project_code: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-300">RFC Number:</label>
+                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300">RFC Number:</label>
                     <input
                       type="text"
                       id="rfc_number"
                       placeholder="RFC Number"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.rfc_number}
                       onChange={(e) => setFormData({ ...formData, rfc_number: e.target.value })}
                     />
@@ -348,15 +348,15 @@ export default function ChangeRequestForm() {
 
                     return (
                       <div key={field} className="flex flex-col">
-                        <label htmlFor={field} className="block text-sm font-medium text-gray-300">
+                        <label htmlFor={field} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           {field.replace("_", " ").toUpperCase()}:
                         </label>
                         <div className="flex items-center">
                           <label
                             htmlFor={field}
-                            className={`mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
+                            className={`mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
                           >
-                            <span className={`block truncate ${!formData[typedField] ? 'text-gray-400' : ''}`}>
+                            <span className={`block truncate ${!formData[typedField] ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                               {truncatedFilename}
                             </span>
                             <input
@@ -371,10 +371,10 @@ export default function ChangeRequestForm() {
                             <button
                               type="button"
                               title={`Download ${field.replace("_", " ")}`}
-                              className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center"
+                              className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 flex items-center justify-center"
                               onClick={() => handleDownloadFile(typedField)}
                             >
-                              <FaDownload className="text-white" />
+                              <FaDownload className="text-gray-800 dark:text-white" />
                             </button>
                           )}
                         </div>
@@ -386,37 +386,37 @@ export default function ChangeRequestForm() {
                 {/* Column 3 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="pic" className="block text-sm font-medium text-gray-300">PIC:</label>
+                    <label htmlFor="pic" className="block text-sm font-medium text-gray-700 dark:text-gray-300">PIC:</label>
                     <input
                       type="text"
                       id="pic"
                       placeholder="PIC"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.pic}
                       onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-300">CAB Meeting Link:</label>
+                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CAB Meeting Link:</label>
                     <input
                       type="text"
                       id="cab_meeting_link"
                       placeholder="CAB Meeting Link"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.cab_meeting_link}
                       onChange={(e) => setFormData({ ...formData, cab_meeting_link: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-300">Downtime Risk:</label>
+                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Downtime Risk:</label>
                     <input
                       type="number"
                       id="downtime_risk"
                       min="0"
                       placeholder="Downtime Risk"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.downtime_risk}
                       onChange={(e) => setFormData({ ...formData, downtime_risk: Number(e.target.value) })}
                       required
@@ -424,14 +424,14 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="integration_risk" className="block text-sm font-medium text-gray-300">Integration Risk (0-10):</label>
+                    <label htmlFor="integration_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Integration Risk (0-10):</label>
                     <input
                       type="number"
                       id="integration_risk"
                       min="0"
                       max="10"
                       placeholder="Integration Risk (0-10)"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.integration_risk}
                       onChange={(e) => setFormData({ ...formData, integration_risk: Number(e.target.value) })}
                       required
@@ -439,10 +439,10 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="uat_result" className="block text-sm font-medium text-gray-300">UAT Score:</label>
+                    <label htmlFor="uat_result" className="block text-sm font-medium text-gray-700 dark:text-gray-300">UAT Score:</label>
                     <select
                       id="uat_result"
-                      className="mt-1 block w-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       title="uat_result"
                       value={formData.uat_result}
                       onChange={(e) => setFormData({ ...formData, uat_result: e.target.value })}
@@ -455,11 +455,11 @@ export default function ChangeRequestForm() {
 
                   {/* Description spans the remaining space */}
                   <div className="flex flex-col flex-grow">
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-300">Description:</label>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description:</label>
                     <textarea
                       id="description"
                       placeholder="Description"
-                      className="mt-1 block w-full h-full p-2 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500"
+                      className="mt-1 block w-full h-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />

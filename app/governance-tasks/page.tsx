@@ -148,7 +148,7 @@ export default function GovernanceTasks() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div>
         <Navbar />
         <div className="container mx-auto p-6">
           <div className="flex justify-between items-center mb-6">
@@ -166,27 +166,27 @@ export default function GovernanceTasks() {
           
           {loading ? (
             <div className="flex justify-center">
-              <p className="text-gray-400">Loading governance tasks...</p>
+              <p className="text-gray-500 dark:text-gray-400">Loading governance tasks...</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Not Started Column */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-gray-300">Not Started</h2>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
                 <div className="space-y-3">
                   {tasks
                     .filter(task => task.status === 'not yet')
                     .map(task => (
                       <div 
                         key={task.id}
-                        className="bg-gray-750 rounded-lg p-3 shadow-md hover:bg-gray-700 transition cursor-pointer"
+                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
                         onClick={() => handleShow(task.id)}
                       >
                         <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                         <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-400">{task.pic}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                         </div>
                       </div>
                     ))
@@ -198,22 +198,22 @@ export default function GovernanceTasks() {
               </div>
               
               {/* In Progress Column */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-yellow-300">In Progress</h2>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
                 <div className="space-y-3">
                   {tasks
                     .filter(task => task.status === 'on progress')
                     .map(task => (
                       <div 
                         key={task.id}
-                        className="bg-gray-750 rounded-lg p-3 shadow-md hover:bg-gray-700 transition cursor-pointer"
+                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
                         onClick={() => handleShow(task.id)}
                       >
                         <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                         <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-400">{task.pic}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                         </div>
                       </div>
                     ))
@@ -225,22 +225,22 @@ export default function GovernanceTasks() {
               </div>
               
               {/* Done Column */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-green-300">Done</h2>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+                <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
                 <div className="space-y-3">
                   {tasks
                     .filter(task => task.status === 'done')
                     .map(task => (
                       <div 
                         key={task.id}
-                        className="bg-gray-750 rounded-lg p-3 shadow-md hover:bg-gray-700 transition cursor-pointer"
+                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
                         onClick={() => handleShow(task.id)}
                       >
                         <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                         <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-400">{task.pic}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                         </div>
                       </div>
                     ))
@@ -301,15 +301,15 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
         <div className="flex justify-between items-center mb-4">
           {!isEdit ? (
-            <h3 className="text-xl font-bold text-white">{formState.namaTugas}</h3>
+            <h3 className="text-xl font-bold">{formState.namaTugas}</h3>
           ) : (
-            <h3 className="text-xl font-bold text-white">Edit Task</h3>
+            <h3 className="text-xl font-bold">Edit Task</h3>
           )}
           <button
-            className="bg-gray-700 text-gray-300 p-2 rounded-full hover:bg-gray-600"
+            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
             ✕
@@ -319,10 +319,10 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           {isEdit && (
             <div>
-              <div className="font-bold text-gray-300 mb-1">Task Name</div>
+              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Task Name</div>
               <input
                 name="namaTugas"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.namaTugas}
                 onChange={handleChange}
               />
@@ -330,14 +330,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           )}
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Deadline</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
             {!isEdit ? (
-              <div className="text-white">{formatDate(formState.tanggal)}</div>
+              <div>{formatDate(formState.tanggal)}</div>
             ) : (
               <input
                 type="date"
                 name="tanggal"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.tanggal}
                 onChange={handleChange}
               />
@@ -345,7 +345,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Status</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             {!isEdit ? (
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(formState.status)}`}>
                 {getStatusText(formState.status)}
@@ -353,7 +353,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             ) : (
               <select
                 name="status"
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.status}
                 onChange={handleChange}
               >
@@ -366,13 +366,13 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Notes</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Notes</div>
           {!isEdit ? (
-            <div className="text-white">{formState.catatan}</div>
+            <div>{formState.catatan}</div>
           ) : (
             <textarea
               name="catatan"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               rows={4}
               value={formState.catatan}
               onChange={handleChange}
@@ -381,13 +381,13 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Person in Charge</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
           {!isEdit ? (
-            <div className="text-white">{formState.pic}</div>
+            <div>{formState.pic}</div>
           ) : (
             <input
               name="pic"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.pic}
               onChange={handleChange}
             />
@@ -404,7 +404,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
                 Save
               </button>
               <button
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
                 onClick={() => setIsEdit(false)}
               >
                 Cancel
@@ -453,11 +453,11 @@ function TaskCreateDialog({ onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-white">Add New Task</h3>
+          <h3 className="text-xl font-bold">Add New Task</h3>
           <button
-            className="bg-gray-700 text-gray-300 p-2 rounded-full hover:bg-gray-600"
+            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
             ✕
@@ -466,10 +466,10 @@ function TaskCreateDialog({ onClose, onSave }) {
         
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div className="font-bold text-gray-300 mb-1">Task Name</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Task Name</div>
             <input
               name="namaTugas"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               placeholder="Enter task name"
               value={formState.namaTugas}
               onChange={handleChange}
@@ -477,21 +477,21 @@ function TaskCreateDialog({ onClose, onSave }) {
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Deadline</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
             <input
               type="date"
               name="tanggal"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.tanggal}
               onChange={handleChange}
             />
           </div>
           
           <div>
-            <div className="font-bold text-gray-300 mb-1">Status</div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             <select
               name="status"
-              className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
               value={formState.status}
               onChange={handleChange}
             >
@@ -503,10 +503,10 @@ function TaskCreateDialog({ onClose, onSave }) {
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Notes</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Notes</div>
           <textarea
             name="catatan"
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
             placeholder="Enter task details"
             rows={4}
             value={formState.catatan}
@@ -515,10 +515,10 @@ function TaskCreateDialog({ onClose, onSave }) {
         </div>
         
         <div className="mb-6">
-          <div className="font-bold text-gray-300 mb-1">Person in Charge</div>
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
           <input
             name="pic"
-            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
             placeholder="Enter person or team responsible"
             value={formState.pic}
             onChange={handleChange}
@@ -533,7 +533,7 @@ function TaskCreateDialog({ onClose, onSave }) {
             Save
           </button>
           <button
-            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
             onClick={onClose}
           >
             Cancel
