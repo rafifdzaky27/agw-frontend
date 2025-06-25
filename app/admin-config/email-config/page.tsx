@@ -190,7 +190,7 @@ export default function Dashboard() {
 
     return (
         <ProtectedRoute allowedRoles={['approver', 'master']}>
-            <div className="min-h-screen bg-gray-900 text-white flex">
+            <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
                     <div className="flex items-center mb-6">

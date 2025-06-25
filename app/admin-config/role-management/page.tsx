@@ -178,11 +178,11 @@ export default function RoleManagement() {
 
     return (
         <ProtectedRoute allowedRoles={['approver', 'master']}>
-            <div className="min-h-screen bg-gray-900 text-white flex">
+            <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
                     <h1 className="text-3xl font-bold mb-4 text-center text-gray-900 dark:text-white">Role Management</h1>
-                    <div className="bg-gray-800 rounded-lg p-4 mb-4">
+                    <div className="bg-gray-800 rounded-lg p-4 mb-4 bg-white text-gray-900 dark:bg-gray-900 dark:text-white">
                         <div className="flex items-stretch space-x-4">
                             <button
                                 className="px-4 py-2 bg-green-500 hover:bg-green-700 rounded flex items-center space-x-2 text-white h-full"
