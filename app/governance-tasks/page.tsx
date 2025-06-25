@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
+
+// Define Task interface
+interface Task {
+  id: string;
+  namaTugas: string;
+  catatan: string;
+  tanggal: string;
+  pic: string;
+  status: 'not yet' | 'on progress' | 'done';
+}
 
 export default function GovernanceTasks() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [currentTask, setCurrentTask] = useState(null);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
 
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
@@ -31,7 +41,7 @@ export default function GovernanceTasks() {
         const data = await response.json();
         
         // Sort by deadline
-        const sortedData = data.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+        const sortedData = data.sort((a: Task, b: Task) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
         setTasks(sortedData);
         setLoading(false);
       } catch (error) {
@@ -44,7 +54,7 @@ export default function GovernanceTasks() {
   }, [API_BASE_URL]);
 
   // Function to save new governance task
-  const handlePost = useCallback(async (task) => {
+  const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
         method: "POST",
@@ -57,7 +67,7 @@ export default function GovernanceTasks() {
       }
       
       const newTask = await response.json();
-      setTasks((prev) => [...prev, newTask]);
+      setTasks((prev: Task[]) => [...prev, newTask]);
       setShowCreateDialog(false);
     } catch (error) {
       console.error("Failed to save data", error);
@@ -65,7 +75,7 @@ export default function GovernanceTasks() {
   }, [API_BASE_URL]);
 
   // Function to update existing governance task
-  const handleSave = useCallback(async (task) => {
+  const handleSave = useCallback(async (task: Task) => {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
         method: "PUT",
@@ -78,7 +88,7 @@ export default function GovernanceTasks() {
       }
       
       const updatedTask = await response.json();
-      setTasks((prev) =>
+      setTasks((prev: Task[]) =>
         prev.map((item) => (item.id === task.id ? updatedTask : item))
       );
       setShowDialog(false);
@@ -88,7 +98,7 @@ export default function GovernanceTasks() {
   }, [API_BASE_URL]);
 
   // Function to delete governance task
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${id}`, { 
         method: "DELETE" 
@@ -98,7 +108,7 @@ export default function GovernanceTasks() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
-      setTasks((prev) => prev.filter((item) => item.id !== id));
+      setTasks((prev: Task[]) => prev.filter((item) => item.id !== id));
       setShowDialog(false);
     } catch (error) {
       console.error("Failed to delete data", error);
@@ -106,14 +116,15 @@ export default function GovernanceTasks() {
   }, [API_BASE_URL]);
 
   // Function to show governance task details
-  const handleShow = useCallback((id) => {
+  const handleShow = useCallback((id: string) => {
     const task = tasks.find((item) => item.id === id);
-    setCurrentTask(task);
+    // Handle potential undefined value by providing null as fallback
+    setCurrentTask(task || null);
     setShowDialog(true);
   }, [tasks]);
 
   // Format date for display
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       day: "2-digit",
@@ -123,7 +134,7 @@ export default function GovernanceTasks() {
   };
 
   // Get badge color based on status
-  const getBadgeClass = (status) => {
+  const getBadgeClass = (status: Task['status']): string => {
     switch(status) {
       case 'done':
         return 'bg-green-900 text-green-200';
@@ -135,7 +146,7 @@ export default function GovernanceTasks() {
   };
 
   // Get status display text
-  const getStatusText = (status) => {
+  const getStatusText = (status: Task['status']): string => {
     switch(status) {
       case 'done':
         return 'Done';
@@ -148,9 +159,9 @@ export default function GovernanceTasks() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <Navbar />
-        <div className="container mx-auto p-6">
+      <div className="min-h-screen bg-gray-900 text-white flex">
+        <Sidebar />
+        <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-center">Governance Tasks</h1>
             <button
@@ -253,7 +264,7 @@ export default function GovernanceTasks() {
             </div>
           )}
           
-          {showDialog && (
+          {showDialog && currentTask && (
             <TaskDialog
               task={currentTask}
               onClose={() => setShowDialog(false)}
@@ -278,7 +289,17 @@ export default function GovernanceTasks() {
 }
 
 // Task Dialog Component
-function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }) {
+interface TaskDialogProps {
+  task: Task;
+  onClose: () => void;
+  onSave: (task: Task) => void;
+  onDelete: (id: string) => void;
+  formatDate: (date: string) => string;
+  getBadgeClass: (status: Task['status']) => string;
+  getStatusText: (status: Task['status']) => string;
+}
+
+function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: TaskDialogProps) {
   const [formState, setFormState] = useState({
     id: task.id || "",
     namaTugas: task.namaTugas || "",
@@ -290,7 +311,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
 
   const [isEdit, setIsEdit] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
@@ -433,16 +454,21 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
 }
 
 // Task Create Dialog Component
-function TaskCreateDialog({ onClose, onSave }) {
+interface TaskCreateDialogProps {
+  onClose: () => void;
+  onSave: (task: Omit<Task, 'id'>) => void;
+}
+
+function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
   const [formState, setFormState] = useState({
     namaTugas: "",
     catatan: "",
     tanggal: "",
-    status: "not yet",
+    status: "not yet" as const,
     pic: ""
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };

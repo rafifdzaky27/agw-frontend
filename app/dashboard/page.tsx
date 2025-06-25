@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useEffect, useState } from 'react';
 
@@ -103,9 +103,9 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white">
-        <Navbar />
-        <div className="container mx-auto p-6">
+      <div className="min-h-screen bg-gray-900 text-white flex">
+        <Sidebar />
+        <div className="flex-1 md:ml-60 p-6">
           <div className="flex flex-col items-center justify-center mx-auto">
             <h1 className="text-3xl font-bold mb-8 text-center">Dashboard</h1>
 
