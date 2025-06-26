@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Define interfaces for type safety
 interface AuditFinding {
@@ -271,13 +272,27 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
   const [isEdit, setIsEdit] = useState(false);
 
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
     onSave(formState);
+    setIsConfirmationOpen(false);
+  };
+
+  const cancelSave = () => {
+    setIsConfirmationOpen(false);
   };
 
   return (
@@ -426,7 +441,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
             <>
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleSave}
+                onClick={handleSaveClick}
               >
                 Save
               </button>
@@ -453,6 +468,14 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
               </button>
             </>
           )}
+
+          {/* Confirmation Modal for FindingDialog */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            message="Are you sure you want to save changes to this audit finding?"
+          />
         </div>
       </div>
     </div>
@@ -483,8 +506,18 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
     onSave(formState);
+    setIsConfirmationOpen(false);
   };
 
   return (
@@ -601,7 +634,7 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
         <div className="flex justify-end gap-3">
           <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleSave}
+            onClick={handleSaveClick}
           >
             Save
           </button>
@@ -611,6 +644,13 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           >
             Cancel
           </button>
+          {/* Confirmation Modal for FindingCreateDialog */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={() => setIsConfirmationOpen(false)}
+            message="Are you sure you want to create this audit finding?"
+          />
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Define Task interface
 interface Task {
@@ -118,7 +119,6 @@ export default function GovernanceTasks() {
   // Function to show governance task details
   const handleShow = useCallback((id: string) => {
     const task = tasks.find((item) => item.id === id);
-    // Handle potential undefined value by providing null as fallback
     setCurrentTask(task || null);
     setShowDialog(true);
   }, [tasks]);
@@ -316,8 +316,22 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
     onSave(formState);
+    setIsConfirmationOpen(false);
+  };
+
+  const cancelSave = () => {
+    setIsConfirmationOpen(false);
   };
 
   return (
@@ -420,7 +434,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             <>
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleSave}
+                onClick={handleSaveClick} // Use the new click handler
               >
                 Save
               </button>
@@ -447,6 +461,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               </button>
             </>
           )}
+
+          {/* Confirmation Modal for TaskDialog */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            message="Are you sure you want to save changes to this task?"
+          />
         </div>
       </div>
     </div>
@@ -473,8 +495,18 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
     onSave(formState);
+    setIsConfirmationOpen(false);
   };
 
   return (
@@ -554,7 +586,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
         <div className="flex justify-end gap-3">
           <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleSave}
+            onClick={handleSaveClick} // Use the new click handler
           >
             Save
           </button>
@@ -564,6 +596,13 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
           >
             Cancel
           </button>
+          {/* Confirmation Modal for TaskCreateDialog */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={() => setIsConfirmationOpen(false)}
+            message="Are you sure you want to create this task?"
+          />
         </div>
       </div>
     </div>
