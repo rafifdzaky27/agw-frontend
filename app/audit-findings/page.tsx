@@ -337,7 +337,7 @@ export default function AuditFindings() {
           )}
           
           {!loading && auditFindings.length === 0 && (
-            <div className="text-center bg-gray-100 dark:bg-gray-800 p-8 rounded-lg shadow-lg">
+            <div className="text-center bg-gray-100 dark:bg-gray-800 p-8 rounded-lg shadow-lg mt-8">
               <p className="text-gray-500 dark:text-gray-400">No audit findings available.</p>
             </div>
           )}
