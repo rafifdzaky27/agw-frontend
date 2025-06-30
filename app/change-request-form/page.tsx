@@ -8,6 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import { FaDownload } from 'react-icons/fa';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import BackButton from '@/components/BackButton';
 
 interface FormDataState {
   name: string;
@@ -198,6 +199,7 @@ export default function ChangeRequestForm() {
       <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
+          <BackButton />
           <div className="flex items-center mb-6">
             <h1 className="text-3xl font-bold text-center flex-grow">Create Change Request</h1>
           </div>

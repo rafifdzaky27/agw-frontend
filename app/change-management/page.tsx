@@ -745,6 +745,8 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
 
   const getUrgencyStyles = (urgency: string | null): { badge: string; iconColor: string } => {
     switch (urgency?.toLowerCase()) {
+      case 'emergency':
+        return { badge: 'bg-red-700 text-red-100', iconColor: 'text-red-600' };
       case 'high':
         return { badge: 'bg-red-600 text-red-100', iconColor: 'text-red-400' };
       case 'medium':
