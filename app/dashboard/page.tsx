@@ -98,6 +98,7 @@ interface DashboardStats {
       name: string;
       deadline: string;
       status: string;
+      isOverdue: boolean;
     }[];
   };
   governanceTasks: {
@@ -112,6 +113,7 @@ interface DashboardStats {
       name: string;
       deadline: string;
       status: string;
+      isOverdue: boolean;
     }[];
   };
 }
@@ -317,7 +319,8 @@ export default function Dashboard() {
             type: 'audit_finding' as const,
             name: finding.namaTemuan,
             deadline: finding.batasAkhirKomitmen,
-            status: finding.status
+            status: finding.status,
+            isOverdue: isOverdue(finding.batasAkhirKomitmen)
           }));
 
         // Process governance tasks data
@@ -341,7 +344,8 @@ export default function Dashboard() {
             type: 'governance_task' as const,
             name: task.namaTugas,
             deadline: task.tanggal,
-            status: task.status
+            status: task.status,
+            isOverdue: isOverdue(task.tanggal)
           }));
 
         // Process recent activities
@@ -629,14 +633,19 @@ export default function Dashboard() {
                     <div className="space-y-2">
                       {dashboardStats?.governanceTasks.upcomingTasks && dashboardStats.governanceTasks.upcomingTasks.length > 0 ? (
                         dashboardStats.governanceTasks.upcomingTasks.map((task) => (
-                          <div key={task.id} className="grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1">
-                            <span className="truncate">{task.name}</span>
+                          <div key={task.id} className={`grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1 ${task.isOverdue ? 'bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded' : ''}`}>
+                            <div className="flex items-center gap-1 truncate">
+                              {task.isOverdue && <FaExclamationTriangle className="text-red-500 text-xs flex-shrink-0" />}
+                              <span className="truncate">{task.name}</span>
+                            </div>
                             <div className="flex justify-center">
                               <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(task.status)}`}>
                                 {formatStatus(task.status)}
                               </span>
                             </div>
-                            <span className="whitespace-nowrap text-right">{formatDate(task.deadline)}</span>
+                            <span className={`whitespace-nowrap text-right ${task.isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>
+                              {formatDate(task.deadline)}
+                            </span>
                           </div>
                         ))
                       ) : (
@@ -690,14 +699,19 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         {dashboardStats?.auditFindings.upcomingDeadlines && dashboardStats.auditFindings.upcomingDeadlines.length > 0 ? (
                           dashboardStats.auditFindings.upcomingDeadlines.map((finding) => (
-                            <div key={finding.id} className="grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1">
-                              <span className="truncate">{finding.name}</span>
+                            <div key={finding.id} className={`grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1 ${finding.isOverdue ? 'bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded' : ''}`}>
+                              <div className="flex items-center gap-1 truncate">
+                                {finding.isOverdue && <FaExclamationTriangle className="text-red-500 text-xs flex-shrink-0" />}
+                                <span className="truncate">{finding.name}</span>
+                              </div>
                               <div className="flex justify-center">
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(finding.status)}`}>
                                   {formatStatus(finding.status)}
                                 </span>
                               </div>
-                              <span className="whitespace-nowrap text-right">{formatDate(finding.deadline)}</span>
+                              <span className={`whitespace-nowrap text-right ${finding.isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>
+                                {formatDate(finding.deadline)}
+                              </span>
                             </div>
                           ))
                         ) : (
