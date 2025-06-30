@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useState, useEffect } from "react";
 import { toast } from 'react-hot-toast';
 import Navbar from "@/components/Navbar";
+import BackButton from '@/components/BackButton';
 
 // Define default configuration values
 const defaultConfig = {
@@ -193,6 +194,7 @@ export default function Dashboard() {
             <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
+                    <BackButton />
                     <div className="flex items-center mb-6">
                         <h1 className="text-3xl font-bold text-center flex-grow">Email Configuration</h1>
                     </div>

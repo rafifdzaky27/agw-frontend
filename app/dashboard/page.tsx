@@ -18,6 +18,8 @@ interface ChangeRequest {
   requested_migration_date: string;
   actual_migration_date: string | null;
   created_at: string;
+  approved_at: string | null;
+  finalized_at: string | null;
   finished_at: string | null;
   status: string;
   cab_meeting_date: string | null;
@@ -43,6 +45,8 @@ interface AuditFinding {
   batasAkhirKomitmen: string;
   pic: string;
   status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface GovernanceTask {
@@ -52,6 +56,16 @@ interface GovernanceTask {
   tanggal: string;
   pic: string;
   status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ActivityItem {
+  timestamp: Date; 
+  displayDate: string; 
+  description: string;
+  link: string;
+  module: 'Change Management' | 'Audit Finding' | 'Governance Task';
 }
 
 // Define interfaces for the dashboard data
@@ -79,6 +93,7 @@ interface DashboardStats {
     overdueCount: number;
     upcomingDeadlines: {
       id: string;
+      type: 'audit_finding'; // Added type for clarity
       name: string;
       deadline: string;
       status: string;
@@ -92,6 +107,7 @@ interface DashboardStats {
     overdueCount: number;
     upcomingTasks: {
       id: string;
+      type: 'governance_task'; // Added type for clarity
       name: string;
       deadline: string;
       status: string;
@@ -104,6 +120,7 @@ export default function Dashboard() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const router = useRouter();
   
   // Get API URL from environment variable - moved inside useEffect to avoid hydration issues
@@ -177,7 +194,7 @@ export default function Dashboard() {
         let governanceTasksData: GovernanceTask[] = [];
         
         try {
-          const changeRequestsResponse = await fetch(`${API_BASE_URL}/requests`, {
+          const changeRequestsResponse = await fetch(`${API_BASE_URL}/requests?sortBy=updated_at&order=desc`, {
             headers: { 
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -199,7 +216,7 @@ export default function Dashboard() {
         }
         
         try {
-          const auditFindingsResponse = await fetch(`${API_BASE_URL}/findings`, {
+          const auditFindingsResponse = await fetch(`${API_BASE_URL}/findings?sortBy=updated_at&order=desc`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -218,7 +235,7 @@ export default function Dashboard() {
         }
         
         try {
-          const governanceTasksResponse = await fetch(`${API_BASE_URL}/governance-tasks`, {
+          const governanceTasksResponse = await fetch(`${API_BASE_URL}/governance-tasks?sortBy=updated_at&order=desc`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -298,6 +315,7 @@ export default function Dashboard() {
           .slice(0, 3) // Get only the 3 most recent
           .map(finding => ({
             id: finding.id,
+            type: 'audit_finding' as const,
             name: finding.namaTemuan,
             deadline: finding.batasAkhirKomitmen,
             status: finding.status
@@ -321,10 +339,105 @@ export default function Dashboard() {
           .slice(0, 3) // Get only the 3 most recent
           .map(task => ({
             id: task.id,
+            type: 'governance_task' as const,
             name: task.namaTugas,
             deadline: task.tanggal,
             status: task.status
           }));
+
+        // Process recent activities
+        const activities: ActivityItem[] = [];
+
+        // Change Requests Activities
+        changeRequestsData.forEach(req => {
+          // Activity for creation
+          activities.push({
+            timestamp: new Date(req.created_at),
+            displayDate: formatDate(req.created_at),
+            description: `New Request: '${req.name}'`,
+            link: `/change-management/${req.id}`,
+            module: 'Change Management'
+          });
+
+          // Activity for approval
+          if (req.approved_at) {
+            activities.push({
+              timestamp: new Date(req.approved_at),
+              displayDate: formatDate(req.approved_at),
+              description: `Request '${req.name}' was approved.`,
+              link: `/change-management/${req.id}`,
+              module: 'Change Management'
+            });
+          }
+
+          // Activity for finalization
+          if (req.finalized_at) {
+            activities.push({
+              timestamp: new Date(req.finalized_at),
+              displayDate: formatDate(req.finalized_at),
+              description: `Request '${req.name}' was finalized.`,
+              link: `/change-management/${req.id}`,
+              module: 'Change Management'
+            });
+          }
+
+          // Activity for completion/failure
+          if (req.finished_at) {
+            activities.push({
+              timestamp: new Date(req.finished_at),
+              displayDate: formatDate(req.finished_at),
+              description: `Request '${req.name}' finished with status: ${req.status}.`,
+              link: `/change-management/${req.id}`,
+              module: 'Change Management'
+            });
+          }
+        });
+
+        // Audit Findings Activities
+        auditFindingsData.forEach(finding => {
+          activities.push({
+            timestamp: new Date(finding.createdAt),
+            displayDate: formatDate(finding.createdAt),
+            description: `New Finding: '${finding.namaTemuan}'`,
+            link: `/audit-findings/${finding.id}`,
+            module: 'Audit Finding'
+          });
+
+          if (finding.updatedAt && finding.updatedAt !== finding.createdAt) {
+            activities.push({
+              timestamp: new Date(finding.updatedAt),
+              displayDate: formatDate(finding.updatedAt),
+              description: `Finding '${finding.namaTemuan}' was updated to status: ${finding.status}`,
+              link: `/audit-findings/${finding.id}`,
+              module: 'Audit Finding'
+            });
+          }
+        });
+
+        // Governance Tasks Activities
+        governanceTasksData.forEach(task => {
+          activities.push({
+            timestamp: new Date(task.createdAt),
+            displayDate: formatDate(task.createdAt),
+            description: `New Task: '${task.namaTugas}'`,
+            link: `/governance-tasks/${task.id}`,
+            module: 'Governance Task'
+          });
+
+          if (task.updatedAt && task.updatedAt !== task.createdAt) {
+            activities.push({
+              timestamp: new Date(task.updatedAt),
+              displayDate: formatDate(task.updatedAt),
+              description: `Task '${task.namaTugas}' was updated to status: ${task.status}`,
+              link: `/governance-tasks/${task.id}`,
+              module: 'Governance Task'
+            });
+          }
+        });
+
+        // Sort all activities by timestamp (most recent first) and take the top N
+        activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        setRecentActivities(activities.slice(0, 5)); // Display top 5 recent activities
 
         // Construct dashboard stats object
         const stats: DashboardStats = {
@@ -605,11 +718,20 @@ export default function Dashboard() {
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-yellow-600 dark:text-yellow-400">Recent Activity</h2>
                 {/* Placeholder for recent activity feed */}
-                <ul className="space-y-3">
-                  <li className="text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-2">User 'admin' approved Change Request #CR123. <span className="text-xs text-gray-400 dark:text-gray-500 float-right">2 hours ago</span></li>
-                  <li className="text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-2">New Change Request #CR126 submitted by 'dev_user'. <span className="text-xs text-gray-400 dark:text-gray-500 float-right">1 day ago</span></li>
-                  <li className="text-sm text-gray-500 dark:text-gray-400">Migration 'MIG003' status updated to 'In Progress'. <span className="text-xs text-gray-400 dark:text-gray-500 float-right">3 days ago</span></li>
-                </ul>
+                {recentActivities.length > 0 ? (
+                  <ul className="space-y-3">
+                    {recentActivities.map((activity, index) => (
+                      <li key={index} className="text-sm text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-2 last:border-b-0">
+                        <Link href={activity.link} className="hover:underline text-blue-500 dark:text-blue-400">
+                          {activity.description}
+                        </Link>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 float-right">{activity.displayDate}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No recent activity to display.</p>
+                )}
               </div>
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Quick Links</h2>

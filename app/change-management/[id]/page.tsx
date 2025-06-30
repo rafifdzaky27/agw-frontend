@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getStatusColor } from '@/utils/status';
 import { FaDownload, FaExclamationCircle } from 'react-icons/fa';
 import { ConfirmationModal, PendingModal, PreviousMigrationsModal, AlertModal } from "@/components/ConfirmationModal"; // Import the new component
+import BackButton from '@/components/BackButton';
 
 interface ChangeRequest {
     id: number;
@@ -925,6 +926,7 @@ export default function ChangeRequestDetails() {
             <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
+                    <BackButton />
                     <div className="flex items-center mb-6">
                         <h1 className="text-3xl font-bold text-center flex-grow">Edit Change Request</h1>
                     </div>
