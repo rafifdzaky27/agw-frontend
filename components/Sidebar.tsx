@@ -25,7 +25,7 @@ import {
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: FaHome },
   { name: "Change Management", href: "/change-management", icon: FaExchangeAlt },
-  { name: "Governance Tasks", href: "/governance-tasks", icon: FaTasks },
+  { name: "Governance\nTasks", href: "/governance-tasks", icon: FaTasks },
   { name: "Audit Findings", href: "/audit-findings", icon: FaClipboardCheck },
   { name: "Portfolio Management", href: "/portfolio-management", icon: FaBriefcase },
   { name: "Admin Config", href: "/admin-config", icon: FaCog },
@@ -122,7 +122,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                     <div className={`p-1.5 rounded-md ${isActive ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                       <Icon size={16} />
                     </div>
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium whitespace-pre-line">{item.name}</span>
                     {isActive && (
                       <FaChevronRight size={12} className="ml-auto text-blue-300" />
                     )}
