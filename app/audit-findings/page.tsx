@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
@@ -16,7 +17,7 @@ interface AuditFinding {
   komitmenTindakLanjut: string;
   batasAkhirKomitmen: string;
   pic: string;
-  status: string;
+  status: 'not yet' | 'on progress' | 'done';
 }
 
 export default function AuditFindings() {
@@ -125,6 +126,31 @@ export default function AuditFindings() {
     setShowDialog(true);
   }, [auditFindings]);
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    // Dropped outside the list
+    if (!destination) {
+      return;
+    }
+
+    const finding = auditFindings.find(f => f.id === draggableId);
+
+    // If the card is moved to a new column, update its status
+    if (finding && destination.droppableId !== source.droppableId) {
+      const newStatus = destination.droppableId as AuditFinding['status'];
+      const updatedFinding = { ...finding, status: newStatus };
+
+      // Optimistically update the UI
+      setAuditFindings(prev =>
+        prev.map(f => (f.id === draggableId ? updatedFinding : f))
+      );
+
+      // Save the change to the backend
+      handleSave(updatedFinding);
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,7 +162,7 @@ export default function AuditFindings() {
   };
 
   // Get badge color based on status
-  const getBadgeClass = (status: string) => {
+  const getBadgeClass = (status: AuditFinding['status']) => {
     switch(status) {
       case 'done':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
@@ -148,7 +174,7 @@ export default function AuditFindings() {
   };
 
   // Get status display text
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: AuditFinding['status']) => {
     switch(status) {
       case 'done':
         return 'Done';
@@ -182,37 +208,132 @@ export default function AuditFindings() {
               <p className="text-gray-500 dark:text-gray-400">Loading audit findings...</p>
             </div>
           ) : (
-            <div className="grid gap-4">
-              {auditFindings.map((finding) => (
-                <div 
-                  key={finding.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition cursor-pointer"
-                  onClick={() => handleShow(finding.id)}
-                >
-                  <div className="flex flex-col md:flex-row justify-between mb-2">
-                    <div className="font-semibold text-lg">{finding.namaTemuan}</div>
-                    <div className="text-gray-600 dark:text-gray-300">{formatDate(finding.batasAkhirKomitmen)}</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd"></path>
-                      </svg>
-                      <span>{finding.kategoriAudit}</span>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Not Started Column */}
+                <Droppable droppableId="not yet">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
+                      <div className="space-y-3">
+                        {auditFindings
+                          .filter(finding => finding.status === 'not yet')
+                          .map((finding, index) => (
+                            <Draggable key={finding.id} draggableId={finding.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(finding.id)}
+                                >
+                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {auditFindings.filter(finding => finding.status === 'not yet').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No findings</div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(finding.status)}`}>
-                      {getStatusText(finding.status)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-gray-500 dark:text-gray-400">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
-                    </svg>
-                    <span>{finding.pic}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  )}
+                </Droppable>
+                
+                {/* In Progress Column */}
+                <Droppable droppableId="on progress">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-yellow-100 dark:bg-yellow-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                      <div className="space-y-3">
+                        {auditFindings
+                          .filter(finding => finding.status === 'on progress')
+                          .map((finding, index) => (
+                            <Draggable key={finding.id} draggableId={finding.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(finding.id)}
+                                >
+                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {auditFindings.filter(finding => finding.status === 'on progress').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No findings</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+                
+                {/* Done Column */}
+                <Droppable droppableId="done">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-green-100 dark:bg-green-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
+                      <div className="space-y-3">
+                        {auditFindings
+                          .filter(finding => finding.status === 'done')
+                          .map((finding, index) => (
+                            <Draggable key={finding.id} draggableId={finding.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(finding.id)}
+                                >
+                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {auditFindings.filter(finding => finding.status === 'done').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No findings</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </DragDropContext>
           )}
           
           {!loading && auditFindings.length === 0 && (
@@ -252,8 +373,8 @@ interface FindingDialogProps {
   onSave: (finding: AuditFinding) => void;
   onDelete: (id: string) => void;
   formatDate: (dateString: string) => string;
-  getBadgeClass: (status: string) => string;
-  getStatusText: (status: string) => string;
+  getBadgeClass: (status: AuditFinding['status']) => string;
+  getStatusText: (status: AuditFinding['status']) => string;
 }
 
 // Finding Dialog Component
@@ -366,7 +487,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
                 className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.status}
                 onChange={handleChange}
-              >
+              > 
                 <option value="not yet">Not Started</option>
                 <option value="on progress">In Progress</option>
                 <option value="done">Done</option>
@@ -484,7 +605,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
 // Define props interface for FindingCreateDialog
 interface FindingCreateDialogProps {
-  onClose: () => void;
+  onClose: () => void; 
   onSave: (finding: Partial<AuditFinding>) => void;
 }
 
@@ -497,7 +618,7 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
     rekomendasi: "",
     komitmenTindakLanjut: "",
     batasAkhirKomitmen: "",
-    status: "not yet",
+    status: "not yet" as const,
     pic: ""
   });
 
