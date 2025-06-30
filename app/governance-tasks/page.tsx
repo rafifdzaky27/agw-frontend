@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent } from "react";
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
@@ -123,6 +124,31 @@ export default function GovernanceTasks() {
     setShowDialog(true);
   }, [tasks]);
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    // Dibatalkan jika kartu dilepas di luar kolom
+    if (!destination) {
+      return;
+    }
+
+    const task = tasks.find(t => t.id === draggableId);
+
+    // Jika kartu dipindahkan ke kolom baru, perbarui statusnya
+    if (task && destination.droppableId !== source.droppableId) {
+      const newStatus = destination.droppableId as Task['status'];
+      const updatedTask = { ...task, status: newStatus };
+
+      // Perbarui UI secara optimis
+      setTasks(prev =>
+        prev.map(t => (t.id === draggableId ? updatedTask : t))
+      );
+
+      // Simpan perubahan ke backend
+      handleSave(updatedTask);
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -180,88 +206,132 @@ export default function GovernanceTasks() {
               <p className="text-gray-500 dark:text-gray-400">Loading governance tasks...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Not Started Column */}
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
-                <div className="space-y-3">
-                  {tasks
-                    .filter(task => task.status === 'not yet')
-                    .map(task => (
-                      <div 
-                        key={task.id}
-                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
-                        onClick={() => handleShow(task.id)}
-                      >
-                        <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                        </div>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Not Started Column */}
+                <Droppable droppableId="not yet">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
+                      <div className="space-y-3">
+                        {tasks
+                          .filter(task => task.status === 'not yet')
+                          .map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(task.id)}
+                                >
+                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {tasks.filter(task => task.status === 'not yet').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                        )}
                       </div>
-                    ))
-                  }
-                  {tasks.filter(task => task.status === 'not yet').length === 0 && (
-                    <div className="text-center py-4 text-gray-500">No tasks</div>
+                    </div>
                   )}
-                </div>
-              </div>
-              
-              {/* In Progress Column */}
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
-                <div className="space-y-3">
-                  {tasks
-                    .filter(task => task.status === 'on progress')
-                    .map(task => (
-                      <div 
-                        key={task.id}
-                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
-                        onClick={() => handleShow(task.id)}
-                      >
-                        <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                        </div>
+                </Droppable>
+                
+                {/* In Progress Column */}
+                <Droppable droppableId="on progress">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-yellow-100 dark:bg-yellow-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                      <div className="space-y-3">
+                        {tasks
+                          .filter(task => task.status === 'on progress')
+                          .map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(task.id)}
+                                >
+                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {tasks.filter(task => task.status === 'on progress').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                        )}
                       </div>
-                    ))
-                  }
-                  {tasks.filter(task => task.status === 'on progress').length === 0 && (
-                    <div className="text-center py-4 text-gray-500">No tasks</div>
+                    </div>
                   )}
-                </div>
-              </div>
-              
-              {/* Done Column */}
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-                <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
-                <div className="space-y-3">
-                  {tasks
-                    .filter(task => task.status === 'done')
-                    .map(task => (
-                      <div 
-                        key={task.id}
-                        className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition cursor-pointer"
-                        onClick={() => handleShow(task.id)}
-                      >
-                        <div className="font-semibold mb-2">{task.namaTugas}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                        </div>
+                </Droppable>
+                
+                {/* Done Column */}
+                <Droppable droppableId="done">
+                  {(provided, snapshot) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-green-100 dark:bg-green-900/50' : ''}`}
+                    >
+                      <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
+                      <div className="space-y-3">
+                        {tasks
+                          .filter(task => task.status === 'done')
+                          .map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  onClick={() => handleShow(task.id)}
+                                >
+                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+                                  <div className="flex justify-between items-center">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        {tasks.filter(task => task.status === 'done').length === 0 && (
+                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                        )}
                       </div>
-                    ))
-                  }
-                  {tasks.filter(task => task.status === 'done').length === 0 && (
-                    <div className="text-center py-4 text-gray-500">No tasks</div>
+                    </div>
                   )}
-                </div>
+                </Droppable>
               </div>
-            </div>
+            </DragDropContext>
           )}
           
           {showDialog && currentTask && (

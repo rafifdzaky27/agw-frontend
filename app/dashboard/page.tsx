@@ -375,14 +375,14 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <div className="flex flex-col items-center justify-center mx-auto">
             <h1 className="text-3xl font-bold mb-8 text-center">Architecture & Governance Dashboard</h1>
 
             {/* Consolidated Dashboard Overview Card */}
-            <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+            <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md mb-8">
               <h2 className="text-2xl font-semibold mb-6 text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2">
                 Architecture & Governance Overview
               </h2>
@@ -406,7 +406,7 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Change Management Section */}
-                  <div className="border dark:border-gray-700 rounded-lg p-4 flex flex-col h-full">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col h-full border-t-4 border-t-blue-500">
                     <div className="flex-grow">
                       <div className="flex items-center mb-4">
                         <FaExchangeAlt className="text-blue-500 text-xl mr-2" />
@@ -475,15 +475,15 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Governance Tasks Section */}
-                  <div className="border dark:border-gray-700 rounded-lg p-4 flex flex-col h-full">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col h-full border-t-4 border-t-blue-500">
                     <div className="flex-grow">
                       <div className="flex items-center mb-4">
-                        <FaTasks className="text-purple-500 text-xl mr-2" />
+                        <FaTasks className="text-blue-500 text-xl mr-2" />
                         <h3 className="text-lg font-semibold">Governance Tasks</h3>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
                           <p className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</p>
                           <p className="text-2xl font-bold">{dashboardStats?.governanceTasks.total}</p>
                         </div>
@@ -536,15 +536,15 @@ export default function Dashboard() {
                   </div>
 
                   {/* Audit Findings Section */}
-                  <div className="border dark:border-gray-700 rounded-lg p-4 flex flex-col h-full">
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col h-full border-t-4 border-t-blue-500">
                     <div className="flex-grow">
                       <div className="flex items-center mb-4">
-                        <FaClipboardCheck className="text-green-500 text-xl mr-2" />
+                        <FaClipboardCheck className="text-blue-500 text-xl mr-2" />
                         <h3 className="text-lg font-semibold">Audit Findings</h3>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
                           <p className="text-sm text-gray-600 dark:text-gray-400">Total Findings</p>
                           <p className="text-2xl font-bold">{dashboardStats?.auditFindings.total}</p>
                         </div>
@@ -602,7 +602,7 @@ export default function Dashboard() {
 
             {/* Recent Activity and Quick Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-yellow-600 dark:text-yellow-400">Recent Activity</h2>
                 {/* Placeholder for recent activity feed */}
                 <ul className="space-y-3">
@@ -611,7 +611,7 @@ export default function Dashboard() {
                   <li className="text-sm text-gray-500 dark:text-gray-400">Migration 'MIG003' status updated to 'In Progress'. <span className="text-xs text-gray-400 dark:text-gray-500 float-right">3 days ago</span></li>
                 </ul>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-indigo-600 dark:text-indigo-400">Quick Links</h2>
                 <ul className="space-y-2">
                   <li><a href="/change-management/new" className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-500 dark:hover:text-blue-300 transition-colors">Submit New Change Request</a></li>
