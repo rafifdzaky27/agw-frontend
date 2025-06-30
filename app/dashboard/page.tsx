@@ -71,18 +71,19 @@ interface ActivityItem {
 // Define interfaces for the dashboard data
 interface DashboardStats {
   changeManagement: {
-    total: number;
+    totalCAB: number;
+    totalRequests: number;
     waitingApproval: number;
     waitingFinalization: number;
     waitingMigration: number;
     completed: number;
     failed: number;
-    urgentCount: number;
     upcomingMigrations: {
       id: string;
       name: string;
       date: string;
       status: string;
+      isOverdue: boolean;
     }[];
   };
   auditFindings: {
@@ -279,22 +280,20 @@ export default function Dashboard() {
         const failedRequests = changeRequests.filter(req => 
           ['failed', 'rejected'].includes(req.status.trim().toLowerCase())
         );
-        // Urgent requests are those with high or urgent urgency level
-        const urgentRequests = changeRequests.filter(req => 
-          req.urgency && req.urgency.trim().toLowerCase() === 'emergency'
-        );
+
         
         // Sort upcoming migrations by date
         const upcomingMigrations = changeRequests
           .filter(req => !['completed', 'success', 'failed', 'rejected'].includes(req.status.trim().toLowerCase()))
-          .filter(req => req.requested_migration_date && new Date(req.requested_migration_date) >= new Date())
+          .filter(req => req.requested_migration_date) // Only need migration date to exist
           .sort((a, b) => new Date(a.requested_migration_date).getTime() - new Date(b.requested_migration_date).getTime())
           .slice(0, 3) // Get only the 3 most recent
           .map(req => ({
             id: req.id.toString(),
             name: req.name,
             date: req.requested_migration_date,
-            status: req.status
+            status: req.status,
+            isOverdue: new Date(req.requested_migration_date) < new Date()
           }));
 
         // Process audit findings data
@@ -442,13 +441,13 @@ export default function Dashboard() {
         // Construct dashboard stats object
         const stats: DashboardStats = {
           changeManagement: {
-            total: changeRequests.length,
+            totalCAB: changeRequests.length,
+            totalRequests: waitingApprovalRequests.length,
             waitingApproval: waitingApprovalRequests.length,
             waitingFinalization: waitingFinalizationRequests.length,
             waitingMigration: waitingMigrationRequests.length,
             completed: completedRequests.length,
             failed: failedRequests.length,
-            urgentCount: urgentRequests.length,
             upcomingMigrations
           },
           auditFindings: {
@@ -528,12 +527,12 @@ export default function Dashboard() {
                       
                       <div className="grid grid-cols-2 gap-3 mb-4">
                         <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Total Requests</p>
-                          <p className="text-2xl font-bold">{dashboardStats?.changeManagement.total}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Total CAB</p>
+                          <p className="text-2xl font-bold">{dashboardStats?.changeManagement.totalCAB}</p>
                         </div>
                         <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Urgent</p>
-                          <p className="text-2xl font-bold">{dashboardStats?.changeManagement.urgentCount}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Total Requests</p>
+                          <p className="text-2xl font-bold">{dashboardStats?.changeManagement.totalRequests}</p>
                         </div>
                       </div>
                       
@@ -564,14 +563,19 @@ export default function Dashboard() {
                       <div className="space-y-2">
                         {dashboardStats?.changeManagement.upcomingMigrations && dashboardStats.changeManagement.upcomingMigrations.length > 0 ? (
                           dashboardStats.changeManagement.upcomingMigrations.map((migration) => (
-                            <div key={migration.id} className="grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1">
-                              <span className="truncate">{migration.name}</span>
+                            <div key={migration.id} className={`grid grid-cols-[1fr_120px_auto] items-center gap-x-2 text-sm border-b border-gray-100 dark:border-gray-700 pb-1 ${migration.isOverdue ? 'bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded' : ''}`}>
+                              <div className="flex items-center gap-1 truncate">
+                                {migration.isOverdue && <FaExclamationTriangle className="text-red-500 text-xs flex-shrink-0" />}
+                                <span className="truncate">{migration.name}</span>
+                              </div>
                               <div className="flex justify-center">
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusColor(migration.status)}`}>
                                   {formatStatus(migration.status)}
                                 </span>
                               </div>
-                              <span className="whitespace-nowrap text-right">{formatDate(migration.date)}</span>
+                              <span className={`whitespace-nowrap text-right ${migration.isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : ''}`}>
+                                {formatDate(migration.date)}
+                              </span>
                             </div>
                           ))
                         ) : (
