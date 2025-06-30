@@ -755,11 +755,11 @@ export default function ChangeRequestDetails() {
         switch (status) {
             case 'completed':
             case 'active':
-                return 'text-gray-900 dark:text-white'; // Dark text in light mode, white in dark mode
+                return 'text-black dark:text-white'; // Black text in light mode, white in dark mode
             case 'pending':
-                return 'text-gray-600 dark:text-gray-400'; // Darker gray in light mode, lighter gray in dark mode
+                return 'text-gray-500 dark:text-gray-400'; // Gray in light mode, lighter gray in dark mode
             default:
-                return 'text-gray-900 dark:text-white'; // Fallback
+                return 'text-black dark:text-white'; // Fallback
         }
     };
 
@@ -928,14 +928,14 @@ export default function ChangeRequestDetails() {
                 <div className="flex-1 md:ml-60 p-6">
                     <BackButton />
                     <div className="flex items-center mb-6">
-                        <h1 className="text-3xl font-bold text-center flex-grow">Edit Change Request</h1>
+                        <h1 className="text-3xl font-bold text-center flex-grow text-black dark:text-white">Edit Change Request</h1>
                     </div>
 
-                    <div className="mb-6 p-4 bg-gray-100 dark:bg-gray-800 rounded relative">
+                    <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded border-2 border-gray-300 dark:border-gray-600 relative">
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="text-2xl font-semibold">Request Flow</h2>
+                            <h2 className="text-2xl font-semibold text-black dark:text-white">Request Flow</h2>
                             <button
-                                className="border font-medium border-gray-300 dark:border-white text-gray-800 dark:text-white rounded-full px-4 py-1 transition duration-300 hover:bg-gray-200 dark:hover:bg-white hover:text-gray-900 dark:hover:text-gray-800"
+                                className="border font-medium border-blue-500 dark:border-white text-blue-600 dark:text-white rounded-full px-4 py-1 transition duration-300 hover:bg-blue-100 dark:hover:bg-white hover:text-blue-800 dark:hover:text-gray-800"
                                 onClick={openModal} // Replace with your function
                             >
                                 Scheduled Migrations
@@ -943,7 +943,7 @@ export default function ChangeRequestDetails() {
                         </div>
 
                         <div className="mb-2 flex items-center">
-                            <span className="font-medium mr-2">Requested by: </span> {formData.requester_name || "N/A"}
+                            <span className="font-medium mr-2 text-black dark:text-white">Requested by: </span> <span className="text-black dark:text-white">{formData.requester_name || "N/A"}</span>
                             <button
                                 className="ml-2 p-2 rounded-lg border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                                 onClick={handleAlert}
@@ -953,7 +953,7 @@ export default function ChangeRequestDetails() {
                             </button>
                         </div>
                         <div className="mb-4">
-                            <span className="font-medium mr-2">Approved by:</span> {formData.approver_name || "N/A"}
+                            <span className="font-medium mr-2 text-black dark:text-white">Approved by:</span> <span className="text-black dark:text-white">{formData.approver_name || "N/A"}</span>
                         </div>
 
                         <div className="relative w-full">
@@ -965,7 +965,7 @@ export default function ChangeRequestDetails() {
                                         >
                                             {determineStatus(step) === 'completed' && <span className="text-white">✓</span>}
                                         </div>
-                                        <p className={`text-sm mt-1 text-center ${getTextColor(step)}`}>
+                                        <p className={`text-sm mt-1 text-center font-medium ${getTextColor(step)}`}>
                                             {step.replace(/_/g, " ")}
                                         </p>
                                         {timestampMap[step as keyof typeof timestampMap] && (
@@ -990,12 +990,12 @@ export default function ChangeRequestDetails() {
                             {/* Column 1 */}
                             <div className="flex flex-col w-1/3 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
                                 <div className="flex flex-col">
-                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name:</label>
+                                    <label htmlFor="name" className="block text-sm font-medium text-black dark:text-gray-300">Name:</label>
                                     <input
                                         type="text"
                                         id="name"
                                         placeholder="Request Name"                                        
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.name}
                                         onChange={handleChange}
                                         required={!isFieldDisabled("name")}
@@ -1004,10 +1004,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="group" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Group:</label>
+                                    <label htmlFor="group" className="block text-sm font-medium text-black dark:text-gray-300">Group:</label>
                                     <select
                                         id="group"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.group}
                                         onChange={handleChange}
                                         required
@@ -1020,10 +1020,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="division" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Division:</label>
+                                    <label htmlFor="division" className="block text-sm font-medium text-black dark:text-gray-300">Division:</label>
                                     <select
                                         id="division"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.division}
                                         onChange={handleChange}
                                         required
@@ -1037,10 +1037,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Type:</label>
+                                    <label htmlFor="type" className="block text-sm font-medium text-black dark:text-gray-300">Request Type:</label>
                                     <select
                                         id="type"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         title="Request Type"
                                         value={formData.type}
                                         onChange={handleChange}
@@ -1054,10 +1054,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Category:</label>
+                                    <label htmlFor="category" className="block text-sm font-medium text-black dark:text-gray-300">Request Category:</label>
                                     <select
                                         id="category"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         title="Request Category"
                                         value={formData.category}
                                         onChange={handleChange}
@@ -1073,10 +1073,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="urgency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Urgency:</label>
+                                    <label htmlFor="urgency" className="block text-sm font-medium text-black dark:text-gray-300">Urgency:</label>
                                     <select
                                         id="urgency"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         title="Urgency"
                                         value={formData.urgency}
                                         onChange={handleChange}
@@ -1090,12 +1090,12 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Requested Migration Date:</label>
+                                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-black dark:text-gray-300">Requested Migration Date:</label>
                                     <input
                                         type="datetime-local"
                                         id="requested_migration_date"
                                         title="Requested Migration Date"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.requested_migration_date 
                                             ? formatUTCStringToInput(formData.requested_migration_date)
                                             : ''
@@ -1107,12 +1107,12 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="cab_meeting_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CAB Meeting Date:</label>
+                                    <label htmlFor="cab_meeting_date" className="block text-sm font-medium text-black dark:text-gray-300">CAB Meeting Date:</label>
                                     <input
                                         type="datetime-local"
                                         id="cab_meeting_date"
                                         title="CAB Meeting Date"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.cab_meeting_date 
                                             ? formatUTCStringToInput(formData.cab_meeting_date)
                                             : ''
@@ -1127,12 +1127,12 @@ export default function ChangeRequestDetails() {
                             {/* Column 2 */}
                             <div className="flex flex-col w-1/3 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
                                 <div className="flex flex-col">
-                                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Code:</label>
+                                    <label htmlFor="project_code" className="block text-sm font-medium text-black dark:text-gray-300">Project Code:</label>
                                     <input
                                         type="text"
                                         id="project_code"
                                         placeholder="Project Code"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.project_code}
                                         onChange={handleChange}
                                         required
@@ -1141,12 +1141,12 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300">RFC Number:</label>
+                                    <label htmlFor="rfc_number" className="block text-sm font-medium text-black dark:text-gray-300">RFC Number:</label>
                                     <input
                                         type="text"
                                         id="rfc_number"
                                         placeholder="RFC Number"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.rfc_number}
                                         onChange={handleChange}
                                         required
@@ -1165,18 +1165,18 @@ export default function ChangeRequestDetails() {
                                         <div key={field} className="flex flex-col">
                                             <label
                                                 htmlFor={field}
-                                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                                className="block text-sm font-medium text-black dark:text-gray-300"
                                             >
                                                 {field.replace("_", " ").toUpperCase()}:
                                             </label>
                                             <div className="flex items-center">
                                                 <label
                                                     htmlFor={field}
-                                                    className={`mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasFile ? "w-4/5" : ""
+                                                    className={`mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasFile ? "w-4/5" : ""
                                                         }`}
                                                 >
                                                     <span
-                                                        className={`block truncate text-gray-900 dark:text-white ${!filename ? "text-gray-500 dark:text-gray-400" : ""
+                                                        className={`block truncate text-black dark:text-white ${!filename ? "text-gray-400 dark:text-gray-400" : ""
                                                             }`}
                                                     >
                                                         {selectedFile
@@ -1199,9 +1199,9 @@ export default function ChangeRequestDetails() {
                                                         download={filename || ""}
                                                         target="_blank"
                                                         title={`Download ${field.replace("_", " ")}`}                                                        
-                                                        className="ml-2 mt-1 w-10 h-10 p-2 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 flex items-center justify-center"
+                                                        className="ml-2 mt-1 w-10 h-10 p-2 rounded bg-blue-100 hover:bg-blue-200 dark:bg-gray-700 dark:hover:bg-gray-600 flex items-center justify-center border-2 border-blue-300"
                                                     >
-                                                        <FaDownload className="text-gray-800 dark:text-white" />
+                                                        <FaDownload className="text-blue-600 dark:text-white" />
                                                     </a>
                                                 )}
                                             </div>
@@ -1213,11 +1213,11 @@ export default function ChangeRequestDetails() {
                             {/* Column 3 */}
                             <div className="flex flex-col w-1/3 gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
                                 <div className="flex flex-col">
-                                    <label htmlFor="pic" className="block text-sm font-medium text-gray-700 dark:text-gray-300">PIC:</label>
+                                    <label htmlFor="pic" className="block text-sm font-medium text-black dark:text-gray-300">PIC:</label>
                                     <textarea
                                         id="pic"
                                         placeholder="PIC"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 h-10 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 h-10 text-black dark:text-white"
                                         value={formData.pic}
                                         onChange={handleChange}
                                         required
@@ -1226,12 +1226,12 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-700 dark:text-gray-300">CAB Meeting Link:</label>
+                                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-black dark:text-gray-300">CAB Meeting Link:</label>
                                     <input
                                         type="text"
                                         id="cab_meeting_link"
                                         placeholder="CAB Meeting Link"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.cab_meeting_link}
                                         onChange={handleChange}
                                         required
@@ -1240,13 +1240,13 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Downtime Risk:</label>
+                                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-black dark:text-gray-300">Downtime Risk:</label>
                                     <input
                                         type="number"
                                         id="downtime_risk"
                                         min="0"
                                         placeholder="Downtime Risk"                                        
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.downtime_risk}
                                         onChange={handleChange}
                                         required
@@ -1255,14 +1255,14 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="integration_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Integration Risk (0-10):</label>
+                                    <label htmlFor="integration_risk" className="block text-sm font-medium text-black dark:text-gray-300">Integration Risk (0-10):</label>
                                     <input
                                         type="number"
                                         id="integration_risk"
                                         min="0"
                                         max="10"
                                         placeholder="Integration Risk (0-10)"                                        
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.integration_risk}
                                         onChange={handleChange}
                                         required
@@ -1271,10 +1271,10 @@ export default function ChangeRequestDetails() {
                                 </div>
 
                                 <div className="flex flex-col">
-                                    <label htmlFor="uat_result" className="block text-sm font-medium text-gray-700 dark:text-gray-300">UAT Score:</label>
+                                    <label htmlFor="uat_result" className="block text-sm font-medium text-black dark:text-gray-300">UAT Score:</label>
                                     <select
                                         id="uat_result"
-                                        className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         title="Urgency"
                                         value={formData.uat_result}
                                         onChange={handleChange}
@@ -1288,21 +1288,21 @@ export default function ChangeRequestDetails() {
 
                                 {/* Description spans the remaining space */}
                                 <div className="flex flex-col flex-grow">
-                                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description:</label>
+                                    <label htmlFor="description" className="block text-sm font-medium text-black dark:text-gray-300">Description:</label>
                                     <textarea
                                         id="description"
                                         placeholder="Description"
-                                        className="mt-1 block w-full h-1/2 p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full h-1/2 p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.description}
                                         onChange={handleChange}
                                         disabled={isFieldDisabled("description")}
                                     />
 
-                                    <label htmlFor="post_implementation_review" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mt-4">Post Implementation Review:</label>
+                                    <label htmlFor="post_implementation_review" className="block text-sm font-medium text-black dark:text-gray-300 mt-4">Post Implementation Review:</label>
                                     <textarea
                                         id="post_implementation_review"
                                         placeholder="Post Implementation Review"
-                                        className="mt-1 block w-full h-1/2 p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full h-1/2 p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
                                         value={formData.post_implementation_review || ''}
                                         onChange={handleChange}
                                         disabled={isFieldDisabled("post_implementation_review")}

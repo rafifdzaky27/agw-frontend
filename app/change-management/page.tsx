@@ -451,22 +451,22 @@ export default function ChangeManagement() {
                     </h1>
 
                     <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-4">
-                        <div className="flex justify-between items-stretch">
-                            <div className="flex items-stretch space-x-4">
+                        <div className="flex justify-between items-stretch gap-12">
+                            <div className="flex items-end space-x-4 mb-1">
                                 <button
-                                    className="px-4 py-2 bg-blue-500 text-white rounded flex items-center space-x-2 hover:bg-blue-700 transition duration-200"
+                                    className="w-32 h-[38px] px-3 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
                                     onClick={() => router.push("/change-request-form")}
                                     >
-                                    <FaPlus />
-                                    <span>Add Request</span>
+                                    <FaPlus className="text-sm" />
+                                    <span className="text-sm">Add Request</span>
                                 </button>
-                                <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center space-x-2 hover:bg-green-700 transition duration-200" onClick={exportToExcel}>
-                                    <FaFileExport />
-                                    <span>Export</span>
+                                <button className="w-24 h-[38px] px-3 bg-green-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-green-700 transition duration-200 font-medium" onClick={exportToExcel}>
+                                    <FaFileExport className="text-sm" />
+                                    <span className="text-sm">Export</span>
                                 </button>
-                                <button className="px-4 py-2 bg-yellow-500 text-white rounded flex items-center space-x-2 hover:bg-yellow-700 transition duration-200" onClick={handleAlertClick}>
-                                    <FaExclamationTriangle />
-                                    <span>Alert</span>
+                                <button className="w-24 h-[38px] px-3 bg-yellow-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-yellow-700 transition duration-200 font-medium" onClick={handleAlertClick}>
+                                    <FaExclamationTriangle className="text-sm" />
+                                    <span className="text-sm">Alert</span>
                                 </button>
                             </div>
 
@@ -515,7 +515,7 @@ export default function ChangeManagement() {
                                             type="button"
                                             className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
                                             onClick={() => setIsStatusModalOpen(true)}
-                                            style={{ width: '250px' }}
+                                            style={{ width: '200px' }}
                                         >
                                             {statusText}
                                         </button>
