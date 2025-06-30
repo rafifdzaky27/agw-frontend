@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { name: "Change Management", href: "/change-management", icon: FaExchangeAlt },
   { name: "Governance Tasks", href: "/governance-tasks", icon: FaTasks },
   { name: "Audit Findings", href: "/audit-findings", icon: FaClipboardCheck },
-  { name: "Portfolio Management", href: "/portfolio-management", icon: FaBriefcase },
+  { name: "Portfolio Management", href: "/portofolio-management", icon: FaBriefcase },
   { name: "Admin Config", href: "/admin-config", icon: FaCog },
 ];
 
