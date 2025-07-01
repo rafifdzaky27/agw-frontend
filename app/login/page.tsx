@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { FaSun, FaMoon } from "react-icons/fa";
 
 export default function Home() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { login } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,8 +52,16 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col md:flex-row-reverse ">
-      <div className="flex flex-col items-center justify-center w-full md:w-1/2 bg-blue-600 text-white">
+    <div className="h-screen w-full flex flex-col md:flex-row-reverse relative">
+      {/* Theme Toggle Button - Bottom Left */}
+      <button
+        onClick={toggleTheme}
+        className="absolute bottom-4 left-4 p-3 rounded-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition duration-200 shadow-lg z-10"
+        aria-label="Toggle theme"
+      >
+        {theme === "dark" ? <FaSun className="text-yellow-400" size={20} /> : <FaMoon className="text-gray-600" size={20} />}
+      </button>
+      <div className="flex flex-col items-center justify-center w-full md:w-1/2 bg-blue-600 dark:bg-blue-900 text-white dark:text-blue-100">
         <div className="flex flex-col gap-2 md:gap-4 w-full md:w-3/4 p-4 md:p-0 text-start">
           <motion.h1
             initial={{ opacity: 0, scale: 0.9 }}
@@ -90,7 +101,7 @@ export default function Home() {
               <input
                 type="text"
                 placeholder="Enter username"
-                className="w-full px-4 py-2 border rounded-lg bg-slate-200 focus:ring focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-lg bg-slate-200 text-black focus:ring focus:ring-blue-500"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -103,7 +114,7 @@ export default function Home() {
               <input
                 type="password"
                 placeholder="Enter password"
-                className="w-full px-4 py-2 border rounded-lg bg-slate-200 focus:ring focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded-lg bg-slate-200 text-black focus:ring focus:ring-blue-500"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
