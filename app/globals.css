@@ -20,6 +20,16 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Smooth transitions for all theme-related changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Prevent transition on page load */
+.preload * {
+  transition: none !important;
+}
+
 /* Utility classes using CSS variables (with Tailwind config) */
 .bg-background {
   background-color: var(--background) !important;
