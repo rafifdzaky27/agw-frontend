@@ -91,7 +91,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
       <aside
         id="sidebar"
         className={`
-          fixed top-0 left-0 h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-all duration-300 ease-in-out z-40 border-r border-gray-200 dark:border-gray-800
+          fixed top-0 left-0 h-full bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-transform duration-300 ease-in-out z-40 border-r border-gray-200 dark:border-gray-800
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           w-56 md:w-60 shadow-xl flex flex-col
           ${className}
