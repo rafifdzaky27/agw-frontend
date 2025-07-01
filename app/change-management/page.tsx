@@ -439,7 +439,7 @@ export default function ChangeManagement() {
     };
 
     const selectedStatusCount = selectedStatuses.length;
-    const statusText = selectedStatusCount === 0 ? "None Selected" : `${selectedStatusCount} Selected`;
+    const statusText = selectedStatusCount === 0 ? "All Status" : `${selectedStatusCount} Selected`;
 
     return (
         <ProtectedRoute>
@@ -451,31 +451,31 @@ export default function ChangeManagement() {
                     </h1>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
-                        <div className="flex justify-between items-stretch gap-12">
-                            <div className="flex items-end space-x-4 mb-1">
+                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-stretch gap-4">
+                            <div className="flex flex-wrap items-end gap-2 sm:gap-4">
                                 <button
-                                    className="w-32 h-[38px] px-3 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
+                                    className="flex-1 sm:flex-none sm:w-36 h-[42px] px-4 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
                                     onClick={() => router.push("/change-request-form")}
                                 >
                                     <FaPlus className="text-sm" />
                                     <span className="text-sm">Add Request</span>
                                 </button>
-                                <button className="w-24 h-[38px] px-3 bg-green-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-green-700 transition duration-200 font-medium" onClick={exportToExcel}>
+                                <button className="flex-1 sm:flex-none sm:w-28 h-[42px] px-4 bg-green-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-green-700 transition duration-200 font-medium" onClick={exportToExcel}>
                                     <FaFileExport className="text-sm" />
                                     <span className="text-sm">Export</span>
                                 </button>
-                                <button className="w-24 h-[38px] px-3 bg-yellow-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-yellow-700 transition duration-200 font-medium" onClick={handleAlertClick}>
+                                <button className="flex-1 sm:flex-none sm:w-28 h-[42px] px-4 bg-yellow-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-yellow-700 transition duration-200 font-medium" onClick={handleAlertClick}>
                                     <FaExclamationTriangle className="text-sm" />
                                     <span className="text-sm">Alert</span>
                                 </button>
                             </div>
 
-                            <div className="flex items-stretch space-x-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-stretch gap-2 sm:gap-4">
                                 <div className="flex flex-col justify-start">
-                                    <label htmlFor="timeReference" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Reference:</label>
+                                    <label htmlFor="timeReference" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference:</label>
                                     <select
                                         id="timeReference"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
+                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={timeReference}
                                         onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
                                     >
@@ -485,10 +485,10 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Start Date:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
+                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         placeholder="Select start date"
@@ -497,10 +497,10 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">End Date:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
+                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         placeholder="Select end date"
@@ -509,68 +509,61 @@ export default function ChangeManagement() {
                                 </div>
 
                                 <div className="flex flex-col justify-start relative">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Status:</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status:</label>
                                     <div className="relative">
                                         <button
                                             type="button"
-                                            className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm text-left"
+                                            className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm text-left outline-none min-w-[120px]"
                                             onClick={() => setIsStatusModalOpen(true)}
-                                            style={{ width: '200px' }}
                                         >
-                                            {statusText}
+                                            <span className="block truncate">{statusText}</span>
                                         </button>
                                     </div>
 
                                     {isStatusModalOpen && (
-                                        <div className="absolute left-0 top-full mt-1 z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
-                                            <div className="py-1">
-                                                {statusOptions.map((option) => (
-                                                    <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="form-checkbox h-5 w-5 text-blue-500 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
-                                                            value={option.value}
-                                                            checked={selectedStatuses.includes(option.value)}
-                                                            onChange={() => handleStatusChange(option.value)}
-                                                        />
-                                                        <span>{option.label}</span>
-                                                    </label>
-                                                ))}
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setIsStatusModalOpen(false)}></div>
+                                            <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl ring-1 ring-black ring-opacity-5 overflow-hidden w-56">
+                                                <div className="py-1">
+                                                    {statusOptions.map((option) => (
+                                                        <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="form-checkbox h-5 w-5 text-blue-500 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
+                                                                value={option.value}
+                                                                checked={selectedStatuses.includes(option.value)}
+                                                                onChange={() => handleStatusChange(option.value)}
+                                                            />
+                                                            <span>{option.label}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 flex justify-between border-t border-gray-200 dark:border-gray-500">
+                                                    <button
+                                                        type="button"
+                                                        className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
+                                                        onClick={handleClearAllStatuses}
+                                                    >
+                                                        Clear
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
+                                                        onClick={handleSelectAllStatuses}
+                                                    >
+                                                        Select All
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 flex justify-between border-t border-gray-200 dark:border-gray-500">
-                                                <button
-                                                    type="button"
-                                                    className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
-                                                    onClick={handleClearAllStatuses}
-                                                >
-                                                    Clear
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
-                                                    onClick={handleSelectAllStatuses}
-                                                >
-                                                    Select All
-                                                </button>
-                                            </div>
-                                            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 border-t border-gray-200 dark:border-gray-500">
-                                                <button
-                                                    type="button"
-                                                    className="w-full text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
-                                                    onClick={() => setIsStatusModalOpen(false)}
-                                                >
-                                                    Close
-                                                </button>
-                                            </div>
-                                        </div>
+                                        </>
                                     )}
                                 </div>
 
-                                <div className="flex flex-col justify-start">
-                                    <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Sort By:</label>
+                                <div className="flex flex-col justify-start col-span-2 sm:col-span-1">
+                                    <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By:</label>
                                     <select
                                         id="sortBy"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
+                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
                                     >
@@ -594,16 +587,16 @@ export default function ChangeManagement() {
                 </div>
             </div>
             {isAlertModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden w-full max-w-2xl text-gray-900 dark:text-white">
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between flex-shrink-0">
                             <h2 className="text-lg font-bold">Request Alert</h2>
                             <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
                                 <FaTimes className="h-6 w-6" />
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-6 flex-1 overflow-y-auto">
                             <p className="text-gray-600 dark:text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
 
                             <div className="flex flex-wrap gap-2 mb-4">
@@ -632,24 +625,24 @@ export default function ChangeManagement() {
                                 </button>
                             </div>
 
-                            <div className="mb-4 flex flex-col">
-                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject:</label>
+                            <div className="mb-4">
+                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject:</label>
                                 <input
                                     type="text"
                                     id="alertSubject"
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                    className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white outline-none"
                                     value={alertSubject}
                                     onChange={(e) => setAlertSubject(e.target.value)}
                                     placeholder="Enter subject"
                                 />
                             </div>
 
-                            <div className="mb-4 flex flex-col">
-                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message:</label>
+                            <div className="mb-4">
+                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message:</label>
                                 <textarea
                                     id="alertText"
-                                    rows={18}
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                    rows={12}
+                                    className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white outline-none resize-none"
                                     value={alertText}
                                     onChange={(e) => setAlertText(e.target.value)}
                                     placeholder="Enter your message"
@@ -657,15 +650,15 @@ export default function ChangeManagement() {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex justify-end gap-2">
+                        <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-2 flex-shrink-0">
                             <button
-                                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                                className="w-full sm:w-auto bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200"
                                 onClick={() => setIsAlertModalOpen(false)}
                             >
                                 Cancel
                             </button>
                             <button
-                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                                className="w-full sm:w-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
                                 onClick={handleSendAlerts}
                             >
                                 Send
