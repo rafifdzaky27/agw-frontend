@@ -449,7 +449,6 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={() => onDelete(task.id)}
                 onClick={handleDeleteClick}
               >
                 Delete
