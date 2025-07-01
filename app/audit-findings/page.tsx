@@ -410,6 +410,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
   // State for confirmation modal
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -429,6 +430,23 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
   const cancelSave = () => {
     setIsConfirmationOpen(false);
+  };
+
+  // Function to open delete confirmation modal
+  const handleDeleteClick = () => {
+    setIsDeleteConfirmationOpen(true);
+  };
+
+  // Function to confirm delete after modal confirmation
+  const confirmDelete = () => {
+    if (finding) {
+      onDelete(finding.id);
+    }
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteConfirmationOpen(false);
   };
 
   return (
@@ -598,7 +616,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={() => finding && onDelete(finding.id)}
+                 onClick={handleDeleteClick}
               >
                 Delete
               </button>
@@ -611,6 +629,14 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
             onConfirm={confirmSave}
             onCancel={cancelSave}
             message="Are you sure you want to save changes to this audit finding?"
+          />
+           
+          {/* Confirmation Modal for Delete */}
+          <ConfirmationModal
+            isOpen={isDeleteConfirmationOpen}
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+            message="Are you sure you want to delete this audit finding? This action cannot be undone."
           />
         </div>
       </div>
