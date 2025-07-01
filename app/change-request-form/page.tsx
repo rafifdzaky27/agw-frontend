@@ -196,7 +196,7 @@ export default function ChangeRequestForm() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <BackButton />
@@ -208,7 +208,7 @@ export default function ChangeRequestForm() {
           {error && <div className="text-center text-red-600 dark:text-red-400 font-medium">{error}</div>}
 
           {(!loading && !error) && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
               <div className="flex flex-row gap-6">
                 {/* Column 1 */}
                 <div className="flex flex-col w-1/3 gap-6">

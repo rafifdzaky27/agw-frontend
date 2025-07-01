@@ -287,7 +287,7 @@ export default function ChangeRequestDetails() {
     if (loading) {
         return (
             <ProtectedRoute>
-                <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex">
+                   <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                     <Sidebar />
                     <div className="flex-1 md:ml-60 p-6">
                         <h1 className="text-3xl font-bold mb-6 text-center">Loading...</h1>
@@ -300,7 +300,7 @@ export default function ChangeRequestDetails() {
     if (error) {
         return (
             <ProtectedRoute>
-                <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex">
+                   <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                     <Sidebar />
                     <div className="flex-1 md:ml-60 p-6">
                         <h1 className="text-3xl font-bold mb-6 text-center">Error</h1>
@@ -315,7 +315,7 @@ export default function ChangeRequestDetails() {
         return (
             <ProtectedRoute>
 
-                <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex">
+                   <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                     <Sidebar />
                     <div className="flex-1 md:ml-60 p-6">
                         <h1 className="text-3xl font-bold mb-6 text-center">Request Not Found</h1>
@@ -923,17 +923,17 @@ export default function ChangeRequestDetails() {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white flex">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
                     <BackButton />
                     <div className="flex items-center mb-6">
-                        <h1 className="text-3xl font-bold text-center flex-grow text-black dark:text-white">Edit Change Request</h1>
+                        <h1 className="text-3xl font-bold text-center flex-grow text-black dark:text-white">Change Request Detail</h1>
                     </div>
 
-                    <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded border-2 border-gray-300 dark:border-gray-600 relative">
+                    <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg relative">
                         <div className="flex justify-between items-center mb-3">
-                            <h2 className="text-2xl font-semibold text-black dark:text-white">Request Flow</h2>
+                            <h2 className="text-2xl font-semibold">Request Flow</h2>
                             <button
                                 className="border font-medium border-blue-500 dark:border-white text-blue-600 dark:text-white rounded-full px-4 py-1 transition duration-300 hover:bg-blue-100 dark:hover:bg-white hover:text-blue-800 dark:hover:text-gray-800"
                                 onClick={openModal} // Replace with your function
@@ -943,7 +943,7 @@ export default function ChangeRequestDetails() {
                         </div>
 
                         <div className="mb-2 flex items-center">
-                            <span className="font-medium mr-2 text-black dark:text-white">Requested by: </span> <span className="text-black dark:text-white">{formData.requester_name || "N/A"}</span>
+                            <span className="font-medium mr-2">Requested by: </span> <span>{formData.requester_name || "N/A"}</span>
                             <button
                                 className="ml-2 p-2 rounded-lg border border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                                 onClick={handleAlert}
@@ -953,7 +953,7 @@ export default function ChangeRequestDetails() {
                             </button>
                         </div>
                         <div className="mb-4">
-                            <span className="font-medium mr-2 text-black dark:text-white">Approved by:</span> <span className="text-black dark:text-white">{formData.approver_name || "N/A"}</span>
+                            <span className="font-medium mr-2">Approved by:</span> <span>{formData.approver_name || "N/A"}</span>
                         </div>
 
                         <div className="relative w-full">

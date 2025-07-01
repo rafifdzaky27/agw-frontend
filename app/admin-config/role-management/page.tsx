@@ -179,7 +179,7 @@ export default function RoleManagement() {
 
     return (
         <ProtectedRoute allowedRoles={['approver', 'master']}>
-            <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
+                <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">
                     <BackButton />

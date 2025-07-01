@@ -443,20 +443,20 @@ export default function ChangeManagement() {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen text-gray-900 dark:text-white flex">
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">   
                     <h1 className="text-3xl font-bold mb-6 text-center">
                         Change Requests Management
                     </h1>
 
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex justify-between items-stretch gap-12">
                             <div className="flex items-end space-x-4 mb-1">
                                 <button
                                     className="w-32 h-[38px] px-3 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
                                     onClick={() => router.push("/change-request-form")}
-                                    >
+                                >
                                     <FaPlus className="text-sm" />
                                     <span className="text-sm">Add Request</span>
                                 </button>
@@ -475,7 +475,7 @@ export default function ChangeManagement() {
                                     <label htmlFor="timeReference" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Reference:</label>
                                     <select
                                         id="timeReference"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={timeReference}
                                         onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
                                     >
@@ -488,7 +488,7 @@ export default function ChangeManagement() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Start Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         placeholder="Select start date"
@@ -500,7 +500,7 @@ export default function ChangeManagement() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">End Date:</label>
                                     <input
                                         type="date"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         placeholder="Select end date"
@@ -513,7 +513,7 @@ export default function ChangeManagement() {
                                     <div className="relative">
                                         <button
                                             type="button"
-                                            className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                            className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm text-left"
                                             onClick={() => setIsStatusModalOpen(true)}
                                             style={{ width: '200px' }}
                                         >
@@ -522,13 +522,13 @@ export default function ChangeManagement() {
                                     </div>
 
                                     {isStatusModalOpen && (
-                                        <div className="absolute left-0 top-full mt-1 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
+                                        <div className="absolute left-0 top-full mt-1 z-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden" style={{ width: '250px' }}>
                                             <div className="py-1">
                                                 {statusOptions.map((option) => (
-                                                    <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                    <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
                                                         <input
                                                             type="checkbox"
-                                                            className="form-checkbox h-5 w-5 text-blue-500 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
+                                                            className="form-checkbox h-5 w-5 text-blue-500 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
                                                             value={option.value}
                                                             checked={selectedStatuses.includes(option.value)}
                                                             onChange={() => handleStatusChange(option.value)}
@@ -537,26 +537,26 @@ export default function ChangeManagement() {
                                                     </label>
                                                 ))}
                                             </div>
-                                            <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700 flex justify-between">
+                                            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 flex justify-between border-t border-gray-200 dark:border-gray-500">
                                                 <button
                                                     type="button"
-                                                    className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
+                                                    className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
                                                     onClick={handleClearAllStatuses}
                                                 >
                                                     Clear
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
+                                                    className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
                                                     onClick={handleSelectAllStatuses}
                                                 >
                                                     Select All
                                                 </button>
                                             </div>
-                                            <div className="px-4 py-2 bg-gray-200 dark:bg-gray-700">
+                                            <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 border-t border-gray-200 dark:border-gray-500">
                                                 <button
                                                     type="button"
-                                                    className="w-full text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
+                                                    className="w-full text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
                                                     onClick={() => setIsStatusModalOpen(false)}
                                                 >
                                                     Close
@@ -570,7 +570,7 @@ export default function ChangeManagement() {
                                     <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 h-1/2">Sort By:</label>
                                     <select
                                         id="sortBy"
-                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
                                     >
@@ -582,6 +582,7 @@ export default function ChangeManagement() {
                             </div>
                         </div>
                     </div>
+
 
                     {loading ? (
                         <p className="text-center text-gray-500 dark:text-gray-300">Loading...</p>

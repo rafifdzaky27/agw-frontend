@@ -185,13 +185,25 @@ export default function AuditFindings() {
     }
   };
 
+  // Get border color based on status
+  const getBorderColor = (status: AuditFinding['status']): string => {
+    switch(status) {
+      case 'done':
+        return '#10b981'; // green-500
+      case 'on progress':
+        return '#f59e0b'; // amber-500
+      default:
+        return '#6b7280'; // gray-500
+    }
+  };
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-white flex">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-center">Audit Findings</h1>
+            <h1 className="text-3xl font-bold flex-1 text-center">Audit Findings</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
               onClick={() => setShowCreateDialog(true)}
@@ -216,7 +228,7 @@ export default function AuditFindings() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
+                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
                       <div className="space-y-3">
@@ -229,7 +241,8 @@ export default function AuditFindings() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
+                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
                                   <div className="font-semibold mb-2">{finding.namaTemuan}</div>
@@ -257,7 +270,7 @@ export default function AuditFindings() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-yellow-100 dark:bg-yellow-900/50' : ''}`}
+                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-yellow-100 dark:bg-yellow-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
                       <div className="space-y-3">
@@ -270,7 +283,8 @@ export default function AuditFindings() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
+                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
                                   <div className="font-semibold mb-2">{finding.namaTemuan}</div>
@@ -298,7 +312,7 @@ export default function AuditFindings() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-green-100 dark:bg-green-900/50' : ''}`}
+                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-green-100 dark:bg-green-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
                       <div className="space-y-3">
@@ -311,7 +325,8 @@ export default function AuditFindings() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 rounded-lg p-3 shadow-md transition cursor-pointer ${snapshot.isDragging ? 'shadow-xl scale-105' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
+                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
                                   <div className="font-semibold mb-2">{finding.namaTemuan}</div>
