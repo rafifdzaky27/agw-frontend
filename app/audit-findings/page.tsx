@@ -245,13 +245,38 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
 
   const [isEdit, setIsEdit] = useState(false);
 
+<<<<<<< Updated upstream
   const handleChange = (e) => {
+=======
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+>>>>>>> Stashed changes
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = () => {
     onSave(formState);
+  };
+
+  // Function to open delete confirmation modal
+  const handleDeleteClick = () => {
+    setIsDeleteConfirmationOpen(true);
+  };
+
+  // Function to confirm delete after modal confirmation
+  const confirmDelete = () => {
+    if (finding) {
+      onDelete(finding.id);
+    }
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteConfirmationOpen(false);
   };
 
   return (
@@ -421,12 +446,35 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+<<<<<<< Updated upstream
                 onClick={() => onDelete(finding.id)}
+=======
+                onClick={handleDeleteClick}
+>>>>>>> Stashed changes
               >
                 Delete
               </button>
             </>
           )}
+<<<<<<< Updated upstream
+=======
+
+          {/* Confirmation Modal for Save */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            message="Are you sure you want to save changes to this audit finding?"
+          />
+          
+          {/* Confirmation Modal for Delete */}
+          <ConfirmationModal
+            isOpen={isDeleteConfirmationOpen}
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+            message="Are you sure you want to delete this audit finding? This action cannot be undone."
+          />
+>>>>>>> Stashed changes
         </div>
       </div>
     </div>

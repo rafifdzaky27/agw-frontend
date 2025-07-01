@@ -295,8 +295,37 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
+<<<<<<< Updated upstream
   const handleSave = () => {
+=======
+  // State for confirmation modal
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
+>>>>>>> Stashed changes
     onSave(formState);
+  };
+
+  // Function to open delete confirmation modal
+  const handleDeleteClick = () => {
+    setIsDeleteConfirmationOpen(true);
+  };
+
+  // Function to confirm delete after modal confirmation
+  const confirmDelete = () => {
+    onDelete(task.id);
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteConfirmationOpen(false);
   };
 
   return (
@@ -421,11 +450,31 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
                 onClick={() => onDelete(task.id)}
+                onClick={handleDeleteClick}
               >
                 Delete
               </button>
             </>
           )}
+<<<<<<< Updated upstream
+=======
+
+          {/* Confirmation Modal for Save */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            message="Are you sure you want to save changes to this task?"
+          />
+          
+          {/* Confirmation Modal for Delete */}
+          <ConfirmationModal
+            isOpen={isDeleteConfirmationOpen}
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+            message="Are you sure you want to delete this task? This action cannot be undone."
+          />
+>>>>>>> Stashed changes
         </div>
       </div>
     </div>
