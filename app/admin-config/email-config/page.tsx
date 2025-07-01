@@ -199,99 +199,96 @@ export default function Dashboard() {
                         <h1 className="text-3xl font-bold text-center flex-grow">Email Configuration</h1>
                     </div>
 
-                    <form className="flex flex-col gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-                         {/* Automatic Reminder & Request Limit */}
-                        <div className="flex flex-row gap-6">
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="reminderDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Automatic Reminder (Days):</label>
-                                <input
-                                    type="number"
-                                    id="reminderDays"
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.reminderDays}
-                                    onChange={handleChange}
-                                />
+                    <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full">
+                        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Email Configuration</h2>
+                        <form>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Reminder Days */}
+                                <div>
+                                    <label htmlFor="reminderDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reminder After (Days):</label>
+                                    <input
+                                        type="number"
+                                        id="reminderDays"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.reminderDays}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                {/* Request Alert Limit */}
+                                <div>
+                                    <label htmlFor="requestAlertLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Request Alert Limit:</label>
+                                    <input
+                                        type="number"
+                                        id="requestAlertLimit"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.requestAlertLimit}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                {/* Request Specific Alert Email Subject */}
+                                <div>
+                                    <label htmlFor="requestAlertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Request Alert Email Subject:</label>
+                                    <input
+                                        type="text"
+                                        id="requestAlertSubject"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.requestAlertSubject}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                {/* Alert Blast Email Subject */}
+                                <div>
+                                    <label htmlFor="alertBlastSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Blast Email Subject:</label>
+                                    <input
+                                        type="text"
+                                        id="alertBlastSubject"
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.alertBlastSubject}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                {/* Request Specific Alert Email Body */}
+                                <div>
+                                    <label htmlFor="requestAlertBody" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Request Alert Email Body:</label>
+                                    <textarea
+                                        id="requestAlertBody"
+                                        rows={12}
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.requestAlertBody}
+                                        onChange={handleChange}
+                                    ></textarea>
+                                </div>
+                                {/* Alert Blast Email Body */}
+                                <div>
+                                    <label htmlFor="alertBlastBody" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alert Blast Email Body:</label>
+                                    <textarea
+                                        id="alertBlastBody"
+                                        rows={12}
+                                        className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                                        value={config.alertBlastBody}
+                                        onChange={handleChange}
+                                    ></textarea>
+                                </div>
                             </div>
-
-                             <div className="flex flex-col w-1/2">
-                                <label htmlFor="requestAlertLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Alert Email Limit:</label>
-                                <input
-                                    type="number"
-                                    id="requestAlertLimit"
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.requestAlertLimit}
-                                    onChange={handleChange}
-                                />
+                            {/* Button Container */}
+                            <div className="flex justify-end gap-4 mt-8">
+                                <button
+                                    type="button"
+                                    onClick={handleReset}
+                                    className="px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-colors"
+                                >
+                                    Reset to Default
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSave}
+                                    className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors"
+                                >
+                                    Save Configuration
+                                </button>
                             </div>
-                         </div>
-                        {/* Two-Column Layout for Email Templates */}
-                        <div className="flex flex-row gap-6">
-                            {/* Request Specific Alert Email Template */}
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="requestAlertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Alert Email Subject:</label>
-                                <input
-                                    type="text"
-                                    id="requestAlertSubject"
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.requestAlertSubject}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            {/* Alert Blast Email Template */}
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="alertBlastSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Alert Blast Email Subject:</label>
-                                <input
-                                    type="text"
-                                    id="alertBlastSubject"
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.alertBlastSubject}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-row gap-6">
-                            {/* Request Specific Alert Email Body */}
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="requestAlertBody" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request Alert Email Body:</label>
-                                <textarea
-                                    id="requestAlertBody"
-                                    rows={20} // Increased rows
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.requestAlertBody}
-                                    onChange={handleChange}
-                                ></textarea>
-                            </div>
-                            {/* Alert Blast Email Body */}
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="alertBlastBody" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Alert Blast Email Body:</label>
-                                <textarea
-                                    id="alertBlastBody"
-                                    rows={20} // Increased rows
-                                    className="mt-1 block w-full p-2 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                                    value={config.alertBlastBody}
-                                    onChange={handleChange}
-                                ></textarea>
-                            </div>
-                        </div>
-                        {/* Button Container */}
-                        <div className="flex justify-between gap-4 mt-3">
-                            <button
-                                type="button"
-                                onClick={handleReset}
-                                className="w-1/2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-500 dark:hover:bg-gray-700 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors mr-2"
-                            >
-                                Reset to Default
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleSave}
-                                className="w-1/2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors"
-                            >
-                                Save Configuration
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </ProtectedRoute>

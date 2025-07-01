@@ -229,7 +229,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {tasks
                           .filter(task => task.status === 'not yet')
                           .map((task, index) => (
@@ -271,7 +271,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {tasks
                           .filter(task => task.status === 'on progress')
                           .map((task, index) => (
@@ -313,7 +313,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {tasks
                           .filter(task => task.status === 'done')
                           .map((task, index) => (

@@ -105,7 +105,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto py-6">
           <ul className="space-y-2 px-3">
             {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
               const Icon = item.icon;
               
               return (

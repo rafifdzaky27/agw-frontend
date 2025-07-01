@@ -231,7 +231,7 @@ export default function AuditFindings() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {auditFindings
                           .filter(finding => finding.status === 'not yet')
                           .map((finding, index) => (
@@ -270,10 +270,10 @@ export default function AuditFindings() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-yellow-100 dark:bg-yellow-900/50' : ''}`}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4"
                     >
                       <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {auditFindings
                           .filter(finding => finding.status === 'on progress')
                           .map((finding, index) => (
@@ -315,7 +315,7 @@ export default function AuditFindings() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-green-100 dark:bg-green-900/50' : ''}`}
                     >
                       <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
-                      <div className="space-y-3">
+                      <div className="space-y-3 min-h-[32rem]">
                         {auditFindings
                           .filter(finding => finding.status === 'done')
                           .map((finding, index) => (
