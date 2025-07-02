@@ -18,16 +18,56 @@ import {
   FaCog,
   FaSignOutAlt,
   FaChevronRight,
-  FaBriefcase
+  FaBriefcase,
+  FaChevronDown,
+  FaChevronUp,
+  FaShieldAlt,
+  FaCogs,
+  FaSitemap
 } from "react-icons/fa";
 
 // Define navigation items with icons for better UX
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: FaHome },
-  { name: "Change Management", href: "/change-management", icon: FaExchangeAlt },
-  { name: "Governance\nTasks", href: "/governance-tasks", icon: FaTasks },
-  { name: "Audit Findings", href: "/audit-findings", icon: FaClipboardCheck },
-  { name: "Portfolio Management", href: "/portfolio-management", icon: FaBriefcase },
+];
+
+// Define dropdown sections
+const DROPDOWN_SECTIONS = [
+  {
+    name: "IT Governance",
+    icon: FaShieldAlt,
+    items: [
+      { name: "Governance Workload", href: "/governance-tasks" },
+      { name: "Audit Findings", href: "/audit-findings" },
+      { name: "Audit Universe", href: "/it-governance/audit-universe" },
+      { name: "Policy Management", href: "/it-governance/policy-management" },
+    ]
+  },
+  {
+    name: "IT Management",
+    icon: FaCogs,
+    items: [
+      { name: "IT Management Workload", href: "/it-management/workload" },
+      { name: "Portfolio Management", href: "/portfolio-management" },
+      { name: "Change Management", href: "/change-management" },
+      { name: "Finance Management", href: "/it-management/finance-management" },
+      { name: "Vendor Management", href: "/it-management/vendor-management" },
+    ]
+  },
+  {
+    name: "IT Architecture",
+    icon: FaSitemap,
+    items: [
+      { name: "Architecture Design", href: "/it-architecture/architecture-design" },
+      { name: "Technology Standards", href: "/it-architecture/technology-standards" },
+      { name: "Integration Patterns", href: "/it-architecture/integration-patterns" },
+      { name: "Architecture Review", href: "/it-architecture/architecture-review" },
+    ]
+  }
+];
+
+// Define admin items (placed at bottom)
+const ADMIN_ITEMS = [
   { name: "Admin Config", href: "/admin-config", icon: FaCog },
 ];
 
@@ -43,6 +83,9 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   
   // State for responsive sidebar
   const [isOpen, setIsOpen] = useState(false);
+  
+  // State for dropdown sections
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   
   // Close sidebar when route changes (mobile)
   useEffect(() => {
@@ -73,6 +116,27 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const handleLogout = () => {
     logout();
     router.push("/");
+  };
+
+  const toggleDropdown = (sectionName: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
+  const isDropdownItemActive = (sectionItems: { href: string }[]) => {
+    return sectionItems.some(item => {
+      // Handle exact matches for specific routes
+      if (item.href === '/governance-tasks' || 
+          item.href === '/audit-findings' || 
+          item.href === '/change-management' || 
+          item.href === '/portfolio-management') {
+        return pathname === item.href;
+      }
+      // Handle prefix matches for other routes
+      return pathname.startsWith(item.href);
+    });
   };
 
   return (
@@ -130,6 +194,97 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                 </li>
               );
             })}
+            
+            {/* Dropdown Sections */}
+            {DROPDOWN_SECTIONS.map((section) => {
+              const isDropdownOpen = openDropdowns[section.name];
+              const hasActiveItem = isDropdownItemActive(section.items);
+              const SectionIcon = section.icon;
+              
+              return (
+                <li key={section.name} className="mt-4">
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleDropdown(section.name)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                      ${hasActiveItem 
+                        ? 'bg-gradient-to-r from-purple-600 to-purple-500 dark:from-purple-700 dark:to-purple-600 text-white shadow-md' 
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
+                    `}
+                  >
+                    <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-purple-700 dark:bg-purple-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                      <SectionIcon size={16} />
+                    </div>
+                    <span className="font-medium flex-1 text-left">{section.name}</span>
+                    {isDropdownOpen ? (
+                      <FaChevronUp size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                    ) : (
+                      <FaChevronDown size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                    )}
+                  </button>
+                  
+                  {/* Dropdown Items */}
+                  {isDropdownOpen && (
+                    <ul className="mt-2 ml-4 space-y-1">
+                      {section.items.map((item) => {
+                        const isItemActive = pathname === item.href;
+                        
+                        return (
+                          <li key={item.href}>
+                            <Link
+                              href={item.href}
+                              className={`
+                                flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm
+                                ${isItemActive 
+                                  ? 'bg-gradient-to-r from-purple-500 to-purple-400 dark:from-purple-600 dark:to-purple-500 text-white shadow-sm' 
+                                  : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}
+                              `}
+                            >
+                              <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-purple-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
+                              <span className="font-medium">{item.name}</span>
+                              {isItemActive && (
+                                <FaChevronRight size={10} className="ml-auto text-purple-200" />
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+            
+            {/* Admin Items - Placed at bottom */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {ADMIN_ITEMS.map((item) => {
+                const isActive = item.href === '/admin-config' ? pathname.startsWith(item.href) : pathname === item.href;
+                const Icon = item.icon;
+                
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                        ${isActive 
+                          ? 'bg-gradient-to-r from-gray-600 to-gray-500 dark:from-gray-700 dark:to-gray-600 text-white shadow-md' 
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
+                      `}
+                    >
+                      <div className={`p-1.5 rounded-md ${isActive ? 'bg-gray-700 dark:bg-gray-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                        <Icon size={16} />
+                      </div>
+                      <span className="font-medium">{item.name}</span>
+                      {isActive && (
+                        <FaChevronRight size={12} className="ml-auto text-gray-300" />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </div>
           </ul>
         </nav>  
         
