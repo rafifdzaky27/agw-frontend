@@ -37,8 +37,8 @@ const DROPDOWN_SECTIONS = [
     name: "IT Governance",
     icon: FaShieldAlt,
     items: [
-      { name: "Governance Workload", href: "/governance-tasks" },
-      { name: "Audit Findings", href: "/audit-findings" },
+      { name: "Governance Workload", href: "/it-governance/governance-workload" },
+      { name: "Audit Findings", href: "/it-governance/audit-findings" },
       { name: "Audit Universe", href: "/it-governance/audit-universe" },
       { name: "Policy Management", href: "/it-governance/policy-management" },
     ]
@@ -47,7 +47,7 @@ const DROPDOWN_SECTIONS = [
     name: "IT Management",
     icon: FaCogs,
     items: [
-      { name: "IT Management Workload", href: "/it-management/workload" },
+      { name: "Management Workload", href: "/it-management/it-management-workload" },
       { name: "Portfolio Management", href: "/portfolio-management" },
       { name: "Change Management", href: "/change-management" },
       { name: "Finance Management", href: "/it-management/finance-management" },
@@ -58,10 +58,7 @@ const DROPDOWN_SECTIONS = [
     name: "IT Architecture",
     icon: FaSitemap,
     items: [
-      { name: "Architecture Design", href: "/it-architecture/architecture-design" },
-      { name: "Technology Standards", href: "/it-architecture/technology-standards" },
-      { name: "Integration Patterns", href: "/it-architecture/integration-patterns" },
-      { name: "Architecture Review", href: "/it-architecture/architecture-review" },
+      { name: "Architecture Workload", href: "/it-architecture/it-architecture-workload" },
     ]
   }
 ];
@@ -128,14 +125,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const isDropdownItemActive = (sectionItems: { href: string }[]) => {
     return sectionItems.some(item => {
       // Handle exact matches for specific routes
-      if (item.href === '/governance-tasks' || 
-          item.href === '/audit-findings' || 
-          item.href === '/change-management' || 
+      if (item.href === '/change-management' || 
           item.href === '/portfolio-management') {
         return pathname === item.href;
       }
       // Handle prefix matches for other routes
-      return pathname.startsWith(item.href);
+      return pathname.startsWith(item.href) && item.href !== '/';
     });
   };
 

@@ -29,12 +29,12 @@ export default function ManagementTasks() {
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
-  // Fetch data for governance tasks
+  // Fetch data for management tasks
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/governance-tasks`);
+        const response = await fetch(`${API_BASE_URL}/it-management-tasks`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -55,54 +55,90 @@ export default function ManagementTasks() {
     fetchData();
   }, [API_BASE_URL]);
 
-  // Function to save new governance task
+  // Function to save new management task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
+      console.log('=== Frontend: Creating new task ===');
+      console.log('API URL:', `${API_BASE_URL}/it-management-tasks`);
+      console.log('Task data:', JSON.stringify(task, null, 2));
+      
+      const response = await fetch(`${API_BASE_URL}/it-management-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task),
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
       }
       
       const newTask = await response.json();
-      setTasks((prev: Task[]) => [...prev, newTask]);
+      console.log('New task created:', JSON.stringify(newTask, null, 2));
+      
+      setTasks((prev: Task[]) => {
+        const updated = [...prev, newTask];
+        console.log('Updated tasks count:', updated.length);
+        return updated;
+      });
       setShowCreateDialog(false);
+      
+      // Show success message
+      alert('Task created successfully!');
     } catch (error) {
       console.error("Failed to save data", error);
+      alert(`Failed to save task: ${error.message}`);
     }
   }, [API_BASE_URL]);
 
-  // Function to update existing governance task
+  // Function to update existing management task
   const handleSave = useCallback(async (task: Task) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
+      console.log('=== Frontend: Updating task ===');
+      console.log('API URL:', `${API_BASE_URL}/it-management-tasks/${task.id}`);
+      console.log('Task data:', JSON.stringify(task, null, 2));
+      
+      const response = await fetch(`${API_BASE_URL}/it-management-tasks/${task.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task),
       });
       
+      console.log('Update response status:', response.status);
+      console.log('Update response ok:', response.ok);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Update error response:', errorText);
+        throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
       }
       
       const updatedTask = await response.json();
-      setTasks((prev: Task[]) =>
-        prev.map((item) => (item.id === task.id ? updatedTask : item))
-      );
+      console.log('Task updated:', JSON.stringify(updatedTask, null, 2));
+      
+      setTasks((prev: Task[]) => {
+        const updated = prev.map((item) => (item.id === task.id ? updatedTask : item));
+        console.log('Tasks updated, count:', updated.length);
+        return updated;
+      });
       setShowDialog(false);
+      
+      // Show success message
+      alert('Task updated successfully!');
     } catch (error) {
       console.error("Failed to update data", error);
+      alert(`Failed to update task: ${error.message}`);
     }
   }, [API_BASE_URL]);
 
-  // Function to delete governance task
+  // Function to delete management task
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/it-management-tasks/${id}`, { 
         method: "DELETE" 
       });
       
@@ -117,7 +153,7 @@ export default function ManagementTasks() {
     }
   }, [API_BASE_URL]);
 
-  // Function to show governance task details
+  // Function to show management task details
   const handleShow = useCallback((id: string) => {
     const task = tasks.find((item) => item.id === id);
     setCurrentTask(task || null);
@@ -201,7 +237,7 @@ export default function ManagementTasks() {
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">Governance Tasks</h1>
+            <h1 className="text-3xl font-bold flex-1 text-center">IT Management Tasks</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
               onClick={() => setShowCreateDialog(true)}
@@ -215,7 +251,7 @@ export default function ManagementTasks() {
           
           {loading ? (
             <div className="flex justify-center">
-              <p className="text-gray-500 dark:text-gray-400">Loading governance tasks...</p>
+              <p className="text-gray-500 dark:text-gray-400">Loading IT management tasks...</p>
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
