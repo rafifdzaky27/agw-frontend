@@ -204,18 +204,18 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                       ${hasActiveItem 
-                        ? 'bg-gradient-to-r from-purple-600 to-purple-500 dark:from-purple-700 dark:to-purple-600 text-white shadow-md' 
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 text-white shadow-md' 
                         : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
                     `}
                   >
-                    <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-purple-700 dark:bg-purple-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                    <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                       <SectionIcon size={16} />
                     </div>
                     <span className="font-medium flex-1 text-left">{section.name}</span>
                     {isDropdownOpen ? (
-                      <FaChevronUp size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                      <FaChevronUp size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
                     ) : (
-                      <FaChevronDown size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                      <FaChevronDown size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
                     )}
                   </button>
                   
@@ -232,14 +232,14 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                               className={`
                                 flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm
                                 ${isItemActive 
-                                  ? 'bg-gradient-to-r from-purple-500 to-purple-400 dark:from-purple-600 dark:to-purple-500 text-white shadow-sm' 
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-400 dark:from-blue-600 dark:to-blue-500 text-white shadow-sm' 
                                   : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}
                               `}
                             >
-                              <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-purple-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-blue-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
                               <span className="font-medium">{item.name}</span>
                               {isItemActive && (
-                                <FaChevronRight size={10} className="ml-auto text-purple-200" />
+                                <FaChevronRight size={10} className="ml-auto text-blue-200" />
                               )}
                             </Link>
                           </li>
@@ -264,16 +264,16 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                         ${isActive 
-                          ? 'bg-gradient-to-r from-gray-600 to-gray-500 dark:from-gray-700 dark:to-gray-600 text-white shadow-md' 
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 text-white shadow-md' 
                           : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
                       `}
                     >
-                      <div className={`p-1.5 rounded-md ${isActive ? 'bg-gray-700 dark:bg-gray-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                      <div className={`p-1.5 rounded-md ${isActive ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                         <Icon size={16} />
                       </div>
                       <span className="font-medium">{item.name}</span>
                       {isActive && (
-                        <FaChevronRight size={12} className="ml-auto text-gray-300" />
+                        <FaChevronRight size={12} className="ml-auto text-blue-300" />
                       )}
                     </Link>
                   </li>
