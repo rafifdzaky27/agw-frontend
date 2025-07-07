@@ -48,7 +48,7 @@ const DROPDOWN_SECTIONS = [
     icon: FaCogs,
     items: [
       { name: "Management Workload", href: "/it-management/it-management-workload" },
-      { name: "Portfolio Management", href: "/portfolio-management" },
+      { name: "Portfolio Management", href: "it-management/portfolio-management" },
       { name: "Change Management", href: "/it-management/change-management" },
       { name: "Finance Management", href: "/it-management/finance-management" },
       { name: "Vendor Management", href: "/it-management/vendor-management" },
