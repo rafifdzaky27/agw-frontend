@@ -15,19 +15,37 @@ interface Task {
   tanggal: string;
   pic: string;
   status: 'not yet' | 'on progress' | 'done';
+  tag: string;
 }
 
 export default function GovernanceTasks() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
   const API_BASE_URL = `${BACKEND_IP}/api`;
+
+  // Filter tasks based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredTasks(tasks);
+    } else {
+      const filtered = tasks.filter(task => 
+        task.tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.namaTugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.catatan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.pic.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTasks(filtered);
+    }
+  }, [tasks, searchTerm]);
 
   // Fetch data for governance tasks
   useEffect(() => {
@@ -132,7 +150,7 @@ export default function GovernanceTasks() {
       return;
     }
 
-    const task = tasks.find(t => t.id === draggableId);
+    const task = filteredTasks.find(t => t.id === draggableId);
 
     // Jika kartu dipindahkan ke kolom baru, perbarui statusnya
     if (task && destination.droppableId !== source.droppableId) {
@@ -212,6 +230,27 @@ export default function GovernanceTasks() {
               Add Task
             </button>
           </div>
+
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search tasks by tag, name, notes, or person in charge..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-3 pl-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <svg 
+                className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
           
           {loading ? (
             <div className="flex justify-center">
@@ -230,7 +269,7 @@ export default function GovernanceTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'not yet')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -254,7 +293,7 @@ export default function GovernanceTasks() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'not yet').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'not yet').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -272,7 +311,7 @@ export default function GovernanceTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'on progress')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -296,7 +335,7 @@ export default function GovernanceTasks() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'on progress').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'on progress').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -314,7 +353,7 @@ export default function GovernanceTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'done')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -338,7 +377,7 @@ export default function GovernanceTasks() {
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'done').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'done').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -372,7 +411,6 @@ export default function GovernanceTasks() {
     </ProtectedRoute>
   );
 }
-
 // Task Dialog Component
 interface TaskDialogProps {
   task: Task;
@@ -392,6 +430,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
+    tag: task.tag || "",
   });
 
   const [isEdit, setIsEdit] = useState(false);
@@ -483,7 +522,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           <div>
             <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             {!isEdit ? (
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(formState.status)}`}>
+              <span className={`px-2 py-1 text-sm font-bold rounded-full ${getBadgeClass(formState.status)}`}>
                 {getStatusText(formState.status)}
               </span>
             ) : (
@@ -497,6 +536,29 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
                 <option value="on progress">In Progress</option>
                 <option value="done">Done</option>
               </select>
+            )}
+          </div>
+
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
+            {!isEdit ? (
+              <div>
+                {formState.tag ? (
+                  <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
+                    {formState.tag}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">No tag</span>
+                )}
+              </div>
+            ) : (
+              <input
+                name="tag"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                placeholder="Enter tag"
+                value={formState.tag}
+                onChange={handleChange}
+              />
             )}
           </div>
         </div>
@@ -535,7 +597,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             <>
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleSaveClick} // Use the new click handler
+                onClick={handleSaveClick}
               >
                 Save
               </button>
@@ -571,7 +633,6 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             message="Are you sure you want to save changes to this task?"
           />
 
-           
           {/* Confirmation Modal for Delete */}
           <ConfirmationModal
             isOpen={isDeleteConfirmationOpen}
@@ -597,7 +658,8 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     catatan: "",
     tanggal: "",
     status: "not yet" as const,
-    pic: ""
+    pic: "",
+    tag: ""
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -668,6 +730,17 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
               <option value="done">Done</option>
             </select>
           </div>
+
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
+            <input
+              name="tag"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+              placeholder="Enter tag (e.g., urgent, review, compliance)"
+              value={formState.tag}
+              onChange={handleChange}
+            />
+          </div>
         </div>
         
         <div className="mb-6">
@@ -696,7 +769,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
         <div className="flex justify-end gap-3">
           <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleSaveClick} // Use the new click handler
+            onClick={handleSaveClick}
           >
             Save
           </button>
