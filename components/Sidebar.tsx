@@ -49,7 +49,7 @@ const DROPDOWN_SECTIONS = [
     items: [
       { name: "Management Workload", href: "/it-management/it-management-workload" },
       { name: "Portfolio Management", href: "/portfolio-management" },
-      { name: "Change Management", href: "/change-management" },
+      { name: "Change Management", href: "/it-management/change-management" },
       { name: "Finance Management", href: "/it-management/finance-management" },
       { name: "Vendor Management", href: "/it-management/vendor-management" },
     ]
