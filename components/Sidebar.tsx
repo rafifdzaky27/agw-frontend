@@ -83,6 +83,20 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   
   // State for dropdown sections
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+  const [manuallyClosedDropdowns, setManuallyClosedDropdowns] = useState<Record<string, boolean>>({});
+  
+  // Auto-open dropdowns with active items on route change, but respect manual close
+  useEffect(() => {
+    const newOpenDropdowns = { ...openDropdowns };
+    DROPDOWN_SECTIONS.forEach(section => {
+      if (isDropdownItemActive(section.items) && !manuallyClosedDropdowns[section.name]) {
+        newOpenDropdowns[section.name] = true;
+      }
+    });
+    setOpenDropdowns(newOpenDropdowns);
+    // Reset manual close state when route changes
+    setManuallyClosedDropdowns({});
+  }, [pathname]);
   
   // Close sidebar when route changes (mobile)
   useEffect(() => {
@@ -116,10 +130,21 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   };
 
   const toggleDropdown = (sectionName: string) => {
+    const isCurrentlyOpen = openDropdowns[sectionName];
+    const hasActiveItem = isDropdownItemActive(DROPDOWN_SECTIONS.find(s => s.name === sectionName)?.items || []);
+    
     setOpenDropdowns(prev => ({
       ...prev,
       [sectionName]: !prev[sectionName]
     }));
+    
+    // Track manual close for sections with active items
+    if (isCurrentlyOpen && hasActiveItem) {
+      setManuallyClosedDropdowns(prev => ({
+        ...prev,
+        [sectionName]: true
+      }));
+    }
   };
 
   const isDropdownItemActive = (sectionItems: { href: string }[]) => {
@@ -161,7 +186,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <h1 className="text-lg font-bold text-center">Architecture and Governance Workspace</h1>
         </div>      
         {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto py-6">
+        <nav className="flex-1 overflow-y-auto py-6 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <ul className="space-y-2 px-3">
             {NAV_ITEMS.map((item) => {
               const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
@@ -181,10 +206,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                     <div className={`p-1.5 rounded-md ${isActive ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                       <Icon size={16} />
                     </div>
-                    <span className="font-medium whitespace-pre-line">{item.name}</span>
-                    {isActive && (
-                      <FaChevronRight size={12} className="ml-auto text-blue-300" />
-                    )}
+                    <span className="font-medium whitespace-pre-line flex-1">{item.name}</span>
+                    <div className="w-3 flex justify-center">
+                      {isActive && (
+                        <FaChevronRight size={12} className="text-blue-300" />
+                      )}
+                    </div>
                   </Link>
                 </li>
               );
@@ -211,16 +238,18 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                     <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                       <SectionIcon size={16} />
                     </div>
-                    <span className="font-medium flex-1 text-left">{section.name}</span>
-                    {isDropdownOpen ? (
-                      <FaChevronUp size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
-                    ) : (
-                      <FaChevronDown size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
-                    )}
+                    <span className="font-medium flex-1 text-left leading-tight">{section.name}</span>
+                    <div className="w-3 flex justify-center">
+                      {isDropdownOpen ? (
+                        <FaChevronUp size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
+                      ) : (
+                        <FaChevronDown size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
+                      )}
+                    </div>
                   </button>
                   
                   {/* Dropdown Items */}
-                  {isDropdownOpen && (
+                  {(isDropdownOpen || (hasActiveItem && !manuallyClosedDropdowns[section.name])) && (
                     <ul className="mt-2 ml-4 space-y-1">
                       {section.items.map((item) => {
                         const isItemActive = pathname === item.href;
@@ -237,10 +266,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                               `}
                             >
                               <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-blue-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
-                              <span className="font-medium">{item.name}</span>
-                              {isItemActive && (
-                                <FaChevronRight size={10} className="ml-auto text-blue-200" />
-                              )}
+                              <span className="font-medium flex-1 leading-tight">{item.name}</span>
+                              <div className="w-3 flex justify-center">
+                                {isItemActive && (
+                                  <FaChevronRight size={10} className="text-blue-200" />
+                                )}
+                              </div>
                             </Link>
                           </li>
                         );
@@ -271,10 +302,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                       <div className={`p-1.5 rounded-md ${isActive ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                         <Icon size={16} />
                       </div>
-                      <span className="font-medium">{item.name}</span>
-                      {isActive && (
-                        <FaChevronRight size={12} className="ml-auto text-blue-300" />
-                      )}
+                      <span className="font-medium flex-1">{item.name}</span>
+                      <div className="w-3 flex justify-center">
+                        {isActive && (
+                          <FaChevronRight size={12} className="text-blue-300" />
+                        )}
+                      </div>
                     </Link>
                   </li>
                 );
@@ -290,7 +323,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           <div className="mb-4 flex items-center justify-between">
             <div className="flex-1 overflow-hidden">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Welcome,</p>
-              <p className="text-sm font-bold truncate">{user.name}</p>
+              <p className="text-sm font-medium truncate">{user.name}</p>
             </div>
             {/* Theme Toggle Button */}
             <button
