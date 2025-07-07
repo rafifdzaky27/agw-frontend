@@ -283,13 +283,6 @@ export default function GovernanceTasks() {
                                   onClick={() => handleShow(task.id)}
                                 >
                                   <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  {task.tag && (
-                                    <div className="mb-2">
-                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
-                                        {task.tag}
-                                      </span>
-                                    </div>
-                                  )}
                                   <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
@@ -332,13 +325,6 @@ export default function GovernanceTasks() {
                                   onClick={() => handleShow(task.id)}
                                 >
                                   <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  {task.tag && (
-                                    <div className="mb-2">
-                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
-                                        {task.tag}
-                                      </span>
-                                    </div>
-                                  )}
                                   <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
@@ -381,13 +367,6 @@ export default function GovernanceTasks() {
                                   onClick={() => handleShow(task.id)}
                                 >
                                   <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  {task.tag && (
-                                    <div className="mb-2">
-                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
-                                        {task.tag}
-                                      </span>
-                                    </div>
-                                  )}
                                   <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
