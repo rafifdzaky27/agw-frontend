@@ -37,8 +37,8 @@ const DROPDOWN_SECTIONS = [
     name: "IT Governance",
     icon: FaShieldAlt,
     items: [
-      { name: "Governance Workload", href: "/governance-tasks" },
-      { name: "Audit Findings", href: "/audit-findings" },
+      { name: "Governance Workload", href: "/it-governance/governance-workload" },
+      { name: "Audit Findings", href: "/it-governance/audit-findings" },
       { name: "Audit Universe", href: "/it-governance/audit-universe" },
       { name: "Policy Management", href: "/it-governance/policy-management" },
     ]
@@ -47,9 +47,9 @@ const DROPDOWN_SECTIONS = [
     name: "IT Management",
     icon: FaCogs,
     items: [
-      { name: "IT Management Workload", href: "/it-management/workload" },
-      { name: "Portfolio Management", href: "/portfolio-management" },
-      { name: "Change Management", href: "/change-management" },
+      { name: "Management Workload", href: "/it-management/it-management-workload" },
+      { name: "Portfolio Management", href: "it-management/portfolio-management" },
+      { name: "Change Management", href: "/it-management/change-management" },
       { name: "Finance Management", href: "/it-management/finance-management" },
       { name: "Vendor Management", href: "/it-management/vendor-management" },
     ]
@@ -58,10 +58,7 @@ const DROPDOWN_SECTIONS = [
     name: "IT Architecture",
     icon: FaSitemap,
     items: [
-      { name: "Architecture Design", href: "/it-architecture/architecture-design" },
-      { name: "Technology Standards", href: "/it-architecture/technology-standards" },
-      { name: "Integration Patterns", href: "/it-architecture/integration-patterns" },
-      { name: "Architecture Review", href: "/it-architecture/architecture-review" },
+      { name: "Architecture Workload", href: "/it-architecture/it-architecture-workload" },
     ]
   }
 ];
@@ -128,14 +125,12 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   const isDropdownItemActive = (sectionItems: { href: string }[]) => {
     return sectionItems.some(item => {
       // Handle exact matches for specific routes
-      if (item.href === '/governance-tasks' || 
-          item.href === '/audit-findings' || 
-          item.href === '/change-management' || 
+      if (item.href === '/change-management' || 
           item.href === '/portfolio-management') {
         return pathname === item.href;
       }
       // Handle prefix matches for other routes
-      return pathname.startsWith(item.href);
+      return pathname.startsWith(item.href) && item.href !== '/';
     });
   };
 
@@ -209,18 +204,18 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                       ${hasActiveItem 
-                        ? 'bg-gradient-to-r from-purple-600 to-purple-500 dark:from-purple-700 dark:to-purple-600 text-white shadow-md' 
+                        ? 'bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 text-white shadow-md' 
                         : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
                     `}
                   >
-                    <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-purple-700 dark:bg-purple-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                    <div className={`p-1.5 rounded-md ${hasActiveItem ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                       <SectionIcon size={16} />
                     </div>
                     <span className="font-medium flex-1 text-left">{section.name}</span>
                     {isDropdownOpen ? (
-                      <FaChevronUp size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                      <FaChevronUp size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
                     ) : (
-                      <FaChevronDown size={12} className={hasActiveItem ? 'text-purple-300' : 'text-gray-400'} />
+                      <FaChevronDown size={12} className={hasActiveItem ? 'text-blue-300' : 'text-gray-400'} />
                     )}
                   </button>
                   
@@ -237,14 +232,14 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                               className={`
                                 flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm
                                 ${isItemActive 
-                                  ? 'bg-gradient-to-r from-purple-500 to-purple-400 dark:from-purple-600 dark:to-purple-500 text-white shadow-sm' 
+                                  ? 'bg-gradient-to-r from-blue-500 to-blue-400 dark:from-blue-600 dark:to-blue-500 text-white shadow-sm' 
                                   : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}
                               `}
                             >
-                              <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-purple-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${isItemActive ? 'bg-blue-200' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
                               <span className="font-medium">{item.name}</span>
                               {isItemActive && (
-                                <FaChevronRight size={10} className="ml-auto text-purple-200" />
+                                <FaChevronRight size={10} className="ml-auto text-blue-200" />
                               )}
                             </Link>
                           </li>
@@ -269,16 +264,16 @@ export default function Sidebar({ className = "" }: SidebarProps) {
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                         ${isActive 
-                          ? 'bg-gradient-to-r from-gray-600 to-gray-500 dark:from-gray-700 dark:to-gray-600 text-white shadow-md' 
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-700 dark:to-blue-600 text-white shadow-md' 
                           : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}
                       `}
                     >
-                      <div className={`p-1.5 rounded-md ${isActive ? 'bg-gray-700 dark:bg-gray-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+                      <div className={`p-1.5 rounded-md ${isActive ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                         <Icon size={16} />
                       </div>
                       <span className="font-medium">{item.name}</span>
                       {isActive && (
-                        <FaChevronRight size={12} className="ml-auto text-gray-300" />
+                        <FaChevronRight size={12} className="ml-auto text-blue-300" />
                       )}
                     </Link>
                   </li>

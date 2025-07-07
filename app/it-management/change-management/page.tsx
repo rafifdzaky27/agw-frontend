@@ -455,7 +455,7 @@ export default function ChangeManagement() {
                             <div className="flex flex-wrap items-end gap-2 sm:gap-4">
                                 <button
                                     className="flex-1 sm:flex-none sm:w-36 h-[42px] px-4 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
-                                    onClick={() => router.push("/change-request-form")}
+                                    onClick={() => router.push("/it-management/change-management/change-request-form")}
                                 >
                                     <FaPlus className="text-sm" />
                                     <span className="text-sm">Add Request</span>

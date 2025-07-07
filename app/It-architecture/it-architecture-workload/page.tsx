@@ -17,7 +17,7 @@ interface Task {
   status: 'not yet' | 'on progress' | 'done';
 }
 
-export default function ManagementTasks() {
+export default function ArchitectureTasks() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,12 +29,12 @@ export default function ManagementTasks() {
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
-  // Fetch data for governance tasks
+  // Fetch data for architecture tasks
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/governance-tasks`);
+        const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -47,7 +47,8 @@ export default function ManagementTasks() {
         setTasks(sortedData);
         setLoading(false);
       } catch (error) {
-        console.error("Failed to load data", error);
+        console.error("Failed to load IT Architecture data", error);
+        console.error("API URL:", `${API_BASE_URL}/it-architecture-tasks`);
         setLoading(false);
       }
     };
@@ -55,10 +56,10 @@ export default function ManagementTasks() {
     fetchData();
   }, [API_BASE_URL]);
 
-  // Function to save new governance task
+  // Function to save new architecture task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
+      const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task),
@@ -76,10 +77,10 @@ export default function ManagementTasks() {
     }
   }, [API_BASE_URL]);
 
-  // Function to update existing governance task
+  // Function to update existing architecture task
   const handleSave = useCallback(async (task: Task) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
+      const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${task.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(task),
@@ -99,10 +100,10 @@ export default function ManagementTasks() {
     }
   }, [API_BASE_URL]);
 
-  // Function to delete governance task
+  // Function to delete architecture task
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${id}`, { 
         method: "DELETE" 
       });
       
@@ -117,7 +118,7 @@ export default function ManagementTasks() {
     }
   }, [API_BASE_URL]);
 
-  // Function to show governance task details
+  // Function to show architecture task details
   const handleShow = useCallback((id: string) => {
     const task = tasks.find((item) => item.id === id);
     setCurrentTask(task || null);
@@ -201,7 +202,7 @@ export default function ManagementTasks() {
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">Governance Tasks</h1>
+            <h1 className="text-3xl font-bold flex-1 text-center">IT Architecture Tasks</h1>
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
               onClick={() => setShowCreateDialog(true)}
@@ -215,7 +216,7 @@ export default function ManagementTasks() {
           
           {loading ? (
             <div className="flex justify-center">
-              <p className="text-gray-500 dark:text-gray-400">Loading governance tasks...</p>
+              <p className="text-gray-500 dark:text-gray-400">Loading IT architecture tasks...</p>
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
