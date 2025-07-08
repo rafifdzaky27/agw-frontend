@@ -1032,7 +1032,7 @@ export default function AuditUniversePage() {
     
     return (
       <div 
-        className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-gray-700 h-48 flex flex-col"
+        className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-gray-700 h-44 flex flex-col"
         onClick={() => handleAuditClick(audit)}
       >
         <div className="flex items-start justify-between mb-4">
@@ -1043,7 +1043,7 @@ export default function AuditUniversePage() {
         </div>
         
         <div className="flex-1 flex flex-col justify-between">
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
             <div className="flex items-center gap-2">
               <FaCalendarAlt className="text-blue-500 text-xs flex-shrink-0" />
               <span className="truncate">{formatDate(audit.date)}</span>
