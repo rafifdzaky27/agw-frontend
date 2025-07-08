@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import AgreementModal from "./components/AgreementModal";
 import AgreementDetailModal from "./components/AgreementDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -49,71 +49,97 @@ export default function PortfolioManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20); // Show 20 items per page
 
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
 
-  // Mock data for development
-  const mockAgreements: Agreement[] = [
-    {
-      id: "1",
-      kodeProject: "PRJ-2024-001",
-      projectName: "Enterprise Resource Planning Implementation",
-      divisiInisiasi: "IT Division",
-      grupTerlibat: "IT, Finance, Operations",
-      keterangan: "Implementation of new ERP system for company-wide operations",
-      namaVendor: "SAP Indonesia",
-      noPKSPO: "PKS/2024/001",
-      tanggalPKSPO: "2024-01-15",
-      tanggalBAPP: "2024-02-01",
-      tanggalBerakhir: "2024-12-31",
-      terminPembayaran: [
-        { id: "t1", termin: "Down Payment", nominal: 500000000, description: "Initial payment" },
-        { id: "t2", termin: "Term 1", nominal: 300000000, description: "After system setup" },
-        { id: "t3", termin: "Term 2", nominal: 200000000, description: "Final payment" }
-      ],
-      createdAt: "2024-01-10T10:00:00Z",
-      updatedAt: "2024-01-10T10:00:00Z"
-    },
-    {
-      id: "2",
-      kodeProject: "PRJ-2024-002",
-      projectName: "Cloud Infrastructure Migration",
-      divisiInisiasi: "IT Division",
-      grupTerlibat: "IT, Security",
-      keterangan: "Migration of on-premise infrastructure to cloud services",
-      namaVendor: "Amazon Web Services",
-      noPKSPO: "PO/2024/002",
-      tanggalPKSPO: "2024-02-01",
-      tanggalBAPP: "2024-02-15",
-      tanggalBerakhir: "2024-08-31",
-      terminPembayaran: [
-        { id: "t4", termin: "Monthly Payment", nominal: 50000000, description: "Monthly cloud services" }
-      ],
-      createdAt: "2024-01-25T14:30:00Z",
-      updatedAt: "2024-01-25T14:30:00Z"
-    },
-    {
-      id: "3",
-      kodeProject: "PRJ-2024-003",
-      projectName: "Mobile Application Development",
-      divisiInisiasi: "Digital Innovation",
-      grupTerlibat: "IT, Marketing, UX",
-      keterangan: "Development of customer-facing mobile application",
-      namaVendor: "TechSoft Solutions",
-      noPKSPO: "PKS/2024/003",
-      tanggalPKSPO: "2024-03-01",
-      tanggalBAPP: "2024-03-15",
-      tanggalBerakhir: "2024-09-30",
-      terminPembayaran: [
-        { id: "t5", termin: "Down Payment", nominal: 150000000, description: "Project initiation" },
-        { id: "t6", termin: "Milestone 1", nominal: 100000000, description: "UI/UX completion" },
-        { id: "t7", termin: "Milestone 2", nominal: 100000000, description: "Backend development" },
-        { id: "t8", termin: "Final Payment", nominal: 50000000, description: "Testing and deployment" }
-      ],
-      createdAt: "2024-02-20T09:15:00Z",
-      updatedAt: "2024-02-20T09:15:00Z"
+  // Mock data for development - 200 entries for testing large dataset
+  const generateMockAgreements = (): Agreement[] => {
+    const divisions = [
+      "IT Division", "Finance Division", "Operations Division", "HR Division", 
+      "Marketing Division", "Sales Division", "Legal Division", "Procurement Division",
+      "Digital Innovation", "Business Development", "Quality Assurance", "Risk Management"
+    ];
+    
+    const groups = [
+      "IT, Finance", "IT, Operations", "IT, Security", "Finance, Operations",
+      "Marketing, Sales", "HR, Legal", "IT, Marketing, UX", "Operations, QA",
+      "Finance, Legal", "IT, Business Development", "Sales, Marketing", "IT, Risk Management"
+    ];
+    
+    const vendors = [
+      "SAP Indonesia", "Oracle Corporation", "Microsoft Indonesia", "Amazon Web Services",
+      "Google Cloud Platform", "IBM Indonesia", "Accenture", "Deloitte Consulting",
+      "TechSoft Solutions", "Digital Innovations Ltd", "CloudTech Services", "DataPro Systems",
+      "SecureNet Solutions", "InnovateTech", "SystemsPlus", "TechAdvance Corp",
+      "SmartSolutions", "NextGen Technologies", "ProTech Services", "EliteTech Solutions"
+    ];
+    
+    const projectTypes = [
+      "ERP Implementation", "Cloud Migration", "Mobile App Development", "Web Portal Development",
+      "Data Analytics Platform", "Security Assessment", "Infrastructure Upgrade", "Digital Transformation",
+      "System Integration", "Database Migration", "Network Upgrade", "Software Licensing",
+      "Cybersecurity Enhancement", "Business Intelligence", "CRM Implementation", "Workflow Automation"
+    ];
+    
+    const agreements: Agreement[] = [];
+    
+    for (let i = 1; i <= 200; i++) {
+      const year = 2024;
+      const month = Math.floor(Math.random() * 12) + 1;
+      const day = Math.floor(Math.random() * 28) + 1;
+      
+      const pksDate = new Date(year, month - 1, day);
+      const bappDate = new Date(pksDate.getTime() + (Math.random() * 30 + 7) * 24 * 60 * 60 * 1000);
+      const endDate = new Date(bappDate.getTime() + (Math.random() * 365 + 90) * 24 * 60 * 60 * 1000);
+      
+      const numPaymentTerms = Math.floor(Math.random() * 4) + 1; // 1-4 payment terms
+      const totalAmount = (Math.random() * 2000000000) + 100000000; // 100M - 2.1B IDR
+      
+      const paymentTerms: PaymentTerm[] = [];
+      const termNames = ["Down Payment", "Term 1", "Term 2", "Term 3", "Final Payment"];
+      const descriptions = [
+        "Initial payment", "After system setup", "Milestone completion", 
+        "Testing phase", "Final delivery", "Monthly payment", "Quarterly payment"
+      ];
+      
+      for (let j = 0; j < numPaymentTerms; j++) {
+        const percentage = j === 0 ? 0.3 : (1 - 0.3) / (numPaymentTerms - 1);
+        paymentTerms.push({
+          id: `t${i}_${j}`,
+          termin: j < termNames.length ? termNames[j] : `Term ${j + 1}`,
+          nominal: Math.floor(totalAmount * percentage),
+          description: descriptions[Math.floor(Math.random() * descriptions.length)]
+        });
+      }
+      
+      const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      
+      agreements.push({
+        id: i.toString(),
+        kodeProject: `PRJ-2024-${i.toString().padStart(3, '0')}`,
+        projectName: `${projectTypes[Math.floor(Math.random() * projectTypes.length)]} ${i}`,
+        divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
+        grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
+        keterangan: `Comprehensive ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()} project for improving business operations and efficiency. This project includes planning, implementation, testing, and deployment phases.`,
+        namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
+        noPKSPO: Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`,
+        tanggalPKSPO: pksDate.toISOString().split('T')[0],
+        tanggalBAPP: bappDate.toISOString().split('T')[0],
+        tanggalBerakhir: endDate.toISOString().split('T')[0],
+        terminPembayaran: paymentTerms,
+        createdAt: createdDate.toISOString(),
+        updatedAt: createdDate.toISOString()
+      });
     }
-  ];
+    
+    return agreements.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  const mockAgreements = generateMockAgreements();
 
   useEffect(() => {
     fetchAgreements();
@@ -156,6 +182,23 @@ export default function PortfolioManagementPage() {
       agreement.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [agreements, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAgreements.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentAgreements = filteredAgreements.slice(startIndex, endIndex);
+
+  // Reset to first page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Reset selection when changing pages or search
+  useEffect(() => {
+    setSelectedAgreements([]);
+    setSelectedAgreement(null);
+  }, [currentPage, searchTerm]);
 
   const handleNewAgreement = () => {
     setSelectedAgreement(null);
@@ -235,10 +278,15 @@ export default function PortfolioManagementPage() {
   };
 
   const handleSelectAll = () => {
-    if (selectedAgreements.length === filteredAgreements.length) {
-      setSelectedAgreements([]);
+    const currentPageIds = currentAgreements.map(agreement => agreement.id);
+    const allCurrentSelected = currentPageIds.every(id => selectedAgreements.includes(id));
+    
+    if (allCurrentSelected) {
+      // Deselect all on current page
+      setSelectedAgreements(prev => prev.filter(id => !currentPageIds.includes(id)));
     } else {
-      setSelectedAgreements(filteredAgreements.map(agreement => agreement.id));
+      // Select all on current page
+      setSelectedAgreements(prev => [...new Set([...prev, ...currentPageIds])]);
     }
   };
 
@@ -310,15 +358,27 @@ export default function PortfolioManagementPage() {
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Portfolio Management
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                {isSelectionMode 
-                  ? "Select multiple agreements to delete them. Click Cancel to exit selection mode."
-                  : "Click on any row to view agreement details. Use Select button for bulk operations."
-                }
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Portfolio Management
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {isSelectionMode 
+                      ? "Select multiple agreements to delete them. Click Cancel to exit selection mode."
+                      : "Click on any row to view agreement details. Use Select button for bulk operations."
+                    }
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {agreements.length}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Total Agreements
+                  </div>
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -404,7 +464,7 @@ export default function PortfolioManagementPage() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
                           <input
                             type="checkbox"
-                            checked={selectedAgreements.length === filteredAgreements.length && filteredAgreements.length > 0}
+                            checked={currentAgreements.length > 0 && currentAgreements.every(agreement => selectedAgreements.includes(agreement.id))}
                             onChange={handleSelectAll}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
@@ -428,14 +488,14 @@ export default function PortfolioManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredAgreements.length === 0 ? (
+                    {currentAgreements.length === 0 ? (
                       <tr>
                         <td colSpan={isSelectionMode ? 6 : 5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                           {searchTerm ? "No agreements found matching your search." : "No agreements available."}
                         </td>
                       </tr>
                     ) : (
-                      filteredAgreements.map((agreement, index) => (
+                      currentAgreements.map((agreement, index) => (
                         <tr
                           key={agreement.id}
                           onClick={() => handleRowClick(agreement)}
@@ -457,7 +517,7 @@ export default function PortfolioManagementPage() {
                             </td>
                           )}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {index + 1}
+                            {startIndex + index + 1}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
                             {agreement.kodeProject}
@@ -482,15 +542,83 @@ export default function PortfolioManagementPage() {
                 </table>
               </div>
               
-              {/* Table Footer */}
+              {/* Table Footer with Pagination */}
               <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700 dark:text-gray-300">
-                    Showing {filteredAgreements.length} of {agreements.length} agreements
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing {startIndex + 1} to {Math.min(endIndex, filteredAgreements.length)} of {filteredAgreements.length} agreements
+                      {agreements.length !== filteredAgreements.length && (
+                        <span className="text-gray-500"> (filtered from {agreements.length} total)</span>
+                      )}
+                    </div>
+                    {isSelectionMode && selectedAgreements.length > 0 && (
+                      <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                        {selectedAgreements.length} selected across all pages
+                      </div>
+                    )}
                   </div>
-                  {isSelectionMode && selectedAgreements.length > 0 && (
-                    <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      {selectedAgreements.length} selected
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center gap-1">
+                        {/* Show page numbers */}
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-1 text-sm border rounded ${
+                                currentPage === pageNum
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        {totalPages > 5 && currentPage < totalPages - 2 && (
+                          <>
+                            <span className="px-2 text-gray-500">...</span>
+                            <button
+                              onClick={() => setCurrentPage(totalPages)}
+                              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
                     </div>
                   )}
                 </div>
