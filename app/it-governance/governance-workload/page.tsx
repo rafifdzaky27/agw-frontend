@@ -8,7 +8,7 @@ import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { FaSearch} from "react-icons/fa";
 
-// Define Task interface
+// Define Task interface with multiple tags support
 interface Task {
   id: string;
   namaTugas: string;
@@ -16,7 +16,74 @@ interface Task {
   tanggal: string;
   pic: string;
   status: 'not yet' | 'on progress' | 'done';
-  tag: string;
+  tags: string[]; // Changed from 'tag: string' to 'tags: string[]'
+}
+
+// Tag Input Component
+interface TagInputProps {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = false }: TagInputProps) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag();
+    } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+
+  const addTag = () => {
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue && !tags.includes(trimmedValue)) {
+      onChange([...tags, trimmedValue]);
+      setInputValue("");
+    }
+  };
+
+  const removeTag = (index: number) => {
+    const newTags = tags.filter((_, i) => i !== index);
+    onChange(newTags);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded min-h-[42px] items-center">
+      {tags.map((tag, index) => (
+        <span
+          key={index}
+          className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-2 py-1 rounded-full"
+        >
+          {tag}
+          {!disabled && (
+            <button
+              type="button"
+              onClick={() => removeTag(index)}
+              className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 ml-1"
+            >
+              ×
+            </button>
+          )}
+        </span>
+      ))}
+      {!disabled && (
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={addTag}
+          placeholder={tags.length === 0 ? placeholder : ""}
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+        />
+      )}
+    </div>
+  );
 }
 
 export default function GovernanceTasks() {
@@ -39,7 +106,7 @@ export default function GovernanceTasks() {
       setFilteredTasks(tasks);
     } else {
       const filtered = tasks.filter(task => 
-        task.tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
         task.namaTugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.catatan.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.pic.toLowerCase().includes(searchTerm.toLowerCase())
@@ -61,8 +128,14 @@ export default function GovernanceTasks() {
         
         const data = await response.json();
         
+        // Convert single tag to tags array for backward compatibility
+        const processedData = data.map((task: any) => ({
+          ...task,
+          tags: task.tags || (task.tag ? [task.tag] : [])
+        }));
+        
         // Sort by deadline
-        const sortedData = data.sort((a: Task, b: Task) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
+        const sortedData = processedData.sort((a: Task, b: Task) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
         setTasks(sortedData);
         setLoading(false);
       } catch (error) {
@@ -88,7 +161,12 @@ export default function GovernanceTasks() {
       }
       
       const newTask = await response.json();
-      setTasks((prev: Task[]) => [...prev, newTask]);
+      // Ensure tags is an array
+      const processedTask = {
+        ...newTask,
+        tags: newTask.tags || (newTask.tag ? [newTask.tag] : [])
+      };
+      setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
     } catch (error) {
       console.error("Failed to save data", error);
@@ -109,8 +187,13 @@ export default function GovernanceTasks() {
       }
       
       const updatedTask = await response.json();
+      // Ensure tags is an array
+      const processedTask = {
+        ...updatedTask,
+        tags: updatedTask.tags || (updatedTask.tag ? [updatedTask.tag] : [])
+      };
       setTasks((prev: Task[]) =>
-        prev.map((item) => (item.id === task.id ? updatedTask : item))
+        prev.map((item) => (item.id === task.id ? processedTask : item))
       );
       setShowDialog(false);
     } catch (error) {
@@ -214,6 +297,45 @@ export default function GovernanceTasks() {
     }
   };
 
+  // Task Card Component
+  const TaskCard = ({ task, provided, snapshot }: { task: Task, provided: any, snapshot: any }) => (
+    <div
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      {...provided.dragHandleProps}
+      className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
+      style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(task.status)}` }}
+      onClick={() => handleShow(task.id)}
+    >
+      <div className="font-semibold mb-2">{task.namaTugas}</div>
+      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+      
+      {/* Tags Display */}
+      {task.tags && task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {task.tags.slice(0, 3).map((tag, tagIndex) => (
+            <span
+              key={tagIndex}
+              className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
+          {task.tags.length > 3 && (
+            <span className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-1 rounded-full">
+              +{task.tags.length - 3}
+            </span>
+          )}
+        </div>
+      )}
+      
+      <div className="flex justify-between items-center">
+        <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
+      </div>
+    </div>
+  );
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
@@ -230,7 +352,7 @@ export default function GovernanceTasks() {
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search tasks by tag, name, notes, or person in charge..."
+                    placeholder="Search tasks by tags, name, notes, or person in charge..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full p-3 pl-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -270,21 +392,7 @@ export default function GovernanceTasks() {
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
-                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(task.status)}` }}
-                                  onClick={() => handleShow(task.id)}
-                                >
-                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                                  <div className="flex justify-between items-center">
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                                  </div>
-                                </div>
+                                <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
                           ))}
@@ -312,21 +420,7 @@ export default function GovernanceTasks() {
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
-                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(task.status)}` }}
-                                  onClick={() => handleShow(task.id)}
-                                >
-                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                                  <div className="flex justify-between items-center">
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                                  </div>
-                                </div>
+                                <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
                           ))}
@@ -354,21 +448,7 @@ export default function GovernanceTasks() {
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
-                                  style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(task.status)}` }}
-                                  onClick={() => handleShow(task.id)}
-                                >
-                                  <div className="font-semibold mb-2">{task.namaTugas}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
-                                  <div className="flex justify-between items-center">
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
-                                  </div>
-                                </div>
+                                <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
                           ))}
@@ -426,7 +506,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
-    tag: task.tag || "",
+    tags: task.tags || [],
   });
 
   const [isEdit, setIsEdit] = useState(false);
@@ -434,6 +514,10 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTagsChange = (tags: string[]) => {
+    setFormState((prev) => ({ ...prev, tags }));
   };
 
   // State for confirmation modal
@@ -534,29 +618,35 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               </select>
             )}
           </div>
+        </div>
 
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
-            {!isEdit ? (
-              <div>
-                {formState.tag ? (
-                  <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
-                    {formState.tag}
-                  </span>
-                ) : (
-                  <span className="text-gray-500">No tag</span>
-                )}
-              </div>
-            ) : (
-              <input
-                name="tag"
-                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-                placeholder="Enter tag"
-                value={formState.tag}
-                onChange={handleChange}
-              />
-            )}
-          </div>
+        {/* Tags Section */}
+        <div className="mb-6">
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tags</div>
+          {!isEdit ? (
+            <div>
+              {formState.tags && formState.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {formState.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-gray-500">No tags</span>
+              )}
+            </div>
+          ) : (
+            <TagInput
+              tags={formState.tags}
+              onChange={handleTagsChange}
+              placeholder="Add tags (press Enter or comma to add)"
+            />
+          )}
         </div>
         
         <div className="mb-6">
@@ -655,12 +745,16 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     tanggal: "",
     status: "not yet" as const,
     pic: "",
-    tag: ""
+    tags: [] as string[]
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTagsChange = (tags: string[]) => {
+    setFormState((prev) => ({ ...prev, tags }));
   };
 
   // State for confirmation modal
@@ -726,16 +820,18 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
               <option value="done">Done</option>
             </select>
           </div>
+        </div>
 
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
-            <input
-              name="tag"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              placeholder="Enter tag (e.g., urgent, review, compliance)"
-              value={formState.tag}
-              onChange={handleChange}
-            />
+        {/* Tags Section */}
+        <div className="mb-6">
+          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tags</div>
+          <TagInput
+            tags={formState.tags}
+            onChange={handleTagsChange}
+            placeholder="Add tags (press Enter or comma to add)"
+          />
+          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Examples: urgent, review, compliance, security, documentation
           </div>
         </div>
         
