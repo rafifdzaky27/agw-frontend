@@ -48,7 +48,7 @@ const DROPDOWN_SECTIONS = [
     icon: FaCogs,
     items: [
       { name: "Management Workload", href: "/it-management/it-management-workload" },
-      { name: "Portfolio Management", href: "it-management/portfolio-management" },
+      { name: "Portfolio Management", href: "/it-management/portfolio-management" },
       { name: "Change Management", href: "/it-management/change-management" },
       { name: "Finance Management", href: "/it-management/finance-management" },
       { name: "Vendor Management", href: "/it-management/vendor-management" },
@@ -151,7 +151,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     return sectionItems.some(item => {
       // Handle exact matches for specific routes
       if (item.href === '/change-management' || 
-          item.href === '/portfolio-management') {
+          item.href === '/it-management/portfolio-management') {
         return pathname === item.href;
       }
       // Handle prefix matches for other routes
