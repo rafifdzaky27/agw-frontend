@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { FaSearch, FaPlus} from "react-icons/fa";
 
 // Define Task interface
 interface Task {
@@ -15,19 +16,37 @@ interface Task {
   tanggal: string;
   pic: string;
   status: 'not yet' | 'on progress' | 'done';
+  tag?: string;
 }
 
 export default function ArchitectureTasks() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
   const API_BASE_URL = `${BACKEND_IP}/api`;
+
+  // Filter tasks based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredTasks(tasks);
+    } else {
+      const filtered = tasks.filter(task => 
+        task.tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.namaTugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.catatan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.pic.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTasks(filtered);
+    }
+  }, [tasks, searchTerm]);
 
   // Fetch data for architecture tasks
   useEffect(() => {
@@ -133,7 +152,7 @@ export default function ArchitectureTasks() {
       return;
     }
 
-    const task = tasks.find(t => t.id === draggableId);
+    const task = filteredTasks.find(t => t.id === draggableId);
 
     // Jika kartu dipindahkan ke kolom baru, perbarui statusnya
     if (task && destination.droppableId !== source.droppableId) {
@@ -203,13 +222,27 @@ export default function ArchitectureTasks() {
         <div className="flex-1 md:ml-60 p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold flex-1 text-center">IT Architecture Tasks</h1>
+          </div>
+
+          {/* Search Bar */}
+          <div className="flex gap-4 mb-6">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search tasks by name, notes, person in charge, or tag..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                }}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+            </div>
             <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
               onClick={() => setShowCreateDialog(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
+              <FaPlus className="text-sm" />
               Add Task
             </button>
           </div>
@@ -231,7 +264,7 @@ export default function ArchitectureTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'not yet')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -250,12 +283,19 @@ export default function ArchitectureTasks() {
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                                   </div>
+                                  {task.tag && (
+                                    <div className="mt-2">
+                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                        {task.tag}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'not yet').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'not yet').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -273,7 +313,7 @@ export default function ArchitectureTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'on progress')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -292,12 +332,19 @@ export default function ArchitectureTasks() {
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                                   </div>
+                                  {task.tag && (
+                                    <div className="mt-2">
+                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                        {task.tag}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'on progress').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'on progress').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -315,7 +362,7 @@ export default function ArchitectureTasks() {
                     >
                       <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
                       <div className="space-y-3 min-h-[32rem]">
-                        {tasks
+                        {filteredTasks
                           .filter(task => task.status === 'done')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -334,12 +381,19 @@ export default function ArchitectureTasks() {
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
                                   </div>
+                                  {task.tag && (
+                                    <div className="mt-2">
+                                      <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                        {task.tag}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </Draggable>
                           ))}
                         {provided.placeholder}
-                        {tasks.filter(task => task.status === 'done').length === 0 && (
+                        {filteredTasks.filter(task => task.status === 'done').length === 0 && (
                           <div className="text-center py-4 text-gray-500">No tasks</div>
                         )}
                       </div>
@@ -373,7 +427,6 @@ export default function ArchitectureTasks() {
     </ProtectedRoute>
   );
 }
-
 // Task Dialog Component
 interface TaskDialogProps {
   task: Task;
@@ -393,6 +446,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
+    tag: task.tag || "",
   });
 
   const [isEdit, setIsEdit] = useState(false);
@@ -484,7 +538,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           <div>
             <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
             {!isEdit ? (
-              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeClass(formState.status)}`}>
+              <span className={`px-2 py-1 text-sm font-bold rounded-full ${getBadgeClass(formState.status)}`}>
                 {getStatusText(formState.status)}
               </span>
             ) : (
@@ -498,6 +552,29 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
                 <option value="on progress">In Progress</option>
                 <option value="done">Done</option>
               </select>
+            )}
+          </div>
+
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
+            {!isEdit ? (
+              <div>
+                {formState.tag ? (
+                  <span className="inline-block bg-blue-600 dark:bg-blue-500 text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md border border-blue-700 dark:border-blue-400 hover:shadow-lg transition-shadow duration-200">
+                    {formState.tag}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">No tag</span>
+                )}
+              </div>
+            ) : (
+              <input
+                name="tag"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                placeholder="Enter tag"
+                value={formState.tag}
+                onChange={handleChange}
+              />
             )}
           </div>
         </div>
@@ -536,7 +613,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             <>
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleSaveClick} // Use the new click handler
+                onClick={handleSaveClick}
               >
                 Save
               </button>
@@ -572,7 +649,6 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             message="Are you sure you want to save changes to this task?"
           />
 
-           
           {/* Confirmation Modal for Delete */}
           <ConfirmationModal
             isOpen={isDeleteConfirmationOpen}
@@ -598,7 +674,8 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     catatan: "",
     tanggal: "",
     status: "not yet" as const,
-    pic: ""
+    pic: "",
+    tag: ""
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -669,6 +746,17 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
               <option value="done">Done</option>
             </select>
           </div>
+
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tag</div>
+            <input
+              name="tag"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+              placeholder="Enter tag (e.g., urgent, review, compliance)"
+              value={formState.tag}
+              onChange={handleChange}
+            />
+          </div>
         </div>
         
         <div className="mb-6">
@@ -697,7 +785,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
         <div className="flex justify-end gap-3">
           <button
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleSaveClick} // Use the new click handler
+            onClick={handleSaveClick}
           >
             Save
           </button>
