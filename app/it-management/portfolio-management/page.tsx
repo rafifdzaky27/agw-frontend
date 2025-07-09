@@ -50,8 +50,7 @@ export default function PortfolioManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [savedAgreementInfo, setSavedAgreementInfo] = useState<Agreement | null>(null);
+
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -231,11 +230,9 @@ export default function PortfolioManagementPage() {
 
   const handleSaveAgreement = async (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      let savedAgreement: Agreement;
-      
       if (isEditMode && selectedAgreement) {
         // Update existing agreement
-        savedAgreement = {
+        const updatedAgreement: Agreement = {
           ...agreementData,
           id: selectedAgreement.id,
           createdAt: selectedAgreement.createdAt,
@@ -243,26 +240,24 @@ export default function PortfolioManagementPage() {
         };
         
         setAgreements(prev => prev.map(agreement => 
-          agreement.id === savedAgreement.id ? savedAgreement : agreement
+          agreement.id === updatedAgreement.id ? updatedAgreement : agreement
         ));
-        toast.success("Agreement updated successfully");
+        toast.success(`Project "${agreementData.projectName}" berhasil diperbarui`);
       } else {
         // Create new agreement
-        savedAgreement = {
+        const newAgreement: Agreement = {
           ...agreementData,
           id: Date.now().toString(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         
-        setAgreements(prev => [...prev, savedAgreement]);
-        toast.success("Agreement created successfully");
+        setAgreements(prev => [newAgreement, ...prev]);
+        toast.success(`Project "${agreementData.projectName}" berhasil ditambahkan`);
       }
       
       setShowModal(false);
       setSelectedAgreement(null);
-      setSavedAgreementInfo(savedAgreement);
-      setShowInfoModal(true);
     } catch (err) {
       toast.error("Failed to save agreement");
     }
@@ -686,113 +681,10 @@ export default function PortfolioManagementPage() {
           />
         )}
 
-        {showInfoModal && savedAgreementInfo && (
-          <InfoModal
-            agreement={savedAgreementInfo}
-            onClose={() => {
-              setShowInfoModal(false);
-              setSavedAgreementInfo(null);
-            }}
-          />
-        )}
+
       </div>
     </ProtectedRoute>
   );
 }
 
-// Info Modal Component
-interface InfoModalProps {
-  agreement: Agreement;
-  onClose: () => void;
-}
 
-function InfoModal({ agreement, onClose }: InfoModalProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getTotalPayment = () => {
-    return agreement.terminPembayaran.reduce((total, term) => total + term.nominal, 0);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Agreement Saved Successfully!
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <FaTimes className="text-xl" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-green-800 dark:text-green-200 font-medium">Changes Summary</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Code:</span>
-                  <p className="text-gray-900 dark:text-white">{agreement.kodeProject}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Name:</span>
-                  <p className="text-gray-900 dark:text-white">{agreement.projectName}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Type:</span>
-                  <p className="text-gray-900 dark:text-white">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      agreement.projectType === 'internal development' 
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    }`}>
-                      {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700 dark:text-gray-300">Division:</span>
-                  <p className="text-gray-900 dark:text-white">{agreement.divisiInisiasi}</p>
-                </div>
-                {agreement.projectType === 'procurement' && (
-                  <>
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
-                      <p className="text-gray-900 dark:text-white">{agreement.namaVendor}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Total Payment:</span>
-                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(getTotalPayment())}</p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={onClose}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
