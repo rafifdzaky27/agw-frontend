@@ -13,6 +13,7 @@ interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
+  projectType: 'internal development' | 'procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -130,6 +131,18 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                   <p className="text-gray-900 dark:text-white font-mono mt-1">{agreement.kodeProject}</p>
                 </div>
                 <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Project Type</label>
+                  <p className="text-gray-900 dark:text-white mt-1">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      agreement.projectType === 'internal development' 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    }`}>
+                      {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
+                    </span>
+                  </p>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Initiating Division</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaBuilding className="text-blue-500 text-sm" />
@@ -153,12 +166,13 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
             </div>
           </div>
 
-          {/* Vendor & Contract Information */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <FaUser className="text-green-500" />
-              Vendor & Contract Information
-            </h3>
+          {/* Vendor & Contract Information - Only for Procurement */}
+          {agreement.projectType === 'procurement' && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <FaUser className="text-green-500" />
+                Vendor & Contract Information
+              </h3>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -192,10 +206,12 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
 
-          {/* Payment Terms */}
-          <div>
+          {/* Payment Terms - Only for Procurement */}
+          {agreement.projectType === 'procurement' && (
+            <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <FaMoneyBillWave className="text-yellow-500" />
               Payment Terms
@@ -246,7 +262,8 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
 
           {/* Metadata */}
           <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
@@ -279,7 +296,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
           >
             <FaEdit className="text-sm" />
-            Edit Agreement
+            Edit Project
           </button>
         </div>
       </div>

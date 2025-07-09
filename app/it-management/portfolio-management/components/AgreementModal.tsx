@@ -15,6 +15,7 @@ interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
+  projectType: 'internal development' | 'procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -39,6 +40,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
   const [formData, setFormData] = useState({
     kodeProject: "",
     projectName: "",
+    projectType: "internal development" as 'internal development' | 'procurement',
     divisiInisiasi: "",
     grupTerlibat: "",
     keterangan: "",
@@ -57,6 +59,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
       setFormData({
         kodeProject: agreement.kodeProject,
         projectName: agreement.projectName,
+        projectType: agreement.projectType,
         divisiInisiasi: agreement.divisiInisiasi,
         grupTerlibat: agreement.grupTerlibat,
         keterangan: agreement.keterangan,
@@ -72,6 +75,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
       setFormData({
         kodeProject: "",
         projectName: "",
+        projectType: "internal development",
         divisiInisiasi: "",
         grupTerlibat: "",
         keterangan: "",
@@ -85,7 +89,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
     }
   }, [agreement, isEditMode]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -137,7 +141,13 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
     if (!formData.projectName.trim()) errors.push("Project Name is required");
     if (!formData.divisiInisiasi.trim()) errors.push("Divisi yang Menginisiasi is required");
     if (!formData.grupTerlibat.trim()) errors.push("Grup yang Terlibat is required");
-    if (!formData.namaVendor.trim()) errors.push("Nama Vendor is required");
+    
+    // Only validate vendor and payment terms for procurement projects
+    if (formData.projectType === 'procurement') {
+      if (!formData.namaVendor.trim()) errors.push("Nama Vendor is required for procurement projects");
+      if (paymentTerms.length === 0) errors.push("At least one payment term is required for procurement projects");
+    }
+    
     if (!formData.noPKSPO.trim()) errors.push("No. PKS/PO is required");
     if (!formData.tanggalPKSPO) errors.push("Tanggal PKS/PO is required");
     if (!formData.tanggalBAPP) errors.push("Tanggal BAPP is required");
@@ -200,7 +210,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {isEditMode ? 'Edit Agreement' : 'Add New Agreement'}
+            {isEditMode ? 'Edit Project' : 'Add New Project'}
           </h2>
           <button
             onClick={onClose}
@@ -248,6 +258,23 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                   placeholder="Enter project name"
                   required
                 />
+              </div>
+
+              <div>
+                <label htmlFor="projectType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Project Type *
+                </label>
+                <select
+                  id="projectType"
+                  name="projectType"
+                  value={formData.projectType}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  required
+                >
+                  <option value="internal development">Internal Development</option>
+                  <option value="procurement">Procurement</option>
+                </select>
               </div>
 
               <div>
@@ -302,24 +329,26 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
           {/* Vendor & Document Details Section */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-              Vendor & Document Details
+              {formData.projectType === 'procurement' ? 'Vendor & Document Details' : 'Document Details'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="namaVendor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nama Vendor *
-                </label>
-                <input
-                  type="text"
-                  id="namaVendor"
-                  name="namaVendor"
-                  value={formData.namaVendor}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter vendor name"
-                  required
-                />
-              </div>
+              {formData.projectType === 'procurement' && (
+                <div>
+                  <label htmlFor="namaVendor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nama Vendor *
+                  </label>
+                  <input
+                    type="text"
+                    id="namaVendor"
+                    name="namaVendor"
+                    value={formData.namaVendor}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Enter vendor name"
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="noPKSPO" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -390,112 +419,114 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
             </div>
           </div>
 
-          {/* Payment Terms Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Termin Pembayaran (Payment Terms)
-              </h3>
-              <button
-                type="button"
-                onClick={addPaymentTerm}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm"
-              >
-                <FaPlus className="text-xs" />
-                Add Term
-              </button>
-            </div>
+          {/* Payment Terms Section - Only for Procurement */}
+          {formData.projectType === 'procurement' && (
+            <div>
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Termin Pembayaran (Payment Terms)
+                </h3>
+                <button
+                  type="button"
+                  onClick={addPaymentTerm}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md transition-colors text-sm"
+                >
+                  <FaPlus className="text-xs" />
+                  Add Term
+                </button>
+              </div>
 
-            {paymentTerms.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p>No payment terms added yet.</p>
-                <p className="text-sm mt-1">Click "Add Term" to add payment terms.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {paymentTerms.map((term, index) => (
-                  <div key={term.id} className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        Payment Term {index + 1}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => removePaymentTerm(term.id)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                        title="Remove payment term"
-                      >
-                        <FaTrash className="text-sm" />
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Termin *
-                        </label>
-                        <input
-                          type="text"
-                          value={term.termin}
-                          onChange={(e) => updatePaymentTerm(term.id, 'termin', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
-                          placeholder="e.g., Down Payment, Term 1"
-                          required
-                        />
+              {paymentTerms.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <p>No payment terms added yet.</p>
+                  <p className="text-sm mt-1">Click "Add Term" to add payment terms.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {paymentTerms.map((term, index) => (
+                    <div key={term.id} className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-gray-900 dark:text-white">
+                          Payment Term {index + 1}
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => removePaymentTerm(term.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Remove payment term"
+                        >
+                          <FaTrash className="text-sm" />
+                        </button>
                       </div>
                       
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Nominal (IDR) *
-                        </label>
-                        <input
-                          type="number"
-                          value={term.nominal}
-                          onChange={(e) => updatePaymentTerm(term.id, 'nominal', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
-                          placeholder="0"
-                          min="0"
-                          required
-                        />
-                        {term.nominal > 0 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {formatCurrency(term.nominal)}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Description
-                        </label>
-                        <input
-                          type="text"
-                          value={term.description}
-                          onChange={(e) => updatePaymentTerm(term.id, 'description', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
-                          placeholder="Payment description"
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Termin *
+                          </label>
+                          <input
+                            type="text"
+                            value={term.termin}
+                            onChange={(e) => updatePaymentTerm(term.id, 'termin', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
+                            placeholder="e.g., Down Payment, Term 1"
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Nominal (IDR) *
+                          </label>
+                          <input
+                            type="number"
+                            value={term.nominal}
+                            onChange={(e) => updatePaymentTerm(term.id, 'nominal', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
+                            placeholder="0"
+                            min="0"
+                            required
+                          />
+                          {term.nominal > 0 && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {formatCurrency(term.nominal)}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Description
+                          </label>
+                          <input
+                            type="text"
+                            value={term.description}
+                            onChange={(e) => updatePaymentTerm(term.id, 'description', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
+                            placeholder="Payment description"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                
-                {/* Total Payment */}
-                {paymentTerms.length > 0 && (
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium text-blue-900 dark:text-blue-100">
-                        Total Payment:
-                      </span>
-                      <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                        {formatCurrency(getTotalPayment())}
-                      </span>
+                  ))}
+                  
+                  {/* Total Payment */}
+                  {paymentTerms.length > 0 && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-blue-900 dark:text-blue-100">
+                          Total Payment:
+                        </span>
+                        <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                          {formatCurrency(getTotalPayment())}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -520,7 +551,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
               ) : (
                 <>
                   <FaSave className="text-sm" />
-                  {isEditMode ? 'Update Agreement' : 'Save Agreement'}
+                  {isEditMode ? 'Update Project' : 'Save Project'}
                 </>
               )}
             </button>

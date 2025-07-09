@@ -22,6 +22,7 @@ interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
+  projectType: 'internal development' | 'procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -49,6 +50,8 @@ export default function PortfolioManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [savedAgreementInfo, setSavedAgreementInfo] = useState<Agreement | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,19 +121,26 @@ export default function PortfolioManagementPage() {
       
       const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
       
+      const projectTypeValue: 'internal development' | 'procurement' = Math.random() > 0.5 ? 'procurement' : 'internal development';
+      
       agreements.push({
         id: i.toString(),
         kodeProject: `PRJ-2024-${i.toString().padStart(3, '0')}`,
         projectName: `${projectTypes[Math.floor(Math.random() * projectTypes.length)]} ${i}`,
+        projectType: projectTypeValue,
         divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
         grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
-        keterangan: `Comprehensive ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()} project for improving business operations and efficiency. This project includes planning, implementation, testing, and deployment phases.`,
-        namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
-        noPKSPO: Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`,
+        keterangan: projectTypeValue === 'internal development' 
+          ? `Internal development project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project will be handled by our internal development team with focus on innovation and efficiency.`
+          : `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`,
+        namaVendor: projectTypeValue === 'procurement' ? vendors[Math.floor(Math.random() * vendors.length)] : '',
+        noPKSPO: projectTypeValue === 'procurement' 
+          ? (Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`)
+          : `INT/2024/${i.toString().padStart(3, '0')}`,
         tanggalPKSPO: pksDate.toISOString().split('T')[0],
         tanggalBAPP: bappDate.toISOString().split('T')[0],
         tanggalBerakhir: endDate.toISOString().split('T')[0],
-        terminPembayaran: paymentTerms,
+        terminPembayaran: projectTypeValue === 'procurement' ? paymentTerms : [],
         createdAt: createdDate.toISOString(),
         updatedAt: createdDate.toISOString()
       });
@@ -221,9 +231,11 @@ export default function PortfolioManagementPage() {
 
   const handleSaveAgreement = async (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
+      let savedAgreement: Agreement;
+      
       if (isEditMode && selectedAgreement) {
         // Update existing agreement
-        const updatedAgreement: Agreement = {
+        savedAgreement = {
           ...agreementData,
           id: selectedAgreement.id,
           createdAt: selectedAgreement.createdAt,
@@ -231,24 +243,26 @@ export default function PortfolioManagementPage() {
         };
         
         setAgreements(prev => prev.map(agreement => 
-          agreement.id === updatedAgreement.id ? updatedAgreement : agreement
+          agreement.id === savedAgreement.id ? savedAgreement : agreement
         ));
         toast.success("Agreement updated successfully");
       } else {
         // Create new agreement
-        const newAgreement: Agreement = {
+        savedAgreement = {
           ...agreementData,
           id: Date.now().toString(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         
-        setAgreements(prev => [...prev, newAgreement]);
+        setAgreements(prev => [...prev, savedAgreement]);
         toast.success("Agreement created successfully");
       }
       
       setShowModal(false);
       setSelectedAgreement(null);
+      setSavedAgreementInfo(savedAgreement);
+      setShowInfoModal(true);
     } catch (err) {
       toast.error("Failed to save agreement");
     }
@@ -399,7 +413,7 @@ export default function PortfolioManagementPage() {
                         className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                       >
                         <FaPlus className="text-sm" />
-                        New Agreement
+                        New Project
                       </button>
                       
                       <button
@@ -485,12 +499,15 @@ export default function PortfolioManagementPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Grup yang Terlibat
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Project Type
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {currentAgreements.length === 0 ? (
                       <tr>
-                        <td colSpan={isSelectionMode ? 6 : 5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        <td colSpan={isSelectionMode ? 7 : 6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                           {searchTerm ? "No agreements found matching your search." : "No agreements available."}
                         </td>
                       </tr>
@@ -534,6 +551,15 @@ export default function PortfolioManagementPage() {
                             <div className="max-w-xs truncate" title={agreement.grupTerlibat}>
                               {agreement.grupTerlibat}
                             </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              agreement.projectType === 'internal development' 
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            }`}>
+                              {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
+                            </span>
                           </td>
                         </tr>
                       ))
@@ -659,7 +685,114 @@ export default function PortfolioManagementPage() {
             message={`Are you sure you want to delete ${selectedAgreements.length} agreement(s)? This action cannot be undone.`}
           />
         )}
+
+        {showInfoModal && savedAgreementInfo && (
+          <InfoModal
+            agreement={savedAgreementInfo}
+            onClose={() => {
+              setShowInfoModal(false);
+              setSavedAgreementInfo(null);
+            }}
+          />
+        )}
       </div>
     </ProtectedRoute>
+  );
+}
+
+// Info Modal Component
+interface InfoModalProps {
+  agreement: Agreement;
+  onClose: () => void;
+}
+
+function InfoModal({ agreement, onClose }: InfoModalProps) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getTotalPayment = () => {
+    return agreement.terminPembayaran.reduce((total, term) => total + term.nominal, 0);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Agreement Saved Successfully!
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <FaTimes className="text-xl" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-green-800 dark:text-green-200 font-medium">Changes Summary</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Code:</span>
+                  <p className="text-gray-900 dark:text-white">{agreement.kodeProject}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Name:</span>
+                  <p className="text-gray-900 dark:text-white">{agreement.projectName}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Project Type:</span>
+                  <p className="text-gray-900 dark:text-white">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      agreement.projectType === 'internal development' 
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    }`}>
+                      {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Division:</span>
+                  <p className="text-gray-900 dark:text-white">{agreement.divisiInisiasi}</p>
+                </div>
+                {agreement.projectType === 'procurement' && (
+                  <>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Vendor:</span>
+                      <p className="text-gray-900 dark:text-white">{agreement.namaVendor}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Total Payment:</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(getTotalPayment())}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={onClose}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
