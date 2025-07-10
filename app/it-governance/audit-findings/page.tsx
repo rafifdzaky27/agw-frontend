@@ -197,6 +197,56 @@ export default function AuditFindings() {
     }
   };
 
+  // Calculate priority based on deadline
+  const calculatePriority = (deadline: string) => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'overdue';
+    } else if (diffDays <= 30) {
+      return 'urgent';
+    } else if (diffDays <= 60) {
+      return 'mediocre';
+    } else {
+      return 'safe';
+    }
+  };
+
+  // Get priority badge class
+  const getPriorityBadgeClass = (priority: string) => {
+    switch(priority) {
+      case 'overdue':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'urgent':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'mediocre':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'safe':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
+  // Get priority text
+  const getPriorityText = (priority: string) => {
+    switch(priority) {
+      case 'overdue':
+        return 'Overdue';
+      case 'urgent':
+        return 'Urgent';
+      case 'mediocre':
+        return 'Mediocre';
+      case 'safe':
+        return 'Safe';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
@@ -245,8 +295,13 @@ export default function AuditFindings() {
                                   style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
-                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="font-semibold flex-1">{finding.kategoriAudit}</div>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getPriorityBadgeClass(calculatePriority(finding.batasAkhirKomitmen))}`}>
+                                      {getPriorityText(calculatePriority(finding.batasAkhirKomitmen))}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.namaTemuan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
@@ -287,8 +342,13 @@ export default function AuditFindings() {
                                   style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
-                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="font-semibold flex-1">{finding.kategoriAudit}</div>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getPriorityBadgeClass(calculatePriority(finding.batasAkhirKomitmen))}`}>
+                                      {getPriorityText(calculatePriority(finding.batasAkhirKomitmen))}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.namaTemuan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
@@ -329,8 +389,13 @@ export default function AuditFindings() {
                                   style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(finding.status)}` }}
                                   onClick={() => handleShow(finding.id)}
                                 >
-                                  <div className="font-semibold mb-2">{finding.namaTemuan}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.rekomendasi}</div>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="font-semibold flex-1">{finding.kategoriAudit}</div>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ml-2 ${getPriorityBadgeClass(calculatePriority(finding.batasAkhirKomitmen))}`}>
+                                      {getPriorityText(calculatePriority(finding.batasAkhirKomitmen))}
+                                    </span>
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{finding.namaTemuan}</div>
                                   <div className="flex justify-between items-center">
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(finding.batasAkhirKomitmen)}</div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">{finding.pic}</div>
@@ -411,6 +476,54 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
   // State for confirmation modal
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+
+  // Priority functions for dialog
+  const calculatePriority = (deadline: string) => {
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return 'overdue';
+    } else if (diffDays <= 30) {
+      return 'urgent';
+    } else if (diffDays <= 60) {
+      return 'mediocre';
+    } else {
+      return 'safe';
+    }
+  };
+
+  const getPriorityBadgeClass = (priority: string) => {
+    switch(priority) {
+      case 'overdue':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'urgent':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'mediocre':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'safe':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+  };
+
+  const getPriorityText = (priority: string) => {
+    switch(priority) {
+      case 'overdue':
+        return 'Overdue';
+      case 'urgent':
+        return 'Urgent';
+      case 'mediocre':
+        return 'Mediocre';
+      case 'safe':
+        return 'Safe';
+      default:
+        return 'Unknown';
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -527,7 +640,15 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
               </select>
             )}
           </div>
+          
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Priority</div>
+            <span className={`px-5 py-1 text-xs font-semibold rounded-full ${getPriorityBadgeClass(calculatePriority(formState.batasAkhirKomitmen))}`}>
+              {getPriorityText(calculatePriority(formState.batasAkhirKomitmen))}
+            </span>
+          </div>
         </div>
+        
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>

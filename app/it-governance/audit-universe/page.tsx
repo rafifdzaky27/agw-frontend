@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaCalendarAlt, FaFileAlt, FaEdit, FaTrash, FaSearch } from "react-icons/fa";
+import { FaPlus, FaCalendarAlt, FaFileAlt, FaEdit, FaSearch } from "react-icons/fa";
 import NewAuditModal from "./components/NewAuditModal";
 import AuditDetailModal from "./components/AuditDetailModal";
 import toast from "react-hot-toast";
@@ -1117,7 +1117,7 @@ export default function AuditUniversePage() {
             )}
 
             {/* Search Bar and Add Button */}
-            <div className="flex gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
@@ -1128,12 +1128,12 @@ export default function AuditUniversePage() {
                     setSearchTerm(e.target.value);
                     resetPagination();
                   }}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
                 />
               </div>
               <button
                 onClick={() => setShowNewAuditModal(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
               >
                 <FaPlus className="text-sm" />
                 Add New Audit
