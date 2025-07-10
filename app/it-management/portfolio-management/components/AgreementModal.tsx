@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FaTimes, FaPlus, FaTrash, FaCalendarAlt, FaSave } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaTimes, FaPlus, FaTrash, FaCalendarAlt, FaSave, FaUpload, FaFile } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 interface PaymentTerm {
@@ -9,6 +9,15 @@ interface PaymentTerm {
   termin: string;
   nominal: number;
   description: string;
+}
+
+interface AgreementFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  file?: File;
 }
 
 interface Agreement {
@@ -25,6 +34,7 @@ interface Agreement {
   tanggalBAPP: string;
   tanggalBerakhir: string;
   terminPembayaran: PaymentTerm[];
+  files: AgreementFile[];
   createdAt: string;
   updatedAt: string;
 }
@@ -52,7 +62,9 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
   });
 
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
+  const [files, setFiles] = useState<AgreementFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Block body scroll when modal is open
   useEffect(() => {
@@ -78,6 +90,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
         tanggalBerakhir: agreement.tanggalBerakhir,
       });
       setPaymentTerms(agreement.terminPembayaran);
+      setFiles(agreement.files || []);
     } else {
       // Reset form for new agreement
       setFormData({
@@ -94,6 +107,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
         tanggalBerakhir: "",
       });
       setPaymentTerms([]);
+      setFiles([]);
     }
   }, [agreement, isEditMode]);
 
@@ -129,6 +143,44 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
     ));
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    
+    selectedFiles.forEach(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        return;
+      }
+
+      const newFile: AgreementFile = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date().toISOString(),
+        file: file
+      };
+
+      setFiles(prev => [...prev, newFile]);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveFile = (fileId: string) => {
+    setFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -150,10 +202,10 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
     if (!formData.divisiInisiasi.trim()) errors.push("Divisi yang Menginisiasi is required");
     if (!formData.grupTerlibat.trim()) errors.push("Grup yang Terlibat is required");
     
-    // Only validate vendor and payment terms for procurement projects
-    if (formData.projectType === 'procurement') {
-      if (!formData.namaVendor.trim()) errors.push("Nama Vendor is required for procurement projects");
-      if (paymentTerms.length === 0) errors.push("At least one payment term is required for procurement projects");
+    // Validate vendor and payment terms for procurement and non procurement projects
+    if (formData.projectType === 'procurement' || formData.projectType === 'non procurement') {
+      if (!formData.namaVendor.trim()) errors.push(`Nama Vendor is required for ${formData.projectType} projects`);
+      if (paymentTerms.length === 0) errors.push(`At least one payment term is required for ${formData.projectType} projects`);
     }
     
     if (!formData.noPKSPO.trim()) errors.push("No. PKS/PO is required");
@@ -197,7 +249,8 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
     try {
       const agreementData = {
         ...formData,
-        terminPembayaran: paymentTerms
+        terminPembayaran: paymentTerms,
+        files: files.map(({ file, ...fileData }) => fileData)
       };
 
       await onSave(agreementData);
@@ -338,10 +391,10 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
           {/* Vendor & Document Details Section */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-              {formData.projectType === 'procurement' ? 'Vendor & Document Details' : 'Document Details'}
+              {formData.projectType === 'internal development' ? 'Document Details' : 'Vendor & Document Details'}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {formData.projectType === 'procurement' && (
+              {(formData.projectType === 'procurement' || formData.projectType === 'non procurement') && (
                 <div>
                   <label htmlFor="namaVendor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nama Vendor *
@@ -428,8 +481,73 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
             </div>
           </div>
 
-          {/* Payment Terms Section - Only for Procurement */}
-          {formData.projectType === 'procurement' && (
+          {/* File Upload Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Documents
+              </h3>
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  multiple
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-sm"
+                >
+                  <FaUpload className="text-xs" />
+                  Upload Files
+                </button>
+              </div>
+            </div>
+
+            {files.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p>No documents uploaded yet.</p>
+                <p className="text-sm mt-1">Supported: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT (Max 10MB each)</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Files to Upload ({files.length})
+                </h4>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {files.map(file => (
+                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FaFile className="text-blue-500 text-sm flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(file.id)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        title="Remove file"
+                      >
+                        <FaTrash className="text-sm" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Terms Section - For Procurement and Non Procurement */}
+          {(formData.projectType === 'procurement' || formData.projectType === 'non procurement') && (
             <div>
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">

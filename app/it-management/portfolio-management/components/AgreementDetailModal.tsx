@@ -1,13 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { FaTimes, FaEdit, FaCalendarAlt, FaUser, FaBuilding, FaFileContract, FaMoneyBillWave } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { FaTimes, FaEdit, FaCalendarAlt, FaUser, FaBuilding, FaFileContract, FaMoneyBillWave, FaFile, FaDownload } from "react-icons/fa";
 
 interface PaymentTerm {
   id: string;
   termin: string;
   nominal: number;
   description: string;
+}
+
+interface AgreementFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  file?: File;
 }
 
 interface Agreement {
@@ -24,6 +34,7 @@ interface Agreement {
   tanggalBAPP: string;
   tanggalBerakhir: string;
   terminPembayaran: PaymentTerm[];
+  files: AgreementFile[];
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +82,39 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
 
   const getTotalPayment = () => {
     return agreement.terminPembayaran.reduce((total, term) => total + term.nominal, 0);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const openFileInNewTab = (file: AgreementFile) => {
+    if (file.file) {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const url = URL.createObjectURL(file.file);
+      
+      const browserSupported = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'txt', 'html', 'css', 'js'];
+      
+      if (browserSupported.includes(fileExtension || '')) {
+        window.open(url, '_blank');
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    } else {
+      toast(`Opening ${file.name}... (Mock file - no actual content)`);
+    }
+  };
+
+  const handleDownloadFile = (file: AgreementFile) => {
+    openFileInNewTab(file);
   };
 
   const getProjectStatus = () => {
@@ -182,8 +226,8 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
             </div>
           </div>
 
-          {/* Vendor & Contract Information - Only for Procurement */}
-          {agreement.projectType === 'procurement' && (
+          {/* Vendor & Contract Information - For Procurement and Non Procurement */}
+          {(agreement.projectType === 'procurement' || agreement.projectType === 'non procurement') && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <FaUser className="text-green-500" />
@@ -225,8 +269,50 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
             </div>
           )}
 
-          {/* Payment Terms - Only for Procurement */}
-          {agreement.projectType === 'procurement' && (
+          {/* Documents Section */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <FaFile className="text-purple-500" />
+              Documents
+            </h3>
+            {(!agreement.files || agreement.files.length === 0) ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p>No documents uploaded</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(agreement.files || []).map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
+                      <FaFile className="text-blue-500 text-lg flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                          {file.name}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadFile(file);
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                      title="Open/Download file"
+                    >
+                      <FaDownload className="text-sm" />
+                      Open
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Payment Terms - For Procurement and Non Procurement */}
+          {(agreement.projectType === 'procurement' || agreement.projectType === 'non procurement') && (
             <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <FaMoneyBillWave className="text-yellow-500" />

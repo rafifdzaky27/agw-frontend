@@ -18,6 +18,15 @@ interface PaymentTerm {
   description: string;
 }
 
+interface AgreementFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  file?: File;
+}
+
 interface Agreement {
   id: string;
   kodeProject: string;
@@ -32,6 +41,7 @@ interface Agreement {
   tanggalBAPP: string;
   tanggalBerakhir: string;
   terminPembayaran: PaymentTerm[];
+  files: AgreementFile[];
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +67,36 @@ export default function PortfolioManagementPage() {
   const [itemsPerPage] = useState(20); // Show 20 items per page
 
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+
+  // Generate mock files for agreements
+  const generateMockFiles = (agreementIndex: number): AgreementFile[] => {
+    const fileTypes = [
+      { ext: 'pdf', type: 'application/pdf', names: ['Contract', 'Agreement', 'Proposal', 'Specification', 'Requirements'] },
+      { ext: 'docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', names: ['Document', 'Report', 'Manual', 'Guide'] },
+      { ext: 'xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', names: ['Budget', 'Timeline', 'Analysis', 'Data'] },
+      { ext: 'pptx', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', names: ['Presentation', 'Slides', 'Overview'] }
+    ];
+    
+    const numFiles = Math.floor(Math.random() * 6) + 1; // 1-6 files per agreement
+    const files: AgreementFile[] = [];
+    
+    for (let j = 0; j < numFiles; j++) {
+      const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
+      const fileName = fileType.names[Math.floor(Math.random() * fileType.names.length)];
+      const fileSize = Math.floor(Math.random() * 5000000) + 100000; // 100KB - 5MB
+      const uploadDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      
+      files.push({
+        id: `file_${agreementIndex}_${j}`,
+        name: `${fileName}_${agreementIndex}_${j + 1}.${fileType.ext}`,
+        size: fileSize,
+        type: fileType.type,
+        uploadedAt: uploadDate.toISOString()
+      });
+    }
+    
+    return files;
+  };
 
   // Mock data for development - 200 entries for testing large dataset
   const generateMockAgreements = (): Agreement[] => {
@@ -144,7 +184,8 @@ export default function PortfolioManagementPage() {
         tanggalPKSPO: pksDate.toISOString().split('T')[0],
         tanggalBAPP: bappDate.toISOString().split('T')[0],
         tanggalBerakhir: endDate.toISOString().split('T')[0],
-        terminPembayaran: projectTypeValue === 'procurement' ? paymentTerms : [],
+        terminPembayaran: projectTypeValue === 'procurement' || projectTypeValue === 'non procurement' ? paymentTerms : [],
+        files: generateMockFiles(i),
         createdAt: createdDate.toISOString(),
         updatedAt: createdDate.toISOString()
       });
