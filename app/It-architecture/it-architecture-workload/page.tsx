@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch, FaPlus, FaDownload, FaFileExcel} from "react-icons/fa";
+import { FaSearch, FaPlus, FaFileExcel} from "react-icons/fa";
 
 // Define Task interface with multiple tags support
 interface Task {
