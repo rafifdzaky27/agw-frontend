@@ -323,20 +323,26 @@ export default function PolicyManagement() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Policy Management</h1>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-              onClick={() => setShowAddDialog(true)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Add Policy
-            </button>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Policy Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage organizational policies, SOPs, guidelines, and technical instructions
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {policies.length}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Policies
+              </div>
+            </div>
           </div>
-          {/* Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          {/* Search Bar and Add Button */}
+          <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -355,6 +361,15 @@ export default function PolicyManagement() {
                 Clear Search
               </button>
             )}
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add Policy
+            </button>
           </div>
           {loading ? (
             <div className="flex justify-center">

@@ -380,8 +380,23 @@ export default function GovernanceTasks() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">Governance Tasks</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Governance Tasks
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage governance tasks with drag-and-drop board
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {tasks.length}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Tasks
+              </div>
+            </div>
           </div>
           {/* Search Bar */}
           <div className="flex gap-4 mb-6">

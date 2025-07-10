@@ -1106,10 +1106,23 @@ export default function AuditUniversePage() {
         <div className="flex-1 md:ml-60 p-6">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-                Audit Universe
-              </h1>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Audit Universe
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Comprehensive audit management across Internal, Regulatory, and External categories
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {audits.length}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Audits
+                </div>
+              </div>
             </div>
 
             {error && (

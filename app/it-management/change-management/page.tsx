@@ -446,9 +446,24 @@ export default function ChangeManagement() {
             <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">   
-                    <h1 className="text-3xl font-bold mb-6 text-center">
-                        Change Requests Management
-                    </h1>
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                                Change Requests Management
+                            </h1>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                Manage IT change requests with comprehensive tracking and approval workflow
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                {allRequests.length}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Total Requests
+                            </div>
+                        </div>
+                    </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-stretch gap-4">
