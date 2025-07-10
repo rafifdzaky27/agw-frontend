@@ -160,11 +160,11 @@ export default function MemoManagerPage() {
       if (jenis === "Memo") {
         if (year === 2024) {
           sequentialNumber = memoCounter2024.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAE/M/2024`;
+          nomor = `${sequentialNumber}/ITE-IAG/M/2024`;
           memoCounter2024++;
         } else {
           sequentialNumber = memoCounter2025.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAE/M/2025`;
+          nomor = `${sequentialNumber}/ITE-IAG/M/2025`;
           memoCounter2025++;
         }
       } else {
@@ -298,7 +298,7 @@ export default function MemoManagerPage() {
     const sequentialNumber = nextSequential.toString().padStart(5, '0');
 
     if (jenis === "Memo") {
-      return `${sequentialNumber}/ITE-IAE/M/${inputYear}`;
+      return `${sequentialNumber}/ITE-IAG/M/${inputYear}`;
     } else {
       return `${sequentialNumber}/ITE-IAG/${inputYear}`;
     }
