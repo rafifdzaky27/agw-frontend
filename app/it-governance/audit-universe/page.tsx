@@ -39,6 +39,7 @@ export default function AuditUniversePage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedAudit, setSelectedAudit] = useState<Audit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedYear, setSelectedYear] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState({
     Internal: 1,
     Regulatory: 1,
@@ -992,6 +993,7 @@ export default function AuditUniversePage() {
   const getAuditsByCategory = (category: string) => {
     const filtered = audits.filter(audit => 
       audit.category === category &&
+      (selectedYear === 'all' || audit.date.split('-')[0] === selectedYear) &&
       (searchTerm === '' ||
        audit.auditName.toLowerCase().includes(searchTerm.toLowerCase()) ||
        audit.auditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1131,7 +1133,21 @@ export default function AuditUniversePage() {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
                 />
               </div>
-              <button
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  resetPagination();
+                }}
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors min-w-[120px]"
+              >
+                <option value="all">All Years</option>
+                {[...new Set(audits.map(audit => audit.date.split('-')[0]))]
+                  .sort((a, b) => parseInt(b) - parseInt(a))
+                  .map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+              </select>              <button
                 onClick={() => setShowNewAuditModal(true)}
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
               >
