@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { FaSearch } from "react-icons/fa";
 
 // Define Policy interface
 interface Policy {
@@ -33,6 +34,7 @@ export default function PolicyManagement() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentPolicy, setCurrentPolicy] = useState<Policy | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedAccordions, setExpandedAccordions] = useState<{[key: string]: boolean}>({
     'Kebijakan': false,
     'SOP': false,
@@ -256,9 +258,57 @@ export default function PolicyManagement() {
     });
   };
 
+  // Filter policies based on search term
+  const filterPoliciesBySearch = (policies: Policy[]) => {
+    if (!searchTerm.trim()) return policies;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return policies.filter(policy => 
+      policy.noDokumen.toLowerCase().includes(searchLower) ||
+      policy.namaDokumen.toLowerCase().includes(searchLower) ||
+      policy.kategori.toLowerCase().includes(searchLower) ||
+      policy.tanggalDokumen.includes(searchTerm)
+    );
+  };
+
+  // Handle search term changes - expand accordions when searching, close when clearing
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    
+    // Expand accordions when there's actual search content
+    if (value && value.trim().length > 0) {
+      // Expand all accordions when searching to show results
+      setExpandedAccordions({
+        'Kebijakan': true,
+        'SOP': true,
+        'Pedoman': true,
+        'Petunjuk Teknis': true
+      });
+    } else if (!value || value.trim().length === 0) {
+      // Close all accordions when search is empty/cleared
+      setExpandedAccordions({
+        'Kebijakan': false,
+        'SOP': false,
+        'Pedoman': false,
+        'Petunjuk Teknis': false
+      });
+    }
+  };
+  // Clear search function - clears search and closes all accordions
+  const clearSearch = () => {
+    setSearchTerm("");
+    // Close all accordions when clearing search for a clean reset
+    setExpandedAccordions({
+      'Kebijakan': false,
+      'SOP': false,
+      'Pedoman': false,
+      'Petunjuk Teknis': false
+    });
+  };
   // Get policies by category
   const getPoliciesByCategory = (category: string) => {
-    return policies.filter(policy => policy.kategori === category);
+    const categoryPolicies = policies.filter(policy => policy.kategori === category);
+    return filterPoliciesBySearch(categoryPolicies);
   };
 
   // Get count of old documents by category
@@ -279,13 +329,33 @@ export default function PolicyManagement() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
               onClick={() => setShowAddDialog(true)}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
               </svg>
               Add Policy
             </button>
           </div>
-
+          {/* Search Bar */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search policies by document number, name, category, or date..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+              />
+            </div>
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="flex items-center justify-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+              >
+                Clear Search
+              </button>
+            )}
+          </div>
           {loading ? (
             <div className="flex justify-center">
               <p className="text-gray-500 dark:text-gray-400">Loading policies...</p>
