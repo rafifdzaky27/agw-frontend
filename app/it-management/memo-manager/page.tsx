@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaSearch } from "react-icons/fa";
+import { FaPlus, FaSearch, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
 
@@ -259,7 +259,7 @@ export default function MemoManagerPage() {
 
   // Handle row expansion
   const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
-    // Don't prevent event propagation, let the row click handle it
+    e.stopPropagation();
     setExpandedRows(prev => {
       const newSet = new Set(prev);
       if (newSet.has(memoId)) {
@@ -269,6 +269,17 @@ export default function MemoManagerPage() {
       }
       return newSet;
     });
+  };
+
+  // Handle copy nomor to clipboard
+  const copyNomor = async (nomor: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(nomor);
+      toast.success(`Nomor ${nomor} copied to clipboard`);
+    } catch (err) {
+      toast.error('Failed to copy nomor');
+    }
   };
 
   const handleNewMemo = () => {
@@ -445,8 +456,7 @@ export default function MemoManagerPage() {
                         return (
                           <tr
                             key={memo.id}
-                            onClick={() => toggleRowExpansion(memo.id, {} as React.MouseEvent)}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                           >
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {startIndex + index + 1}
@@ -463,10 +473,14 @@ export default function MemoManagerPage() {
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {formatDate(memo.tanggal)}
                             </td>
-                            <td className="px-4 py-4 text-sm font-mono text-gray-900 dark:text-white">
-                              <div className="break-all">
+                            <td className="px-4 py-4 text-sm font-mono">
+                              <span 
+                                className="break-all cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                                onClick={(e) => copyNomor(memo.nomor, e)}
+                                title="Click to copy"
+                              >
                                 {memo.nomor}
-                              </div>
+                              </span>
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                               <div className="max-w-56">
@@ -492,10 +506,18 @@ export default function MemoManagerPage() {
                               </div>
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                              <div className="max-w-48">
-                                <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                  {memo.pembuat}
+                              <div className="flex items-center justify-between max-w-48">
+                                <div className="flex-1 min-w-0">
+                                  <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                    {memo.pembuat}
+                                  </div>
                                 </div>
+                                <button
+                                  onClick={(e) => toggleRowExpansion(memo.id, e)}
+                                  className="ml-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                                >
+                                  {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+                                </button>
                               </div>
                             </td>
                           </tr>
