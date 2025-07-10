@@ -57,7 +57,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         noTlp: vendor.noTlp,
         portofolioProject: vendor.portofolioProject,
       });
-      setPics(vendor.pics.length > 0 ? vendor.pics : [createEmptyPIC()]);
+      setPics(vendor.pics.length > 0 ? vendor.pics : [createEmptyPIC(true)]);
     } else {
       // Reset form for new vendor
       setFormData({
@@ -66,16 +66,16 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         noTlp: "",
         portofolioProject: "",
       });
-      setPics([createEmptyPIC()]);
+      setPics([createEmptyPIC(true)]);
     }
   }, [vendor, isEditMode]);
 
-  const createEmptyPIC = (): PIC => ({
+  const createEmptyPIC = (isFirst: boolean = false): PIC => ({
     id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
     nama: "",
     email: "",
     noHP: "",
-    role: ""
+    role: isFirst ? "PIC Utama" : ""
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -102,7 +102,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
   };
 
   const addPIC = () => {
-    setPics(prev => [...prev, createEmptyPIC()]);
+    setPics(prev => [...prev, createEmptyPIC(false)]);
   };
 
   const removePIC = (picId: string) => {
@@ -111,7 +111,18 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
       return;
     }
     
-    setPics(prev => prev.filter(pic => pic.id !== picId));
+    const picToRemove = pics.find(pic => pic.id === picId);
+    const remainingPics = pics.filter(pic => pic.id !== picId);
+    
+    // If removing PIC Utama and there are other PICs, make the first remaining PIC as PIC Utama
+    if (picToRemove?.role === "PIC Utama" && remainingPics.length > 0) {
+      const hasOtherPICUtama = remainingPics.some(pic => pic.role === "PIC Utama");
+      if (!hasOtherPICUtama) {
+        remainingPics[0].role = "PIC Utama";
+      }
+    }
+    
+    setPics(remainingPics);
   };
 
   const validateForm = () => {
@@ -169,6 +180,13 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         toast.error("At least one complete PIC is required");
         setIsSubmitting(false);
         return;
+      }
+
+      // Ensure there's always a PIC Utama
+      const hasPICUtama = validPics.some(pic => pic.role === "PIC Utama");
+      if (!hasPICUtama && validPics.length > 0) {
+        // Set first PIC as PIC Utama
+        validPics[0].role = "PIC Utama";
       }
 
       const vendorData = {

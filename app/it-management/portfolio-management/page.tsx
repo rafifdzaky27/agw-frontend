@@ -22,7 +22,7 @@ interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
-  projectType: 'internal development' | 'procurement';
+  projectType: 'internal development' | 'procurement' | 'non procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -120,7 +120,8 @@ export default function PortfolioManagementPage() {
       
       const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
       
-      const projectTypeValue: 'internal development' | 'procurement' = Math.random() > 0.5 ? 'procurement' : 'internal development';
+      const projectTypeOptions: ('internal development' | 'procurement' | 'non procurement')[] = ['internal development', 'procurement', 'non procurement'];
+      const projectTypeValue = projectTypeOptions[Math.floor(Math.random() * projectTypeOptions.length)];
       
       agreements.push({
         id: i.toString(),
@@ -131,11 +132,15 @@ export default function PortfolioManagementPage() {
         grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
         keterangan: projectTypeValue === 'internal development' 
           ? `Internal development project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project will be handled by our internal development team with focus on innovation and efficiency.`
-          : `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`,
+          : projectTypeValue === 'procurement'
+          ? `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`
+          : `Non-procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves internal resources without external procurement processes.`,
         namaVendor: projectTypeValue === 'procurement' ? vendors[Math.floor(Math.random() * vendors.length)] : '',
         noPKSPO: projectTypeValue === 'procurement' 
           ? (Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`)
-          : `INT/2024/${i.toString().padStart(3, '0')}`,
+          : projectTypeValue === 'internal development'
+          ? `INT/2024/${i.toString().padStart(3, '0')}`
+          : `NON/2024/${i.toString().padStart(3, '0')}`,
         tanggalPKSPO: pksDate.toISOString().split('T')[0],
         tanggalBAPP: bappDate.toISOString().split('T')[0],
         tanggalBerakhir: endDate.toISOString().split('T')[0],
@@ -544,9 +549,16 @@ export default function PortfolioManagementPage() {
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               agreement.projectType === 'internal development' 
                                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : agreement.projectType === 'procurement'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
                             }`}>
-                              {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
+                              {agreement.projectType === 'internal development' 
+                                ? 'Internal Development' 
+                                : agreement.projectType === 'procurement'
+                                ? 'Procurement'
+                                : 'Non Procurement'
+                              }
                             </span>
                           </td>
                         </tr>

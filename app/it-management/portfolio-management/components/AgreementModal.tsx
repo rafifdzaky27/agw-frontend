@@ -15,7 +15,7 @@ interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
-  projectType: 'internal development' | 'procurement';
+  projectType: 'internal development' | 'procurement' | 'non procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -40,7 +40,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
   const [formData, setFormData] = useState({
     kodeProject: "",
     projectName: "",
-    projectType: "internal development" as 'internal development' | 'procurement',
+    projectType: "internal development" as 'internal development' | 'procurement' | 'non procurement',
     divisiInisiasi: "",
     grupTerlibat: "",
     keterangan: "",
@@ -282,6 +282,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                 >
                   <option value="internal development">Internal Development</option>
                   <option value="procurement">Procurement</option>
+                  <option value="non procurement">Non Procurement</option>
                 </select>
               </div>
 
