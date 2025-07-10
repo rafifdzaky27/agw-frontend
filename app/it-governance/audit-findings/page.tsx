@@ -18,6 +18,7 @@ interface AuditFinding {
   batasAkhirKomitmen: string;
   pic: string;
   status: 'not yet' | 'on progress' | 'done';
+  progressPemenuhan: string;
 }
 
 export default function AuditFindings() {
@@ -550,6 +551,7 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
     batasAkhirKomitmen: finding?.batasAkhirKomitmen || "",
     pic: finding?.pic || "",
     status: finding?.status || "not yet",
+    progressPemenuhan: finding?.progressPemenuhan || "",
   });
 
   const [isEdit, setIsEdit] = useState(false);
@@ -786,18 +788,36 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
           </div>
         </div>
         
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
-          {!isEdit ? (
-            <div>{formState.pic}</div>
-          ) : (
-            <input
-              name="pic"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.pic}
-              onChange={handleChange}
-            />
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Progress Pemenuhan</div>
+            {!isEdit ? (
+              <div>{formState.progressPemenuhan}</div>
+            ) : (
+              <textarea
+                name="progressPemenuhan"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                rows={3}
+                value={formState.progressPemenuhan}
+                onChange={handleChange}
+                placeholder="Describe fulfillment progress..."
+              />
+            )}
+          </div>
+          
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
+            {!isEdit ? (
+              <div>{formState.pic}</div>
+            ) : (
+              <input
+                name="pic"
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                value={formState.pic}
+                onChange={handleChange}
+              />
+            )}
+          </div>
         </div>
         
         <div className="flex justify-end gap-3">
@@ -870,7 +890,8 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
     komitmenTindakLanjut: "",
     batasAkhirKomitmen: "",
     status: "not yet" as const,
-    pic: ""
+    pic: "",
+    progressPemenuhan: ""
   });
 
   // Block body scroll when modal is open
@@ -1000,15 +1021,29 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
           </div>
         </div>
         
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
-          <input
-            name="pic"
-            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-            placeholder="Enter person or team responsible"
-            value={formState.pic}
-            onChange={handleChange}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Progress Pemenuhan</div>
+            <textarea
+              name="progressPemenuhan"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+              rows={3}
+              placeholder="Describe fulfillment progress..."
+              value={formState.progressPemenuhan}
+              onChange={handleChange}
+            />
+          </div>
+          
+          <div>
+            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
+            <input
+              name="pic"
+              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+              placeholder="Enter person or team responsible"
+              value={formState.pic}
+              onChange={handleChange}
+            />
+          </div>
         </div>
         
         <div className="flex justify-end gap-3">
