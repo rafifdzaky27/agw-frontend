@@ -190,10 +190,7 @@ export default function PortfolioManagementPage() {
     
     return agreements.filter(agreement =>
       agreement.kodeProject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.divisiInisiasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.grupTerlibat.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
+      agreement.projectName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [agreements, searchTerm]);
 
@@ -407,7 +404,7 @@ export default function PortfolioManagementPage() {
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search agreements..."
+                  placeholder="Search by project code or name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
