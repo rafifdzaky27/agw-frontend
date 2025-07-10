@@ -464,7 +464,7 @@ export default function GovernanceTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
