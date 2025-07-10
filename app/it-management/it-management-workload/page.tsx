@@ -575,6 +575,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
 
   const [isEdit, setIsEdit] = useState(false);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState(prev => ({
@@ -809,6 +817,14 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     pic: "",
     tags: [] as string[]
   });
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

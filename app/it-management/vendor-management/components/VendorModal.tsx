@@ -41,6 +41,14 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
   const [pics, setPics] = useState<PIC[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   useEffect(() => {
     if (isEditMode && vendor) {
       setFormData({

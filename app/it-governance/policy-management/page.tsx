@@ -549,6 +549,14 @@ function AddPolicyDialog({ onClose, onSave }: AddPolicyDialogProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
@@ -754,6 +762,14 @@ function EditPolicyDialog({ policy, onClose, onSave }: EditPolicyDialogProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [existingFiles, setExistingFiles] = useState<PolicyFile[]>(policy.files || []);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -983,6 +999,14 @@ interface PolicyDetailDialogProps {
 
 function PolicyDetailDialog({ policy, onClose, onEdit, onDelete, formatDate, isDocumentOld }: PolicyDetailDialogProps) {
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleDeleteClick = () => {
     setIsDeleteConfirmationOpen(true);

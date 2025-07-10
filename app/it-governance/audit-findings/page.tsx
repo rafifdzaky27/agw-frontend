@@ -558,6 +558,14 @@ function FindingDialog({ finding, onClose, onSave, onDelete, formatDate, getBadg
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   // Priority functions for dialog
   const calculatePriority = (deadline: string) => {
     const today = new Date();
@@ -864,6 +872,14 @@ function FindingCreateDialog({ onClose, onSave }: FindingCreateDialogProps) {
     status: "not yet" as const,
     pic: ""
   });
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaTimes, FaSave, FaCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -31,6 +31,14 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
     perihal: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -132,7 +140,7 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
                   />
                   <div>
                     <div className="font-medium text-gray-900 dark:text-white">Memo</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Format: XXXXX/ITE-IAE/M/YYYY</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Format: XXXXX/ITE-IAG/M/YYYY</div>
                   </div>
                 </label>
                 <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">

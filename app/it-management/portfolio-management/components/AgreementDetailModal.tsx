@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { FaTimes, FaEdit, FaCalendarAlt, FaUser, FaBuilding, FaFileContract, FaMoneyBillWave } from "react-icons/fa";
 
 interface PaymentTerm {
@@ -34,6 +35,14 @@ interface AgreementDetailModalProps {
 }
 
 export default function AgreementDetailModal({ agreement, onClose, onEdit }: AgreementDetailModalProps) {
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',

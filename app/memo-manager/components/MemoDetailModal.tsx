@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { FaTimes, FaFileAlt, FaCalendarAlt, FaUser, FaEnvelope, FaHashtag } from "react-icons/fa";
 
 interface Memo {
@@ -21,6 +22,14 @@ interface MemoDetailModalProps {
 }
 
 export default function MemoDetailModal({ memo, onClose }: MemoDetailModalProps) {
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
@@ -218,7 +227,7 @@ export default function MemoDetailModal({ memo, onClose }: MemoDetailModalProps)
                   </h4>
                   <div className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     {memo.jenis === 'Memo' ? (
-                      <p>Format Memo: <strong>XXXXX/ITE-IAE/M/YYYY</strong></p>
+                      <p>Format Memo: <strong>XXXXX/ITE-IAG/M/YYYY</strong></p>
                     ) : (
                       <p>Format Surat: <strong>XXXXX/ITE-IAG/YYYY</strong></p>
                     )}
