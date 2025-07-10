@@ -462,7 +462,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                        <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
                           {filteredTasks.filter(task => task.status === 'not yet').length}
                         </span>
@@ -495,7 +495,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
+                        <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
                           {filteredTasks.filter(task => task.status === 'not yet').length}
                         </span>
