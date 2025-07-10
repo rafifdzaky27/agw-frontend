@@ -30,7 +30,7 @@ import {
 // Define navigation items with icons for better UX
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: FaHome },
-  { name: "Memo Manager", href: "/it-management/memo-manager", icon: FaFileAlt },
+  { name: "Memo Manager", href: "/memo-manager", icon: FaFileAlt },
 ];
 
 // Define dropdown sections

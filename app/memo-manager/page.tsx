@@ -383,36 +383,29 @@ export default function MemoManagerPage() {
               </div>
             )}
 
-            {/* Controls */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleNewMemo}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    <FaPlus className="text-sm" />
-                    New
-                  </button>
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search by subject, number, recipient..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+            {/* Search Bar and Add Button */}
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by subject, number, recipient..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
               </div>
+              <button
+                onClick={handleNewMemo}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+              >
+                <FaPlus className="text-sm" />
+                New Memo
+              </button>
             </div>
 
             {/* Data Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1200px]">
                   <thead className="bg-gray-50 dark:bg-gray-700">
@@ -514,7 +507,7 @@ export default function MemoManagerPage() {
                                 </div>
                                 <button
                                   onClick={(e) => toggleRowExpansion(memo.id, e)}
-                                  className="ml-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                                  className="ml-2 px-1 py-6 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
                                 >
                                   {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
                                 </button>
