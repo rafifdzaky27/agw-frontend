@@ -23,12 +23,14 @@ import {
   FaChevronUp,
   FaShieldAlt,
   FaCogs,
-  FaSitemap
+  FaSitemap,
+  FaFileAlt
 } from "react-icons/fa";
 
 // Define navigation items with icons for better UX
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: FaHome },
+  { name: "Memo Manager", href: "/it-management/memo-manager", icon: FaFileAlt },
 ];
 
 // Define dropdown sections
