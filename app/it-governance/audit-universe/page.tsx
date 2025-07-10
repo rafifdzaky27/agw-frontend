@@ -1130,7 +1130,7 @@ export default function AuditUniversePage() {
                     setSearchTerm(e.target.value);
                     resetPagination();
                   }}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
                 />
               </div>
               <select
@@ -1139,7 +1139,7 @@ export default function AuditUniversePage() {
                   setSelectedYear(e.target.value);
                   resetPagination();
                 }}
-                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors min-w-[120px]"
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors min-w-[120px]"
               >
                 <option value="all">All Years</option>
                 {[...new Set(audits.map(audit => audit.date.split('-')[0]))]
