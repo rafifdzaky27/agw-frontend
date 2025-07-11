@@ -9,7 +9,7 @@ interface PaymentTerm {
   termin: string;
   nominal: number;
   description: string;
-  status: 'Belum Dibayar' | 'Sudah Dibayar' | 'Checking Umum' | 'Menunggu Posting';
+  status: 'Belum Dibayar' | 'Sudah Dibayar' | 'Checking Umum' | 'Menunggu Posting' | 'Sirkulir IT';
   paymentDate?: string;
   budget?: 'Capex' | 'Opex';
   notes?: string;
@@ -19,7 +19,7 @@ interface PaymentTerm {
 }
 
 interface AddEditBillModalProps {
-  bill?: PaymentTerm; // If provided, we're editing; if not, we're creating
+  bill?: PaymentTerm | null; // Changed from undefined to null to match usage
   projectId: string;
   existingBillsCount: number;
   onSave: (billData: PaymentTerm) => void;
@@ -42,9 +42,11 @@ export default function AddEditBillModal({ bill, projectId, existingBillsCount, 
 
   const statusOptions = [
     { value: 'Belum Dibayar', label: 'Belum Dibayar' },
+    { value: 'Sirkulir IT', label: 'Sirkulir IT' },
     { value: 'Checking Umum', label: 'Checking Umum' },
     { value: 'Menunggu Posting', label: 'Menunggu Posting' },
     { value: 'Sudah Dibayar', label: 'Sudah Dibayar' }
+    
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

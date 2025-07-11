@@ -379,7 +379,7 @@ export default function ProjectPaymentDetailModal({ project, onClose, onUpdate }
                               Bill Name
                             </label>
                             <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              {termName}
+                              {term.termin}
                             </p>
                           </div>
 
@@ -390,15 +390,6 @@ export default function ProjectPaymentDetailModal({ project, onClose, onUpdate }
                             <p className="text-lg font-bold text-gray-900 dark:text-white">
                               {formatCurrency(term.nominal)}
                             </p>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                              Status
-                            </label>
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(term.status)}`}>
-                              {term.status}
-                            </span>
                           </div>
 
                           {/* Additional fields for paid bills */}
@@ -427,6 +418,17 @@ export default function ProjectPaymentDetailModal({ project, onClose, onUpdate }
                               </span>
                             </div>
                           )}
+                          {term.notes && (
+                        <div className="mb-4">
+                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                            Notes
+                          </label>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {term.notes}
+                          </p>
+                        </div>
+                      )}
+
                         </div>
                       ) : (
                         // Procurement: Full layout with requirements
@@ -474,17 +476,6 @@ export default function ProjectPaymentDetailModal({ project, onClose, onUpdate }
                               </span>
                             </div>
                           )}
-                        </div>
-                      )}
-
-                      {term.notes && (
-                        <div className="mb-4">
-                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                            Notes
-                          </label>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {term.notes}
-                          </p>
                         </div>
                       )}
 

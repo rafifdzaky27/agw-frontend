@@ -248,12 +248,33 @@ export default function FinanceManagementPage() {
                     Monitor and manage payment status for all projects
                   </p>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {projects.length}
+                <div className="flex items-center gap-8">
+                  {/* Status Summary */}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {projects.filter(p => getPaymentStatus(p.terminPembayaran).status === 'Done').length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Completed
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Total Projects
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {projects.filter(p => getPaymentStatus(p.terminPembayaran).status.includes('Progress')).length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      In Progress
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {projects.length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Total Projects
+                    </div>
                   </div>
                 </div>
               </div>
@@ -265,43 +286,16 @@ export default function FinanceManagementPage() {
               </div>
             )}
 
-            {/* Controls */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                {/* Summary Stats */}
-                <div className="flex gap-6">
-                  <div className="flex items-center gap-2">
-                    <FaCheckCircle className="text-green-500" />
-                    <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Completed</div>
-                      <div className="font-semibold">
-                        {projects.filter(p => getPaymentStatus(p.terminPembayaran).status === 'Done').length}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaClock className="text-yellow-500" />
-                    <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">In Progress</div>
-                      <div className="font-semibold">
-                        {projects.filter(p => getPaymentStatus(p.terminPembayaran).status.includes('Progress')).length}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              </div>
+            {/* Search - Direct without card wrapper */}
+            <div className="relative w-full mb-6">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
 
             {/* Data Table */}
