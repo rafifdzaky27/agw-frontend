@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaSearch, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaPlus, FaSearch, FaChevronDown, FaChevronUp, FaFilter } from "react-icons/fa";
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
 
@@ -28,6 +28,7 @@ export default function MemoManagerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [jenisFilter, setJenisFilter] = useState<"" | "Memo" | "Surat">("");
   const [showModal, setShowModal] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -234,17 +235,26 @@ export default function MemoManagerPage() {
     }
   };
 
-  // Filter memos based on search term
+  // Filter memos based on search term and jenis
   const filteredMemos = useMemo(() => {
-    if (!searchTerm) return memos;
+    let filtered = memos;
     
-    return memos.filter(memo =>
-      memo.perihal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.nomor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.kepada.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.pembuat.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [memos, searchTerm]);
+    // Filter by jenis
+    if (jenisFilter) {
+      filtered = filtered.filter(memo => memo.jenis === jenisFilter);
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(memo =>
+        memo.nomor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memo.kepada.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memo.perihal.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [memos, searchTerm, jenisFilter]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
@@ -256,6 +266,11 @@ export default function MemoManagerPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
+  
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [jenisFilter, searchTerm]);
 
   // Handle row expansion
   const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
@@ -389,11 +404,23 @@ export default function MemoManagerPage() {
                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by subject, number, recipient..."
+                  placeholder="Search by number, recipient, subject..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
+              </div>
+              <div className="relative">
+                <select
+                  value={jenisFilter}
+                  onChange={(e) => setJenisFilter(e.target.value as "" | "Memo" | "Surat")}
+                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:border-blue-500 text-gray-900 dark:text-white cursor-pointer"
+                >
+                  <option value="">Filter by</option>
+                  <option value="Memo">Memo</option>
+                  <option value="Surat">Surat</option>
+                </select>
+                <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
               </div>
               <button
                 onClick={handleNewMemo}
