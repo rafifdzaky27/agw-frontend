@@ -342,7 +342,7 @@ export default function FinanceManagementPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {startIndex + index + 1}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-white">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
                               {project.noPKSPO}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
