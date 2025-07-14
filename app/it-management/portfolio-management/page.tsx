@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import AgreementModal from "./components/AgreementModal";
 import AgreementDetailModal from "./components/AgreementDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -60,6 +61,7 @@ export default function PortfolioManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   
   // Pagination state
@@ -353,7 +355,103 @@ export default function PortfolioManagementPage() {
       setShowDeleteConfirm(true);
     }
   };
+  const handleExportSelected = async () => {
+    if (selectedAgreements.length === 0) {
+      toast.error("Please select agreements to export");
+      return;
+    }
 
+    try {
+      setIsExporting(true);
+      
+      // Get selected agreements data
+      const selectedAgreementsData = agreements.filter(agreement => selectedAgreements.includes(agreement.id));
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      selectedAgreementsData.forEach((agreement, index) => {
+        // Calculate total payment amount
+        const totalPayment = agreement.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        
+        // Format payment terms as string
+        const paymentTermsText = agreement.terminPembayaran
+          .map(term => `${term.termin}: ${formatCurrency(term.nominal)} (${term.description})`)
+          .join('; ');
+        
+        // Count files
+        const fileCount = agreement.files.length;
+        const fileNames = agreement.files.map(file => file.name).join('; ');
+        
+        excelData.push({
+          "No": index + 1,
+          "Kode Project": agreement.kodeProject,
+          "Project Name": agreement.projectName,
+          "Project Type": agreement.projectType,
+          "Divisi Inisiasi": agreement.divisiInisiasi,
+          "Grup Terlibat": agreement.grupTerlibat,
+          "Keterangan": agreement.keterangan,
+          "Nama Vendor": agreement.namaVendor,
+          "No PKS/PO": agreement.noPKSPO,
+          "Tanggal PKS/PO": new Date(agreement.tanggalPKSPO).toLocaleDateString('id-ID'),
+          "Tanggal BAPP": new Date(agreement.tanggalBAPP).toLocaleDateString('id-ID'),
+          "Tanggal Berakhir": new Date(agreement.tanggalBerakhir).toLocaleDateString('id-ID'),
+          "Total Payment": formatCurrency(totalPayment),
+          "Payment Terms": paymentTermsText,
+          "File Count": fileCount,
+          "File Names": fileNames,
+          "Created At": new Date(agreement.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(agreement.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Kode Project
+        { wch: 30 },  // Project Name
+        { wch: 20 },  // Project Type
+        { wch: 20 },  // Divisi Inisiasi
+        { wch: 20 },  // Grup Terlibat
+        { wch: 40 },  // Keterangan
+        { wch: 25 },  // Nama Vendor
+        { wch: 20 },  // No PKS/PO
+        { wch: 15 },  // Tanggal PKS/PO
+        { wch: 15 },  // Tanggal BAPP
+        { wch: 15 },  // Tanggal Berakhir
+        { wch: 20 },  // Total Payment
+        { wch: 50 },  // Payment Terms
+        { wch: 10 },  // File Count
+        { wch: 50 },  // File Names
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Portfolio Data");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Portfolio_${selectedAgreements.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedAgreements.length} agreements to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export agreements. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const handleEditFromDetail = () => {
     setShowDetailModal(false);
     setIsEditMode(true);
@@ -489,6 +587,14 @@ export default function PortfolioManagementPage() {
                     Delete {selectedAgreements.length > 0 && `(${selectedAgreements.length})`}
                   </button>
                   
+                  <button
+                    onClick={handleExportSelected}
+                    disabled={selectedAgreements.length === 0 || isExporting}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaFileExcel className="text-sm" />
+                    {isExporting ? 'Exporting...' : `Export ${selectedAgreements.length > 0 ? `(${selectedAgreements.length})` : ''}`}
+                  </button>                  
                   {selectedAgreements.length > 0 && (
                     <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg whitespace-nowrap">
                       <FaCheck className="text-blue-500 mr-2" />

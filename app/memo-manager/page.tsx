@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaSearch, FaChevronDown, FaChevronUp, FaFilter } from "react-icons/fa";
+import { FaPlus, FaSearch, FaChevronDown, FaChevronUp, FaFilter, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
 
@@ -31,6 +32,7 @@ export default function MemoManagerPage() {
   const [jenisFilter, setJenisFilter] = useState<"" | "Memo" | "Surat">("");
   const [showModal, setShowModal] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -266,7 +268,75 @@ export default function MemoManagerPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  
+  // Export function
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      
+      if (filteredMemos.length === 0) {
+        toast.error("No memos found to export");
+        return;
+      }
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      filteredMemos.forEach((memo, index) => {
+        excelData.push({
+          "No": index + 1,
+          "Jenis": memo.jenis,
+          "Tanggal": memo.tanggal,
+          "Nomor": memo.nomor,
+          "Kepada": memo.kepada,
+          "CC": memo.cc,
+          "Perihal": memo.perihal,
+          "Pembuat": memo.pembuat,
+          "Created At": new Date(memo.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(memo.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 8 },   // Jenis
+        { wch: 12 },  // Tanggal
+        { wch: 20 },  // Nomor
+        { wch: 30 },  // Kepada
+        { wch: 30 },  // CC
+        { wch: 50 },  // Perihal
+        { wch: 20 },  // Pembuat
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Memo Data");
+
+      // Generate filename with filter info and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const jenisFilter_text = jenisFilter ? `_${jenisFilter}` : '';
+      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      const filename = `Memo_Manager${jenisFilter_text}${searchFilter}_${filteredMemos.length}_items_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${filteredMemos.length} memos to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export memos. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };  
   // Reset page when filter changes
   useEffect(() => {
     setCurrentPage(1);
@@ -429,7 +499,14 @@ export default function MemoManagerPage() {
                 <FaPlus className="text-sm" />
                 New Memo
               </button>
-            </div>
+              <button
+                onClick={handleExport}
+                disabled={isExporting || filteredMemos.length === 0}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+              >
+                <FaFileExcel className="text-sm" />
+                {isExporting ? 'Exporting...' : `Export (${filteredMemos.length})`}
+              </button>            </div>
 
             {/* Data Table */}
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">

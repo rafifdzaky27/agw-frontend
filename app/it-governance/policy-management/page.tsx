@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch, FaFileExcel } from "react-icons/fa";
+import { FaSearch, FaFileExcel, FaTimes, FaCheck  } from "react-icons/fa";
 import * as XLSX from 'xlsx';
 
 // Define Policy interface
@@ -396,15 +396,16 @@ export default function PolicyManagement() {
             
             {/* Select/Cancel Button */}
             <button
-              onClick={toggleSelectionMode}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${
-                isSelectionMode
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isSelectionMode ? 'Cancel' : 'Select'}
-            </button>
+                onClick={toggleSelectionMode}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
+                  isSelectionMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+              >
+                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
+                {isSelectionMode ? 'Cancel' : 'Select'}
+              </button>
 
             {/* Select All Button - Only show in selection mode */}
             {isSelectionMode && (

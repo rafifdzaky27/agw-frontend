@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import VendorModal from "./components/VendorModal";
 import VendorDetailModal from "./components/VendorDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -43,6 +44,7 @@ export default function VendorManagementPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -257,7 +259,99 @@ export default function VendorManagementPage() {
     setShowDeleteConfirm(false);
     setIsSelectionMode(false);
   };
+  const handleExportSelected = async () => {
+    if (selectedVendors.length === 0) {
+      toast.error("Please select vendors to export");
+      return;
+    }
 
+    try {
+      setIsExporting(true);
+      
+      // Get selected vendors data
+      const selectedVendorsData = vendors.filter(vendor => selectedVendors.includes(vendor.id));
+      
+      // Create Excel data - one row per PIC
+      const excelData: any[] = [];
+      let rowNumber = 1;
+      
+      selectedVendorsData.forEach(vendor => {
+        // Find PIC Utama (Primary PIC)
+        const primaryPIC = vendor.pics.find(pic => pic.role === "PIC Utama");
+        
+        if (primaryPIC) {
+          // Use PIC Utama data
+          excelData.push({
+            "No": rowNumber++,
+            "Nama Vendor": vendor.namaVendor,
+            "Alamat": vendor.alamat,
+            "No Telepon": vendor.noTlp,
+            "Portfolio Project": vendor.portofolioProject,
+            "PIC Nama": primaryPIC.nama,
+            "PIC Email": primaryPIC.email,
+            "PIC No HP": primaryPIC.noHP,
+            "PIC Role": primaryPIC.role,
+            "Created At": new Date(vendor.createdAt).toLocaleDateString('id-ID'),
+            "Updated At": new Date(vendor.updatedAt).toLocaleDateString('id-ID')
+          });
+        } else {
+          // If no PIC Utama found, create row with empty PIC data
+          excelData.push({
+            "No": rowNumber++,
+            "Nama Vendor": vendor.namaVendor,
+            "Alamat": vendor.alamat,
+            "No Telepon": vendor.noTlp,
+            "Portfolio Project": vendor.portofolioProject,
+            "PIC Nama": "-",
+            "PIC Email": "-",
+            "PIC No HP": "-",
+            "PIC Role": "-",
+            "Created At": new Date(vendor.createdAt).toLocaleDateString('id-ID'),
+            "Updated At": new Date(vendor.updatedAt).toLocaleDateString('id-ID')
+          });
+        }
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 25 },  // Nama Vendor
+        { wch: 40 },  // Alamat
+        { wch: 15 },  // No Telepon
+        { wch: 50 },  // Portfolio Project
+        { wch: 20 },  // PIC Nama
+        { wch: 25 },  // PIC Email
+        { wch: 15 },  // PIC No HP
+        { wch: 15 },  // PIC Role
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Vendor Data");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Vendors_${selectedVendors.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedVendors.length} vendors to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export vendors. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   if (loading) {
     return (
       <ProtectedRoute>
@@ -366,6 +460,14 @@ export default function VendorManagementPage() {
                     Delete {selectedVendors.length > 0 && `(${selectedVendors.length})`}
                   </button>
                   
+                  <button
+                    onClick={handleExportSelected}
+                    disabled={selectedVendors.length === 0 || isExporting}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaFileExcel className="text-sm" />
+                    {isExporting ? 'Exporting...' : `Export ${selectedVendors.length > 0 ? `(${selectedVendors.length})` : ''}`}
+                  </button>                  
                   {selectedVendors.length > 0 && (
                     <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg whitespace-nowrap">
                       <FaCheck className="text-blue-500 mr-2" />
