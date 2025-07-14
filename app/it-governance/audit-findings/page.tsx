@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { FaFileExcel } from "react-icons/fa";
 
 // Define interfaces for type safety
 interface AuditFinding {
@@ -34,6 +35,58 @@ export default function AuditFindings() {
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
   const API_BASE_URL = `${BACKEND_IP}/api`;
+
+  // Function to export audit findings to Excel
+  const handleExportToExcel = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/findings/export/excel`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const { data, filename } = await response.json();
+      
+      // Create Excel file using a simple CSV approach
+      const csvContent = convertToCSV(data);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename.replace('.xlsx', '.csv'));
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error("Failed to export audit findings", error);
+      alert("Failed to export audit findings. Please try again.");
+    }
+  }, [API_BASE_URL]);
+
+  // Helper function to convert JSON to CSV
+  const convertToCSV = (data: any[]) => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvHeaders = headers.join(',');
+    
+    const csvRows = data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      }).join(',')
+    );
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
 
   // Fetch data audit findings
   useEffect(() => {
@@ -337,6 +390,13 @@ export default function AuditFindings() {
               />
             </div>
             <button
+              onClick={handleExportToExcel}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              <FaFileExcel className="text-sm" />
+              Export Excel
+            </button>
+            <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
               onClick={() => setShowCreateDialog(true)}
             >
@@ -345,7 +405,7 @@ export default function AuditFindings() {
               </svg>
               Add Finding
             </button>
-          </div>
+            </div>
           
           {loading ? (
             <div className="flex justify-center">

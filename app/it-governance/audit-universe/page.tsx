@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaCalendarAlt, FaFileAlt, FaEdit, FaSearch } from "react-icons/fa";
+import { FaPlus, FaCalendarAlt, FaFileAlt, FaEdit, FaSearch, FaCheck, FaTimes, FaTrash, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import NewAuditModal from "./components/NewAuditModal";
 import AuditDetailModal from "./components/AuditDetailModal";
 import toast from "react-hot-toast";
@@ -40,6 +41,9 @@ export default function AuditUniversePage() {
   const [selectedAudit, setSelectedAudit] = useState<Audit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedAudits, setSelectedAudits] = useState<string[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
   const [currentPage, setCurrentPage] = useState({
     Internal: 1,
     Regulatory: 1,
@@ -980,10 +984,240 @@ export default function AuditUniversePage() {
   };
 
   const handleAuditClick = (audit: Audit) => {
-    setSelectedAudit(audit);
-    setShowDetailModal(true);
+    if (isSelectionMode) {
+      handleMultipleSelect(audit.id);
+    } else {
+      setSelectedAudit(audit);
+      setShowDetailModal(true);
+    }
   };
 
+  // Selection mode functions
+  const handleMultipleSelect = (auditId: string) => {
+    setSelectedAudits(prev => 
+      prev.includes(auditId) 
+        ? prev.filter(id => id !== auditId)
+        : [...prev, auditId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const allCurrentAudits = audits.map(audit => audit.id);
+    if (selectedAudits.length === allCurrentAudits.length) {
+      setSelectedAudits([]);
+    } else {
+      setSelectedAudits(allCurrentAudits);
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedAudits([]);
+  };
+
+  // Export function
+  const handleExportSelected = async () => {
+    if (selectedAudits.length === 0) {
+      toast.error("Please select audits to export");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      
+      // Get selected audits data
+      const selectedAuditsData = audits.filter(audit => selectedAudits.includes(audit.id));
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      selectedAuditsData.forEach((audit, index) => {
+        // Count files
+        const fileCount = audit.files.length;
+        const fileNames = audit.files.map(file => file.name).join('; ');
+        const totalFileSize = audit.files.reduce((sum, file) => sum + file.size, 0);
+        
+        // Format file size
+        const formatFileSize = (bytes: number) => {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+        
+        excelData.push({
+          "No": index + 1,
+          "Audit Name": audit.auditName,
+          "Category": audit.category,
+          "Auditor": audit.auditor,
+          "Date": audit.date,
+          "Scope": audit.scope,
+          "File Count": fileCount,
+          "File Names": fileNames,
+          "Total File Size": formatFileSize(totalFileSize),
+          "Created At": new Date(audit.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(audit.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 30 },  // Audit Name
+        { wch: 15 },  // Category
+        { wch: 25 },  // Auditor
+        { wch: 12 },  // Date
+        { wch: 50 },  // Scope
+        { wch: 12 },  // File Count
+        { wch: 50 },  // File Names
+        { wch: 15 },  // Total File Size
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Universe Data");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Audits_${selectedAudits.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedAudits.length} audits to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export audits. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedAudits.length === 0) {
+      toast.error("Please select audits to delete");
+      return;
+    }
+    
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedAudits.length} audit(s)? This action cannot be undone.`);
+    
+    if (confirmDelete) {
+      try {
+        // Remove selected audits from the list
+        setAudits(prev => prev.filter(audit => !selectedAudits.includes(audit.id)));
+        setSelectedAudits([]);
+        setIsSelectionMode(false);
+        toast.success(`Successfully deleted ${selectedAudits.length} audit(s)`);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast.error("Failed to delete audits. Please try again.");
+      }
+    }
+  };
+  // Export function based on current filter
+  const handleExportFiltered = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Get filtered audits based on current year filter and search term
+      const filteredAudits = audits.filter(audit => 
+        (selectedYear === 'all' || audit.date.split('-')[0] === selectedYear) &&
+        (searchTerm === '' ||
+         audit.auditName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         audit.auditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         audit.scope.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      
+      if (filteredAudits.length === 0) {
+        toast.error("No audits found with current filter");
+        return;
+      }
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      filteredAudits.forEach((audit, index) => {
+        // Count files
+        const fileCount = audit.files.length;
+        const fileNames = audit.files.map(file => file.name).join('; ');
+        const totalFileSize = audit.files.reduce((sum, file) => sum + file.size, 0);
+        
+        // Format file size
+        const formatFileSize = (bytes: number) => {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+        
+        excelData.push({
+          "No": index + 1,
+          "Audit Name": audit.auditName,
+          "Category": audit.category,
+          "Auditor": audit.auditor,
+          "Date": audit.date,
+          "Scope": audit.scope,
+          "File Count": fileCount,
+          "File Names": fileNames,
+          "Total File Size": formatFileSize(totalFileSize),
+          "Created At": new Date(audit.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(audit.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 30 },  // Audit Name
+        { wch: 15 },  // Category
+        { wch: 25 },  // Auditor
+        { wch: 12 },  // Date
+        { wch: 50 },  // Scope
+        { wch: 12 },  // File Count
+        { wch: 50 },  // File Names
+        { wch: 15 },  // Total File Size
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Audit Data");
+
+      // Generate filename with filter info and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const yearFilter = selectedYear === 'all' ? 'All_Years' : `Year_${selectedYear}`;
+      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      const filename = `Audit_Universe_${yearFilter}${searchFilter}_${filteredAudits.length}_items_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${filteredAudits.length} audits to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export audits. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const formatDate = (dateString: string) => {
     const [year, month] = dateString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
@@ -1034,9 +1268,30 @@ export default function AuditUniversePage() {
     
     return (
       <div 
-        className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-gray-700 h-44 flex flex-col"
+        className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border ${
+          isSelectionMode && selectedAudits.includes(audit.id) 
+            ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
+            : 'border-gray-200 dark:border-gray-700'
+        } h-44 flex flex-col relative`}
         onClick={() => handleAuditClick(audit)}
       >
+        {/* Selection Checkbox - Smaller Size */}
+        {isSelectionMode && (
+          <div 
+            className="absolute top-2 right-2 z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMultipleSelect(audit.id);
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedAudits.includes(audit.id)}
+              onChange={() => {}}
+              className="w-3.5 h-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-1 dark:bg-gray-700 dark:border-gray-600"
+            />
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
             {audit.auditName}
@@ -1160,14 +1415,68 @@ export default function AuditUniversePage() {
                   .map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
-              </select>              <button
+              </select>
+              <button
+                onClick={toggleSelectionMode}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
+                  isSelectionMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
+              >
+                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
+                {isSelectionMode ? 'Cancel' : 'Select'}
+              </button>       
+              {/* Export Button - Only show when year filter is not "all" OR when in selection mode with selected items */}
+              {(selectedYear !== 'all' || (isSelectionMode && selectedAudits.length > 0)) && (
+                <button
+                  onClick={isSelectionMode && selectedAudits.length > 0 ? handleExportSelected : handleExportFiltered}
+                  disabled={isExporting}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaFileExcel className="text-sm" />
+                  {isExporting ? 'Exporting...' : 
+                    isSelectionMode && selectedAudits.length > 0 
+                      ? `Export (${selectedAudits.length})` 
+                      : 'Export'
+                  }
+                </button>
+              )}
+              <button
                 onClick={() => setShowNewAuditModal(true)}
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
               >
                 <FaPlus className="text-sm" />
                 Add New Audit
               </button>
+              {/* Select All button - only show when in selection mode */}
+              {isSelectionMode && (
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaCheck className="text-sm" />
+                  {selectedAudits.length === audits.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
             </div>
+
+            {/* Selection Mode Toolbar - Compact Version - Only Counter and Delete */}
+            {isSelectionMode && selectedAudits.length > 0 && (
+              <div className="flex items-center justify-between gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 px-2 py-1 bg-white dark:bg-gray-800 rounded">
+                  {selectedAudits.length} selected
+                </span>
+                
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition-colors"
+                >
+                  <FaTrash className="text-xs" />
+                  Delete
+                </button>
+              </div>
+            )}
 
             {/* Three Column Layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
