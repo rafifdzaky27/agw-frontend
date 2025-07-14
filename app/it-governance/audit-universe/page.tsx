@@ -1415,13 +1415,18 @@ export default function AuditUniversePage() {
                   .map(year => (
                     <option key={year} value={year}>{year}</option>
                   ))}
-              </select>              <button
-                onClick={() => setShowNewAuditModal(true)}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+              </select>
+              <button
+                onClick={toggleSelectionMode}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
+                  isSelectionMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
               >
-                <FaPlus className="text-sm" />
-                Add New Audit
-              </button>
+                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
+                {isSelectionMode ? 'Cancel' : 'Select'}
+              </button>       
               {/* Export Button - Only show when year filter is not "all" OR when in selection mode with selected items */}
               {(selectedYear !== 'all' || (isSelectionMode && selectedAudits.length > 0)) && (
                 <button
@@ -1438,15 +1443,11 @@ export default function AuditUniversePage() {
                 </button>
               )}
               <button
-                onClick={toggleSelectionMode}
-                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
-                  isSelectionMode 
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
-                }`}
+                onClick={() => setShowNewAuditModal(true)}
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
               >
-                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
-                {isSelectionMode ? 'Cancel' : 'Select'}
+                <FaPlus className="text-sm" />
+                Add New Audit
               </button>
               {/* Select All button - only show when in selection mode */}
               {isSelectionMode && (

@@ -493,20 +493,21 @@ export default function MemoManagerPage() {
                 <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
               </div>
               <button
-                onClick={handleNewMemo}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
-              >
-                <FaPlus className="text-sm" />
-                New Memo
-              </button>
-              <button
                 onClick={handleExport}
                 disabled={isExporting || filteredMemos.length === 0}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
               >
                 <FaFileExcel className="text-sm" />
                 {isExporting ? 'Exporting...' : `Export (${filteredMemos.length})`}
-              </button>            </div>
+              </button> 
+              <button
+                onClick={handleNewMemo}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+              >
+                <FaPlus className="text-sm" />
+                New Memo
+              </button>
+              </div>
 
             {/* Data Table */}
             <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">

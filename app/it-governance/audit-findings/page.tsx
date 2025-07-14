@@ -390,6 +390,13 @@ export default function AuditFindings() {
               />
             </div>
             <button
+              onClick={handleExportToExcel}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              <FaFileExcel className="text-sm" />
+              Export Excel
+            </button>
+            <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
               onClick={() => setShowCreateDialog(true)}
             >
@@ -398,13 +405,7 @@ export default function AuditFindings() {
               </svg>
               Add Finding
             </button>
-            <button
-              onClick={handleExportToExcel}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
-            >
-              <FaFileExcel className="text-sm" />
-              Export Excel
-            </button>          </div>
+            </div>
           
           {loading ? (
             <div className="flex justify-center">

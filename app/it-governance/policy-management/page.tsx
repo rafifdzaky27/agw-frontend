@@ -430,7 +430,7 @@ export default function PolicyManagement() {
                 title={selectedPolicies.size === 0 ? 'Select policies to export' : `Export ${selectedPolicies.size} selected policies`}
               >
                 <FaFileExcel className="w-4 h-4" />
-                Export to Excel
+                Export Excel
                 {selectedPolicies.size > 0 && (
                   <span className="bg-green-800 text-white px-2 py-1 rounded-full text-xs">
                     {selectedPolicies.size}
