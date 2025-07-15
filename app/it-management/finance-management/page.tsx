@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaSearch, FaMoneyBillWave, FaCheckCircle, FaClock } from "react-icons/fa";
+import { FaSearch, FaMoneyBillWave, FaCheckCircle, FaClock, FaCalendarAlt, FaFileExcel, FaCheck, FaTimes, FaTrash } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import ProjectPaymentDetailModal from "./components/ProjectPaymentDetailModal";
 import toast from "react-hot-toast";
 
@@ -49,6 +50,12 @@ export default function FinanceManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Filter and selection states
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,70 +69,103 @@ export default function FinanceManagementPage() {
       "Dashboard Analytics Real-time", "Sistem Inventory Management", "Portal Customer Service",
       "Aplikasi HR Management System", "Platform Digital Marketing", "Sistem Document Management",
       "Aplikasi Project Management", "Portal Vendor Management", "Sistem CRM Terintegrasi",
-      "Platform Learning Management", "Aplikasi Quality Control", "Sistem Asset Management"
+      "Platform Learning Management", "Aplikasi Quality Control", "Sistem Asset Management",
+      "Cloud Infrastructure Migration", "Data Warehouse Implementation", "API Gateway Development",
+      "Microservices Architecture", "DevOps Pipeline Setup", "Security Audit System",
+      "Business Intelligence Platform", "IoT Monitoring System", "Blockchain Integration",
+      "AI/ML Analytics Platform", "Digital Transformation Initiative"
     ];
 
     const vendors = [
       "PT Teknologi Maju Indonesia", "CV Digital Solutions", "PT Inovasi Sistem Terpadu",
-      "PT Solusi IT Nusantara", "CV Kreasi Digital", "PT Mitra Teknologi Global"
+      "PT Solusi IT Nusantara", "CV Kreasi Digital", "PT Mitra Teknologi Global",
+      "PT Sistem Informasi Prima", "CV Teknologi Canggih", "PT Digital Innovation Hub"
     ];
 
     const divisions = ["IT", "Finance", "Operations", "HR", "Marketing", "Procurement"];
     const groups = ["Development Team", "Infrastructure Team", "Security Team", "Analytics Team"];
+    
+    // Define years with different project counts
+    const yearData = [
+      { year: 2022, count: 8 },
+      { year: 2023, count: 12 },
+      { year: 2024, count: 15 },
+      { year: 2025, count: 6 }
+    ];
 
-    for (let i = 1; i <= 15; i++) {
-      const numTerms = Math.floor(Math.random() * 4) + 2; // 2-5 payment terms
-      const terms: PaymentTerm[] = [];
-      
-      // Determine project type once per project
-      const projectType = Math.random() > 0.6 ? 'procurement' : 'non procurement';
-      const isNonProcurement = projectType === 'non procurement';
-      
-      for (let j = 1; j <= numTerms; j++) {
-        const baseAmount = 100000000 + (Math.random() * 500000000); // 100M - 600M
-        const status = Math.random() > 0.6 ? 'Sudah Dibayar' : 
-                     Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar';
+    let projectId = 1;
+
+    yearData.forEach(({ year, count }) => {
+      for (let i = 1; i <= count; i++) {
+        const numTerms = Math.floor(Math.random() * 4) + 2; // 2-5 payment terms
+        const terms: PaymentTerm[] = [];
         
-        terms.push({
-          id: `term_${i}_${j}`,
-          termin: isNonProcurement ? `Bill ${j}` : `Termin ${j}`,
-          nominal: Math.floor(baseAmount),
-          description: isNonProcurement ? 
-            (j === 1 ? "Initial billing for project setup" : 
-             j === 2 ? "Development milestone billing" :
-             j === 3 ? "Final delivery billing" : "Maintenance billing") :
-            (j === 1 ? "BA/PS, Proplan" : 
-             j === 2 ? "Delivery & Testing" :
-             j === 3 ? "Go Live & Training" : "Maintenance & Support"),
-          status: status,
-          paymentDate: status === 'Sudah Dibayar' ? 
-            new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0] : 
-            undefined,
-          budget: status === 'Sudah Dibayar' ? (Math.random() > 0.5 ? 'Capex' : 'Opex') : undefined,
-          notes: status === 'Sudah Dibayar' ? (isNonProcurement ? 'Billing completed successfully' : 'Payment completed successfully') : ''
+        // Determine project type once per project
+        const projectType = Math.random() > 0.6 ? 'procurement' : 'non procurement';
+        const isNonProcurement = projectType === 'non procurement';
+        
+        // Create random date within the year
+        const createdDate = new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+        
+        for (let j = 1; j <= numTerms; j++) {
+          const baseAmount = 100000000 + (Math.random() * 500000000); // 100M - 600M
+          
+          // Adjust payment status based on year (older projects more likely to be paid)
+          let status: string;
+          if (year <= 2022) {
+            status = Math.random() > 0.2 ? 'Sudah Dibayar' : 'Checking Umum'; // 80% paid for 2022
+          } else if (year === 2023) {
+            status = Math.random() > 0.4 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 60% paid for 2023
+          } else if (year === 2024) {
+            status = Math.random() > 0.6 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 40% paid for 2024
+          } else {
+            status = Math.random() > 0.8 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.5 ? 'Checking Umum' : 'Belum Dibayar'; // 20% paid for 2025
+          }
+          
+          terms.push({
+            id: `term_${projectId}_${j}`,
+            termin: isNonProcurement ? `Bill ${j}` : `Termin ${j}`,
+            nominal: Math.floor(baseAmount),
+            description: isNonProcurement ? 
+              (j === 1 ? "Initial billing for project setup" : 
+               j === 2 ? "Development milestone billing" :
+               j === 3 ? "Final delivery billing" : "Maintenance billing") :
+              (j === 1 ? "BA/PS, Proplan" : 
+               j === 2 ? "Delivery & Testing" :
+               j === 3 ? "Go Live & Training" : "Maintenance & Support"),
+            status: status,
+            paymentDate: status === 'Sudah Dibayar' ? 
+              new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0] : 
+              undefined,
+            budget: status === 'Sudah Dibayar' ? (Math.random() > 0.5 ? 'Capex' : 'Opex') : undefined,
+            notes: status === 'Sudah Dibayar' ? (isNonProcurement ? 'Billing completed successfully' : 'Payment completed successfully') : ''
+          });
+        }
+        
+        projects.push({
+          id: projectId.toString(),
+          kodeProject: `PRJ-${year}-${i.toString().padStart(3, '0')}`,
+          projectName: projectNames[Math.floor(Math.random() * projectNames.length)],
+          projectType: projectType,
+          divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
+          grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
+          keterangan: `Project implementation for ${projectNames[Math.floor(Math.random() * projectNames.length)].toLowerCase()} - ${year}`,
+          namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
+          noPKSPO: `PKS/${i.toString().padStart(3, '0')}/${year}`,
+          tanggalPKSPO: createdDate.toISOString().split('T')[0],
+          tanggalBAPP: new Date(createdDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+          tanggalBerakhir: new Date(createdDate.getTime() + (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+          terminPembayaran: terms,
+          createdAt: createdDate.toISOString(),
+          updatedAt: createdDate.toISOString()
         });
+        
+        projectId++;
       }
-
-      const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-      
-      projects.push({
-        id: i.toString(),
-        kodeProject: `PRJ-${i.toString().padStart(3, '0')}`,
-        projectName: projectNames[Math.floor(Math.random() * projectNames.length)],
-        projectType: projectType,
-        divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
-        grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
-        keterangan: `Project implementation for ${projectNames[Math.floor(Math.random() * projectNames.length)].toLowerCase()}`,
-        namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
-        noPKSPO: `PKS/${i.toString().padStart(3, '0')}/2024`,
-        tanggalPKSPO: createdDate.toISOString().split('T')[0],
-        tanggalBAPP: new Date(createdDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-        tanggalBerakhir: new Date(createdDate.getTime() + (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-        terminPembayaran: terms,
-        createdAt: createdDate.toISOString(),
-        updatedAt: createdDate.toISOString()
-      });
-    }
+    });
     
     return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   };
@@ -170,14 +210,26 @@ export default function FinanceManagementPage() {
 
   // Filter projects based on search term
   const filteredProjects = useMemo(() => {
-    if (!searchTerm) return projects;
+    let filtered = projects;
     
-    return projects.filter(project =>
-      project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.noPKSPO.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [projects, searchTerm]);
+    // Filter by year
+    if (selectedYear !== 'all') {
+      filtered = filtered.filter(project => 
+        project.tanggalPKSPO.split('-')[0] === selectedYear
+      );
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(project =>
+        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.noPKSPO.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [projects, searchTerm, selectedYear]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
@@ -192,8 +244,12 @@ export default function FinanceManagementPage() {
 
   // Handle row click
   const handleRowClick = (project: Project) => {
-    setSelectedProject(project);
-    setShowDetailModal(true);
+    if (isSelectionMode) {
+      handleMultipleSelect(project.id);
+    } else {
+      setSelectedProject(project);
+      setShowDetailModal(true);
+    }
   };
 
   // Update project payment terms
@@ -201,7 +257,244 @@ export default function FinanceManagementPage() {
     setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
     toast.success("Payment information updated successfully");
   };
+  // Selection mode functions
+  const handleMultipleSelect = (projectId: string) => {
+    setSelectedProjects(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
 
+  const handleSelectAll = () => {
+    const allCurrentProjects = filteredProjects.map(project => project.id);
+    if (selectedProjects.length === allCurrentProjects.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(allCurrentProjects);
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedProjects([]);
+  };
+
+  // Export function for selected projects
+  const handleExportSelected = async () => {
+    if (selectedProjects.length === 0) {
+      toast.error("Please select projects to export");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      
+      // Get selected projects data
+      const selectedProjectsData = projects.filter(project => selectedProjects.includes(project.id));
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      selectedProjectsData.forEach((project, index) => {
+        const paymentStatus = getPaymentStatus(project.terminPembayaran);
+        const totalValue = project.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        const paidValue = project.terminPembayaran
+          .filter(term => term.status === 'Sudah Dibayar')
+          .reduce((sum, term) => sum + term.nominal, 0);
+        
+        excelData.push({
+          "No": index + 1,
+          "Project Code": project.kodeProject,
+          "Project Name": project.projectName,
+          "Project Type": project.projectType,
+          "PKS/PO Number": project.noPKSPO,
+          "Vendor": project.namaVendor,
+          "Division": project.divisiInisiasi,
+          "Group": project.grupTerlibat,
+          "PKS/PO Date": project.tanggalPKSPO,
+          "BAPP Date": project.tanggalBAPP,
+          "End Date": project.tanggalBerakhir,
+          "Payment Status": paymentStatus.status,
+          "Total Value": formatCurrency(totalValue),
+          "Paid Value": formatCurrency(paidValue),
+          "Remaining Value": formatCurrency(totalValue - paidValue),
+          "Payment Terms Count": project.terminPembayaran.length,
+          "Paid Terms": project.terminPembayaran.filter(term => term.status === 'Sudah Dibayar').length,
+          "Description": project.keterangan,
+          "Created At": new Date(project.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(project.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Project Code
+        { wch: 30 },  // Project Name
+        { wch: 15 },  // Project Type
+        { wch: 20 },  // PKS/PO Number
+        { wch: 25 },  // Vendor
+        { wch: 15 },  // Division
+        { wch: 20 },  // Group
+        { wch: 12 },  // PKS/PO Date
+        { wch: 12 },  // BAPP Date
+        { wch: 12 },  // End Date
+        { wch: 20 },  // Payment Status
+        { wch: 18 },  // Total Value
+        { wch: 18 },  // Paid Value
+        { wch: 18 },  // Remaining Value
+        { wch: 15 },  // Payment Terms Count
+        { wch: 12 },  // Paid Terms
+        { wch: 40 },  // Description
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Selected Projects");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Finance_Projects_${selectedProjects.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedProjects.length} projects to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export projects. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export function based on current filter
+  const handleExportFiltered = async () => {
+    try {
+      setIsExporting(true);
+      
+      if (filteredProjects.length === 0) {
+        toast.error("No projects found with current filter");
+        return;
+      }
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      filteredProjects.forEach((project, index) => {
+        const paymentStatus = getPaymentStatus(project.terminPembayaran);
+        const totalValue = project.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        const paidValue = project.terminPembayaran
+          .filter(term => term.status === 'Sudah Dibayar')
+          .reduce((sum, term) => sum + term.nominal, 0);
+        
+        excelData.push({
+          "No": index + 1,
+          "Project Code": project.kodeProject,
+          "Project Name": project.projectName,
+          "Project Type": project.projectType,
+          "PKS/PO Number": project.noPKSPO,
+          "Vendor": project.namaVendor,
+          "Division": project.divisiInisiasi,
+          "Group": project.grupTerlibat,
+          "PKS/PO Date": project.tanggalPKSPO,
+          "BAPP Date": project.tanggalBAPP,
+          "End Date": project.tanggalBerakhir,
+          "Payment Status": paymentStatus.status,
+          "Total Value": formatCurrency(totalValue),
+          "Paid Value": formatCurrency(paidValue),
+          "Remaining Value": formatCurrency(totalValue - paidValue),
+          "Payment Terms Count": project.terminPembayaran.length,
+          "Paid Terms": project.terminPembayaran.filter(term => term.status === 'Sudah Dibayar').length,
+          "Description": project.keterangan,
+          "Created At": new Date(project.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(project.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Project Code
+        { wch: 30 },  // Project Name
+        { wch: 15 },  // Project Type
+        { wch: 20 },  // PKS/PO Number
+        { wch: 25 },  // Vendor
+        { wch: 15 },  // Division
+        { wch: 20 },  // Group
+        { wch: 12 },  // PKS/PO Date
+        { wch: 12 },  // BAPP Date
+        { wch: 12 },  // End Date
+        { wch: 20 },  // Payment Status
+        { wch: 18 },  // Total Value
+        { wch: 18 },  // Paid Value
+        { wch: 18 },  // Remaining Value
+        { wch: 15 },  // Payment Terms Count
+        { wch: 12 },  // Paid Terms
+        { wch: 40 },  // Description
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Projects");
+
+      // Generate filename with filter info and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const yearFilter = selectedYear === 'all' ? 'All_Years' : `Year_${selectedYear}`;
+      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      const filename = `Finance_Projects_${yearFilter}${searchFilter}_${filteredProjects.length}_items_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${filteredProjects.length} projects to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export projects. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedProjects.length === 0) {
+      toast.error("Please select projects to delete");
+      return;
+    }
+    
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedProjects.length} project(s)? This action cannot be undone.`);
+    
+    if (confirmDelete) {
+      try {
+        // Remove selected projects from the list
+        setProjects(prev => prev.filter(project => !selectedProjects.includes(project.id)));
+        setSelectedProjects([]);
+        setIsSelectionMode(false);
+        toast.success(`Successfully deleted ${selectedProjects.length} project(s)`);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast.error("Failed to delete projects. Please try again.");
+      }
+    }
+  };
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -286,8 +579,8 @@ export default function FinanceManagementPage() {
               </div>
             )}
 
-            {/* Search - Direct without card wrapper */}
-            <div className="relative w-full mb-6">
+            {/* Search Bar and Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -296,7 +589,72 @@ export default function FinanceManagementPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               />
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors min-w-[120px]"
+              >
+                <option value="all">All Years</option>
+                {[...new Set(projects.map(project => project.tanggalPKSPO.split('-')[0]))]
+                  .sort((a, b) => parseInt(b) - parseInt(a))
+                  .map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+              </select>
+              <button
+                onClick={toggleSelectionMode}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
+                  isSelectionMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
+                {isSelectionMode ? 'Cancel' : 'Select'}
+              </button>   
+              {/* Select All button - only show when in selection mode */}
+              {isSelectionMode && (
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaCheck className="text-sm" />
+                  {selectedProjects.length === filteredProjects.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}    
+              {/* Export Button - Only show when year filter is not "all" OR when in selection mode with selected items */}
+              {(selectedYear !== 'all' || (isSelectionMode && selectedProjects.length > 0)) && (
+                <button
+                  onClick={isSelectionMode && selectedProjects.length > 0 ? handleExportSelected : handleExportFiltered}
+                  disabled={isExporting}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaFileExcel className="text-sm" />
+                  {isExporting ? 'Exporting...' : 
+                    isSelectionMode && selectedProjects.length > 0 
+                      ? `Export (${selectedProjects.length})` 
+                      : 'Export'
+                  }
+                </button>
+              )}
             </div>
+
+            {/* Selection Mode Toolbar - Only Counter and Delete */}
+            {isSelectionMode && selectedProjects.length > 0 && (
+              <div className="flex items-center justify-between gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 px-2 py-1 bg-white dark:bg-gray-800 rounded">
+                  {selectedProjects.length} selected
+                </span>
+                
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition-colors"
+                >
+                  <FaTrash className="text-xs" />
+                  Delete
+                </button>
+              </div>
+            )}
 
             {/* Data Table */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -304,6 +662,17 @@ export default function FinanceManagementPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
+                      {/* Selection checkbox column - only show in selection mode */}
+                      {isSelectionMode && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectedProjects.length === filteredProjects.length && filteredProjects.length > 0}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                        </th>
+                      )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         No.
                       </th>
@@ -324,7 +693,7 @@ export default function FinanceManagementPage() {
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {currentProjects.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        <td colSpan={isSelectionMode ? 6 : 5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                           {searchTerm ? 'No projects found matching your search.' : 'No projects available.'}
                         </td>
                       </tr>
@@ -337,8 +706,29 @@ export default function FinanceManagementPage() {
                           <tr
                             key={project.id}
                             onClick={() => handleRowClick(project)}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                            className={`hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
+                              isSelectionMode && selectedProjects.includes(project.id) 
+                                ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
+                                : ''
+                            }`}
                           >
+                            {/* Selection checkbox column - only show in selection mode */}
+                            {isSelectionMode && (
+                              <td 
+                                className="px-6 py-4 whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMultipleSelect(project.id);
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProjects.includes(project.id)}
+                                  onChange={() => {}}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                              </td>
+                            )}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                               {startIndex + index + 1}
                             </td>
