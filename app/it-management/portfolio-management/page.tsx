@@ -553,7 +553,7 @@ export default function PortfolioManagementPage() {
                 <>
                   <button
                     onClick={toggleSelectionMode}
-                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
                     title="Select multiple agreements for bulk operations"
                   >
                     <FaCheck className="text-sm" />

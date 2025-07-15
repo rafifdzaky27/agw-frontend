@@ -1420,8 +1420,8 @@ export default function AuditUniversePage() {
                 onClick={toggleSelectionMode}
                 className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
                   isSelectionMode 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
               >
                 {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
@@ -1431,7 +1431,7 @@ export default function AuditUniversePage() {
               {isSelectionMode && (
                 <button
                   onClick={handleSelectAll}
-                  className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
                 >
                   <FaCheck className="text-sm" />
                   {selectedAudits.length === audits.length ? 'Deselect All' : 'Select All'}
