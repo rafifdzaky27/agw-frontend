@@ -399,7 +399,7 @@ export default function PolicyManagement() {
                 onClick={toggleSelectionMode}
                 className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
                   isSelectionMode 
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
                     : 'bg-purple-600 hover:bg-purple-700 text-white'
                 }`}
               >
@@ -411,7 +411,7 @@ export default function PolicyManagement() {
             {isSelectionMode && (
               <button
                 onClick={handleSelectAll}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
               >
                 {isSelectAll ? 'Deselect All' : 'Select All'}
               </button>

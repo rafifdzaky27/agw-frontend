@@ -1420,13 +1420,23 @@ export default function AuditUniversePage() {
                 onClick={toggleSelectionMode}
                 className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
                   isSelectionMode 
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
                     : 'bg-purple-600 hover:bg-purple-700 text-white'
                 }`}
               >
                 {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
                 {isSelectionMode ? 'Cancel' : 'Select'}
-              </button>       
+              </button>   
+              {/* Select All button - only show when in selection mode */}
+              {isSelectionMode && (
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaCheck className="text-sm" />
+                  {selectedAudits.length === audits.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}    
               {/* Export Button - Only show when year filter is not "all" OR when in selection mode with selected items */}
               {(selectedYear !== 'all' || (isSelectionMode && selectedAudits.length > 0)) && (
                 <button
@@ -1449,16 +1459,7 @@ export default function AuditUniversePage() {
                 <FaPlus className="text-sm" />
                 Add New Audit
               </button>
-              {/* Select All button - only show when in selection mode */}
-              {isSelectionMode && (
-                <button
-                  onClick={handleSelectAll}
-                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
-                >
-                  <FaCheck className="text-sm" />
-                  {selectedAudits.length === audits.length ? 'Deselect All' : 'Select All'}
-                </button>
-              )}
+              
             </div>
 
             {/* Selection Mode Toolbar - Compact Version - Only Counter and Delete */}
