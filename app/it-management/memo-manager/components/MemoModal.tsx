@@ -4,21 +4,8 @@ import { useState } from "react";
 import { FaTimes, FaSave, FaCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-interface Memo {
-  id: string;
-  jenis: "Memo" | "Surat";
-  tanggal: string;
-  nomor: string;
-  kepada: string;
-  cc: string;
-  perihal: string;
-  pembuat: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface MemoModalProps {
-  onSave: (memoData: Omit<Memo, 'id' | 'nomor' | 'pembuat' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (memoData: { type: "memo" | "surat"; to: string; cc?: string; reason: string }) => void;
   onClose: () => void;
 }
 
@@ -70,14 +57,15 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
     setIsSubmitting(true);
 
     try {
-      const memoData = {
-        ...formData,
-        kepada: formData.kepada.trim(),
-        cc: formData.cc.trim(),
-        perihal: formData.perihal.trim()
+      // Convert old format to new API format
+      const apiData = {
+        type: formData.jenis.toLowerCase() as "memo" | "surat",
+        to: formData.kepada.trim(),
+        cc: formData.cc.trim() || undefined,
+        reason: formData.perihal.trim()
       };
 
-      onSave(memoData);
+      await onSave(apiData);
     } catch (error) {
       console.error("Error saving memo:", error);
       toast.error("Gagal menyimpan dokumen");

@@ -7,19 +7,18 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { FaPlus, FaSearch, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
+import { memoApiService} from "@/utils/memoApi";
 
-// Define interfaces
+// Define interfaces to match backend API
 interface Memo {
-  id: string;
-  jenis: "Memo" | "Surat";
-  tanggal: string;
-  nomor: string;
-  kepada: string;
+  id: number;
+  type: "memo" | "surat";
+  memo_number: string;
+  to: string;
   cc: string;
-  perihal: string;
-  pembuat: string;
-  createdAt: string;
-  updatedAt: string;
+  reason: string;
+  created_by: string;
+  created_at: string;
 }
 
 export default function MemoManagerPage() {
@@ -35,6 +34,7 @@ export default function MemoManagerPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+<<<<<<< Updated upstream:app/it-management/memo-manager/page.tsx
   // Generate mock data
   const generateMockMemos = (): Memo[] => {
     const memos: Memo[] = [];
@@ -216,34 +216,69 @@ export default function MemoManagerPage() {
 
   const mockMemos = generateMockMemos();
 
+=======
+>>>>>>> Stashed changes:app/memo-manager/page.tsx
   useEffect(() => {
-    fetchMemos();
+    if (token) {
+      fetchMemos();
+    }
   }, [token]);
 
   const fetchMemos = async () => {
     try {
       setLoading(true);
-      setTimeout(() => {
-        setMemos(mockMemos);
-        setLoading(false);
-      }, 1000);
+      setError(null);
+      
+      const response = await memoApiService.getAllMemos();
+      
+      if (response.success && response.data) {
+        // Convert API response to frontend format
+        const convertedMemos: Memo[] = response.data.map(apiMemo => ({
+          id: apiMemo.id,
+          type: apiMemo.type,
+          memo_number: apiMemo.memo_number,
+          to: apiMemo.to,
+          cc: apiMemo.cc || '',
+          reason: apiMemo.reason,
+          created_by: apiMemo.created_by,
+          created_at: apiMemo.created_at
+        }));
+        
+        setMemos(convertedMemos);
+        console.log(`Loaded ${convertedMemos.length} memos from API`);
+      } else {
+        throw new Error(response.error || 'Failed to fetch memos');
+      }
     } catch (err) {
-      setError("Failed to fetch memos");
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch memos';
+      setError(errorMessage);
+      console.error('Error fetching memos:', err);
+      toast.error(errorMessage);
+    } finally {
       setLoading(false);
-      toast.error("Failed to load memos");
     }
   };
 
-  // Filter memos based on search term
+  // Filter memos based on search term and sort by created date (latest first)
   const filteredMemos = useMemo(() => {
-    if (!searchTerm) return memos;
+    let filtered = memos;
     
-    return memos.filter(memo =>
-      memo.perihal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.nomor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.kepada.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      memo.pembuat.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Apply search filter if search term exists
+    if (searchTerm) {
+      filtered = memos.filter(memo =>
+        memo.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memo.memo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memo.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        memo.created_by.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Sort by created date (latest first - descending order)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      return dateB.getTime() - dateA.getTime(); // Descending order (latest first)
+    });
   }, [memos, searchTerm]);
 
   // Pagination logic
@@ -272,13 +307,13 @@ export default function MemoManagerPage() {
   };
 
   // Handle copy nomor to clipboard
-  const copyNomor = async (nomor: string, e: React.MouseEvent) => {
+  const copyNomor = async (memo_number: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(nomor);
-      toast.success(`Nomor ${nomor} copied to clipboard`);
+      await navigator.clipboard.writeText(memo_number);
+      toast.success(`Number ${memo_number} copied to clipboard`);
     } catch (err) {
-      toast.error('Failed to copy nomor');
+      toast.error('Failed to copy number');
     }
   };
 
@@ -286,6 +321,7 @@ export default function MemoManagerPage() {
     setShowModal(true);
   };
 
+<<<<<<< Updated upstream:app/it-management/memo-manager/page.tsx
   // Generate next number for new memo/letter
   const generateNextNumber = (jenis: "Memo" | "Surat", tanggal: string): string => {
     const inputYear = new Date(tanggal).getFullYear();
@@ -301,23 +337,51 @@ export default function MemoManagerPage() {
       return `${sequentialNumber}/ITE-IAE/M/${inputYear}`;
     } else {
       return `${sequentialNumber}/ITE-IAG/${inputYear}`;
+=======
+  const handleSaveMemo = async (memoData: { type: "memo" | "surat"; to: string; cc?: string; reason: string }) => {
+    try {
+      console.log('=== CREATING NEW MEMO ===');
+      console.log('Memo data:', memoData);
+      
+      const createRequest = {
+        type: memoData.type,
+        to: memoData.to,
+        cc: memoData.cc || '',
+        reason: memoData.reason,
+        created_by: user?.name || "Current User"
+      };
+      
+      const response = await memoApiService.createMemo(createRequest);
+      
+      if (response.success && response.data) {
+        // Convert API response to frontend format
+        const newMemo: Memo = {
+          id: response.data.id,
+          type: response.data.type,
+          memo_number: response.data.memo_number,
+          to: response.data.to,
+          cc: response.data.cc || '',
+          reason: response.data.reason,
+          created_by: response.data.created_by,
+          created_at: response.data.created_at
+        };
+        
+        console.log('New memo created:', newMemo);
+        
+        // Add new memo at the beginning (newest first)
+        setMemos(prev => [newMemo, ...prev]);
+        
+        toast.success(`${memoData.type === 'memo' ? 'Memo' : 'Surat'} "${memoData.reason}" berhasil dibuat dengan nomor ${newMemo.memo_number}`);
+        setShowModal(false);
+      } else {
+        throw new Error(response.error || 'Failed to create memo');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create memo';
+      console.error('Error creating memo:', error);
+      toast.error(errorMessage);
+>>>>>>> Stashed changes:app/memo-manager/page.tsx
     }
-  };
-
-  const handleSaveMemo = (memoData: Omit<Memo, 'id' | 'nomor' | 'pembuat' | 'createdAt' | 'updatedAt'>) => {
-    const newMemo: Memo = {
-      id: Date.now().toString(),
-      ...memoData,
-      nomor: generateNextNumber(memoData.jenis, memoData.tanggal),
-      pembuat: user?.name || "Current User",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Add new memo at the end (newest)
-    setMemos(prev => [...prev, newMemo]);
-    toast.success(`${memoData.jenis} "${memoData.perihal}" berhasil dibuat dengan nomor ${newMemo.nomor}`);
-    setShowModal(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -363,7 +427,7 @@ export default function MemoManagerPage() {
                     Memo Manager
                   </h1>
                   <p className="text-gray-600 dark:text-gray-400">
-                    Kelola memo dan surat dengan sistem penomoran otomatis
+                    Kelola memo dan surat dengan sistem penomoran otomatis (diurutkan berdasarkan tanggal dibuat terbaru)
                   </p>
                 </div>
                 <div className="text-right">
@@ -421,25 +485,25 @@ export default function MemoManagerPage() {
                         No.
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
-                        Jenis
+                        Type
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
-                        Tanggal
+                        Created ↓
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
-                        Nomor
+                        Number
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-56">
-                        Kepada
+                        To
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
                         CC
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Perihal
+                        Reason
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
-                        Pembuat
+                        Created By
                       </th>
                     </tr>
                   </thead>
@@ -463,29 +527,29 @@ export default function MemoManagerPage() {
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                memo.jenis === 'Memo' 
+                                memo.type === 'memo' 
                                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                                   : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                               }`}>
-                                {memo.jenis}
+                                {memo.type === 'memo' ? 'Memo' : 'Surat'}
                               </span>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {formatDate(memo.tanggal)}
+                              {formatDate(memo.created_at)}
                             </td>
                             <td className="px-4 py-4 text-sm font-mono">
                               <span 
                                 className="break-all cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                                onClick={(e) => copyNomor(memo.nomor, e)}
+                                onClick={(e) => copyNomor(memo.memo_number, e)}
                                 title="Click to copy"
                               >
-                                {memo.nomor}
+                                {memo.memo_number}
                               </span>
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                               <div className="max-w-56">
                                 <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                  {memo.kepada}
+                                  {memo.to}
                                 </div>
                               </div>
                             </td>
@@ -502,19 +566,24 @@ export default function MemoManagerPage() {
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                               <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                {memo.perihal}
+                                {memo.reason}
                               </div>
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                               <div className="flex items-center justify-between max-w-48">
                                 <div className="flex-1 min-w-0">
                                   <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                    {memo.pembuat}
+                                    {memo.created_by}
                                   </div>
                                 </div>
                                 <button
+<<<<<<< Updated upstream:app/it-management/memo-manager/page.tsx
                                   onClick={(e) => toggleRowExpansion(memo.id, e)}
                                   className="ml-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+=======
+                                  onClick={(e) => toggleRowExpansion(memo.id.toString(), e)}
+                                  className="ml-2 px-1 py-6 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+>>>>>>> Stashed changes:app/memo-manager/page.tsx
                                 >
                                   {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
                                 </button>
