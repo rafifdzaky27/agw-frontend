@@ -29,7 +29,7 @@ export default function AuditFindings() {
   const [currentFinding, setCurrentFinding] = useState<AuditFinding | null>(null);
 
   // Get API URL from environment variable
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_AUDIT_SERVICE_URL || "http://localhost:5002";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
   // Fetch data audit findings

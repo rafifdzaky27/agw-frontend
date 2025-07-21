@@ -46,7 +46,7 @@ export default function AuditUniversePage() {
   });
   const ITEMS_PER_PAGE = 10;
 
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_AUDIT_SERVICE_URL || "http://localhost:5002";
 
   // Mock data for development - replace with actual API calls
   const mockAudits: Audit[] = [

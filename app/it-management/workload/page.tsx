@@ -26,7 +26,7 @@ export default function ManagementTasks() {
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
 
   // Get API URL from environment variable
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
   // Fetch data for governance tasks
