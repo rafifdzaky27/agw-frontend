@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaSearch, FaFileExcel, FaFileAlt } from "react-icons/fa";
+import { FaPlus, FaSearch, FaFileExcel, FaFileAlt, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import * as XLSX from 'xlsx';
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
@@ -22,18 +22,13 @@ export default function MemoManagerPage() {
   const [typeFilter, setTypeFilter] = useState<"" | "memo" | "surat">("");
   const [showModal, setShowModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  useEffect(() => {
-    if (token) {
-      fetchMemos();
-    }
-  }, [token]);
-
-  const fetchMemos = async () => {
+  const fetchMemos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -56,7 +51,13 @@ export default function MemoManagerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchMemos();
+    }
+  }, [token, fetchMemos]);
 
   // Filter memos based on search term and type
   const filteredMemos = useMemo(() => {
@@ -93,6 +94,31 @@ export default function MemoManagerPage() {
     setCurrentPage(page);
   };
 
+  // Handle row expansion
+  const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(memoId)) {
+        newSet.delete(memoId);
+      } else {
+        newSet.add(memoId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle copy memo number to clipboard
+  const copyMemoNumber = async (memoNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(memoNumber);
+      toast.success(`Nomor ${memoNumber} copied to clipboard`);
+    } catch (err) {
+      toast.error('Failed to copy memo number');
+    }
+  };
+
   // Export function
   const handleExport = async () => {
     try {
@@ -104,7 +130,7 @@ export default function MemoManagerPage() {
       }
       
       // Create Excel data
-      const excelData: any[] = [];
+      const excelData: Record<string, string | number>[] = [];
       
       filteredMemos.forEach((memo, index) => {
         excelData.push({
@@ -312,6 +338,7 @@ export default function MemoManagerPage() {
                     <option value="memo">Memo</option>
                     <option value="surat">Surat</option>
                   </select>
+                  <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
                 </div>
                 <button
                   onClick={handleExport}
@@ -330,31 +357,34 @@ export default function MemoManagerPage() {
                 </button>
               </div>
 
-              {/* Memos Table */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+              {/* Enhanced Data Table - EXACT MATCH TO PAGE-LAMA.TSX */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <table className="w-full min-w-[1200px]">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                          No.
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
                           Jenis
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Nomor
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
                           Tanggal
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
+                          Nomor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-44">
                           Kepada
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
                           CC
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Perihal
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
                           Pembuat
                         </th>
                       </tr>
@@ -362,20 +392,21 @@ export default function MemoManagerPage() {
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {currentMemos.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                            {filteredMemos.length === 0 && memos.length > 0 
-                              ? "Tidak ada memo yang sesuai dengan pencarian"
-                              : "Belum ada memo yang dibuat"
-                            }
+                          <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            {searchTerm ? 'No documents found matching your search.' : 'No documents available.'}
                           </td>
                         </tr>
                       ) : (
                         currentMemos.map((memo, index) => {
+                          const isExpanded = expandedRows.has(memo.id.toString());
                           return (
                             <tr
                               key={memo.id}
                               className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                             >
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {startIndex + index + 1}
+                              </td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                   memo.type === 'memo' 
@@ -385,21 +416,29 @@ export default function MemoManagerPage() {
                                   {formatType(memo.type)}
                                 </span>
                               </td>
-                              <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                                {memo.memo_number}
-                              </td>
-                              <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                 {formatDate(memo.created_at)}
                               </td>
+                              <td className="px-4 py-4 text-sm font-mono">
+                                <span 
+                                  className="break-all cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                                  onClick={(e) => copyMemoNumber(memo.memo_number, e)}
+                                  title="Click to copy"
+                                >
+                                  {memo.memo_number}
+                                </span>
+                              </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                                <div className="max-w-56 break-words">
-                                  {memo.to}
+                                <div className="max-w-44">
+                                  <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                    {memo.to}
+                                  </div>
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                                 <div className="max-w-48">
                                   {memo.cc ? (
-                                    <div className="break-words">
+                                    <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                       {memo.cc}
                                     </div>
                                   ) : (
@@ -408,13 +447,23 @@ export default function MemoManagerPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                                <div className="break-words">
+                                <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                   {memo.reason}
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                                <div className="max-w-48 break-words">
-                                  {memo.created_by}
+                                <div className="flex items-center justify-between max-w-48">
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
+                                      {memo.created_by}
+                                    </div>
+                                  </div>
+                                  <button
+                                  onClick={(e) => toggleRowExpansion(memo.id.toString(), e)}
+                                  className="ml-2 px-1 py-6 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+                                >
+                                  {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+                                </button>
                                 </div>
                               </td>
                             </tr>

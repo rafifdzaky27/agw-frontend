@@ -28,11 +28,11 @@ export interface ApiResponse<T> {
 }
 
 class MemoApiService {
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('token');
+  private getAuthHeaders(token?: string): HeadersInit {
+    const authToken = token || localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
+      'Authorization': authToken ? `Bearer ${authToken}` : '',
     };
   }
 
@@ -49,7 +49,7 @@ class MemoApiService {
   /**
    * Get all memos with optional filtering
    */
-  async getAllMemos(filters?: { reason?: string; type?: 'memo' | 'surat' }): Promise<ApiResponse<MemoApiResponse[]>> {
+  async getAllMemos(token?: string, filters?: { reason?: string; type?: 'memo' | 'surat' }): Promise<ApiResponse<MemoApiResponse[]>> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -65,7 +65,7 @@ class MemoApiService {
       
       const response = await fetch(url, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
       });
 
       return await this.handleResponse<MemoApiResponse[]>(response);
@@ -78,11 +78,11 @@ class MemoApiService {
   /**
    * Get a memo by ID
    */
-  async getMemoById(id: number): Promise<ApiResponse<MemoApiResponse>> {
+  async getMemoById(id: number, token?: string): Promise<ApiResponse<MemoApiResponse>> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/memo/${id}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(),
+        headers: this.getAuthHeaders(token),
       });
 
       return await this.handleResponse<MemoApiResponse>(response);
@@ -97,14 +97,9 @@ class MemoApiService {
    */
   async createMemo(memoData: CreateMemoRequest, token?: string): Promise<ApiResponse<MemoApiResponse>> {
     try {
-      const headers = token ? {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      } : this.getAuthHeaders();
-
       const response = await fetch(`${API_BASE_URL}/api/memo`, {
         method: 'POST',
-        headers: headers,
+        headers: this.getAuthHeaders(token),
         body: JSON.stringify(memoData),
       });
 

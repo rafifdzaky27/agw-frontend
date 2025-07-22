@@ -5,7 +5,7 @@ import { FaTimes, FaSave, FaCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 interface MemoModalProps {
-  onSave: (memoData: { type: "memo" | "surat"; to: string; cc?: string; reason: string }) => void;
+  onSave: (memoData: { type: "memo" | "surat"; to: string; cc?: string; reason: string }) => Promise<void>;
   onClose: () => void;
 }
 
@@ -59,7 +59,7 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
     try {
       // Convert old format to new API format
       const apiData = {
-        type: formData.jenis.toLowerCase() as "memo" | "surat",
+        type: (formData.jenis.toLowerCase() === "memo" ? "memo" : "surat") as "memo" | "surat",
         to: formData.kepada.trim(),
         cc: formData.cc.trim() || undefined,
         reason: formData.perihal.trim()
