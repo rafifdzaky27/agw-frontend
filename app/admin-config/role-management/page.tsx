@@ -241,6 +241,14 @@ function UserCard({ user, onSelect }: { user: User; onSelect: (user: User) => vo
 function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => void; onUpdate: (user: User) => void }) {
     const [editedUser, setEditedUser] = useState({ ...user }); // Initialize with a copy of the user data
 
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setEditedUser((prev) => ({ ...prev, [id]: value }));
@@ -348,6 +356,14 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
         division: "",
         email: "",
     });
+
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;

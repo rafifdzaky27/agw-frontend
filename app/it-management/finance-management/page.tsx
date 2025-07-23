@@ -1,104 +1,528 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import BackButton from "@/components/BackButton";
-import { FaDollarSign, FaSearch, FaFilter, FaPlus, FaChartLine, FaWallet, FaCreditCard, FaFileInvoiceDollar } from "react-icons/fa";
+import { FaSearch, FaMoneyBillWave, FaCheckCircle, FaClock, FaCalendarAlt, FaFileExcel, FaCheck, FaTimes, FaTrash } from "react-icons/fa";
+import * as XLSX from 'xlsx';
+import ProjectPaymentDetailModal from "./components/ProjectPaymentDetailModal";
+import toast from "react-hot-toast";
+
+// Define interfaces
+interface PaymentTerm {
+  id: string;
+  termin: string;
+  nominal: number;
+  description: string;
+  status: 'Belum Dibayar' | 'Sudah Dibayar' | 'Checking Umum' | 'Menunggu Posting' | 'Sirkulir IT';
+  paymentDate?: string;
+  budget?: 'Capex' | 'Opex';
+  notes?: string;
+  // New fields for Non-Procurement Opex breakdown
+  opexCabang?: number;
+  opexPusat?: number;
+}
+
+interface Project {
+  id: string;
+  kodeProject: string;
+  projectName: string;
+  projectType: 'internal development' | 'procurement' | 'non procurement';
+  divisiInisiasi: string;
+  grupTerlibat: string;
+  keterangan: string;
+  namaVendor: string;
+  noPKSPO: string;
+  tanggalPKSPO: string;
+  tanggalBAPP: string;
+  tanggalBerakhir: string;
+  terminPembayaran: PaymentTerm[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function FinanceManagementPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Filter and selection states
+  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Sample budget data
-  const budgetData = [
-    {
-      id: 1,
-      category: "Infrastructure",
-      allocated: 500000,
-      spent: 325000,
-      remaining: 175000,
-      percentage: 65
-    },
-    {
-      id: 2,
-      category: "Software Licenses",
-      allocated: 200000,
-      spent: 180000,
-      remaining: 20000,
-      percentage: 90
-    },
-    {
-      id: 3,
-      category: "Cloud Services",
-      allocated: 150000,
-      spent: 95000,
-      remaining: 55000,
-      percentage: 63
-    },
-    {
-      id: 4,
-      category: "Security",
-      allocated: 100000,
-      spent: 45000,
-      remaining: 55000,
-      percentage: 45
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  // Generate mock data based on Portfolio Management structure
+  const generateMockProjects = (): Project[] => {
+    const projects: Project[] = [];
+    const projectNames = [
+      "Sistem Informasi Manajemen Keuangan", "Platform E-Commerce B2B", "Aplikasi Mobile Banking",
+      "Dashboard Analytics Real-time", "Sistem Inventory Management", "Portal Customer Service",
+      "Aplikasi HR Management System", "Platform Digital Marketing", "Sistem Document Management",
+      "Aplikasi Project Management", "Portal Vendor Management", "Sistem CRM Terintegrasi",
+      "Platform Learning Management", "Aplikasi Quality Control", "Sistem Asset Management",
+      "Cloud Infrastructure Migration", "Data Warehouse Implementation", "API Gateway Development",
+      "Microservices Architecture", "DevOps Pipeline Setup", "Security Audit System",
+      "Business Intelligence Platform", "IoT Monitoring System", "Blockchain Integration",
+      "AI/ML Analytics Platform", "Digital Transformation Initiative"
+    ];
+
+    const vendors = [
+      "PT Teknologi Maju Indonesia", "CV Digital Solutions", "PT Inovasi Sistem Terpadu",
+      "PT Solusi IT Nusantara", "CV Kreasi Digital", "PT Mitra Teknologi Global",
+      "PT Sistem Informasi Prima", "CV Teknologi Canggih", "PT Digital Innovation Hub"
+    ];
+
+    const divisions = ["IT", "Finance", "Operations", "HR", "Marketing", "Procurement"];
+    const groups = ["Development Team", "Infrastructure Team", "Security Team", "Analytics Team"];
+    
+    // Define years with different project counts
+    const yearData = [
+      { year: 2022, count: 8 },
+      { year: 2023, count: 12 },
+      { year: 2024, count: 15 },
+      { year: 2025, count: 6 }
+    ];
+
+    let projectId = 1;
+
+    yearData.forEach(({ year, count }) => {
+      for (let i = 1; i <= count; i++) {
+        const numTerms = Math.floor(Math.random() * 4) + 2; // 2-5 payment terms
+        const terms: PaymentTerm[] = [];
+        
+        // Determine project type once per project
+        const projectType = Math.random() > 0.6 ? 'procurement' : 'non procurement';
+        const isNonProcurement = projectType === 'non procurement';
+        
+        // Create random date within the year
+        const createdDate = new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+        
+        for (let j = 1; j <= numTerms; j++) {
+          const baseAmount = 100000000 + (Math.random() * 500000000); // 100M - 600M
+          
+          // Adjust payment status based on year (older projects more likely to be paid)
+          let status: string;
+          if (year <= 2022) {
+            status = Math.random() > 0.2 ? 'Sudah Dibayar' : 'Checking Umum'; // 80% paid for 2022
+          } else if (year === 2023) {
+            status = Math.random() > 0.4 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 60% paid for 2023
+          } else if (year === 2024) {
+            status = Math.random() > 0.6 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 40% paid for 2024
+          } else {
+            status = Math.random() > 0.8 ? 'Sudah Dibayar' : 
+                    Math.random() > 0.5 ? 'Checking Umum' : 'Belum Dibayar'; // 20% paid for 2025
+          }
+          
+          terms.push({
+            id: `term_${projectId}_${j}`,
+            termin: isNonProcurement ? `Bill ${j}` : `Termin ${j}`,
+            nominal: Math.floor(baseAmount),
+            description: isNonProcurement ? 
+              (j === 1 ? "Initial billing for project setup" : 
+               j === 2 ? "Development milestone billing" :
+               j === 3 ? "Final delivery billing" : "Maintenance billing") :
+              (j === 1 ? "BA/PS, Proplan" : 
+               j === 2 ? "Delivery & Testing" :
+               j === 3 ? "Go Live & Training" : "Maintenance & Support"),
+            status: status,
+            paymentDate: status === 'Sudah Dibayar' ? 
+              new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0] : 
+              undefined,
+            budget: status === 'Sudah Dibayar' ? (Math.random() > 0.5 ? 'Capex' : 'Opex') : undefined,
+            notes: status === 'Sudah Dibayar' ? (isNonProcurement ? 'Billing completed successfully' : 'Payment completed successfully') : ''
+          });
+        }
+        
+        projects.push({
+          id: projectId.toString(),
+          kodeProject: `PRJ-${year}-${i.toString().padStart(3, '0')}`,
+          projectName: projectNames[Math.floor(Math.random() * projectNames.length)],
+          projectType: projectType,
+          divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
+          grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
+          keterangan: `Project implementation for ${projectNames[Math.floor(Math.random() * projectNames.length)].toLowerCase()} - ${year}`,
+          namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
+          noPKSPO: `PKS/${i.toString().padStart(3, '0')}/${year}`,
+          tanggalPKSPO: createdDate.toISOString().split('T')[0],
+          tanggalBAPP: new Date(createdDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+          tanggalBerakhir: new Date(createdDate.getTime() + (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+          terminPembayaran: terms,
+          createdAt: createdDate.toISOString(),
+          updatedAt: createdDate.toISOString()
+        });
+        
+        projectId++;
+      }
+    });
+    
+    return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  const mockProjects = generateMockProjects();
+
+  useEffect(() => {
+    fetchProjects();
+  }, [token]);
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API call to get projects from Portfolio Management
+      setTimeout(() => {
+        setProjects(mockProjects);
+        setLoading(false);
+      }, 1000);
+    } catch (err) {
+      setError("Failed to fetch projects");
+      setLoading(false);
+      toast.error("Failed to load projects");
     }
-  ];
+  };
 
-  // Sample expense data
-  const recentExpenses = [
-    {
-      id: 1,
-      description: "AWS Cloud Services - Monthly",
-      amount: 15000,
-      date: "2024-07-01",
-      category: "Cloud Services",
-      status: "Approved"
-    },
-    {
-      id: 2,
-      description: "Microsoft Office 365 Licenses",
-      amount: 25000,
-      date: "2024-06-28",
-      category: "Software Licenses",
-      status: "Pending"
-    },
-    {
-      id: 3,
-      description: "Network Equipment Purchase",
-      amount: 75000,
-      date: "2024-06-25",
-      category: "Infrastructure",
-      status: "Approved"
+  // Calculate payment status for each project
+  const getPaymentStatus = (terms: PaymentTerm[]) => {
+    const paidTerms = terms.filter(term => term.status === 'Sudah Dibayar').length;
+    const totalTerms = terms.length;
+    
+    if (paidTerms === totalTerms) {
+      return { status: 'Done', color: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400' };
+    } else if (paidTerms > 0) {
+      return { 
+        status: `Progress (${paidTerms}/${totalTerms})`, 
+        color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400' 
+      };
+    } else {
+      return { status: 'Not Started', color: 'text-gray-600 bg-gray-100 dark:bg-gray-900/30 dark:text-gray-400' };
     }
-  ];
+  };
 
+  // Filter projects based on search term
+  const filteredProjects = useMemo(() => {
+    let filtered = projects;
+    
+    // Filter by year
+    if (selectedYear !== 'all') {
+      filtered = filtered.filter(project => 
+        project.tanggalPKSPO.split('-')[0] === selectedYear
+      );
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(project =>
+        project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.noPKSPO.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  }, [projects, searchTerm, selectedYear]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProjects = filteredProjects.slice(startIndex, endIndex);
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle row click
+  const handleRowClick = (project: Project) => {
+    if (isSelectionMode) {
+      handleMultipleSelect(project.id);
+    } else {
+      setSelectedProject(project);
+      setShowDetailModal(true);
+    }
+  };
+
+  // Update project payment terms
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    toast.success("Payment information updated successfully");
+  };
+  // Selection mode functions
+  const handleMultipleSelect = (projectId: string) => {
+    setSelectedProjects(prev => 
+      prev.includes(projectId) 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const allCurrentProjects = filteredProjects.map(project => project.id);
+    if (selectedProjects.length === allCurrentProjects.length) {
+      setSelectedProjects([]);
+    } else {
+      setSelectedProjects(allCurrentProjects);
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedProjects([]);
+  };
+
+  // Export function for selected projects
+  const handleExportSelected = async () => {
+    if (selectedProjects.length === 0) {
+      toast.error("Please select projects to export");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      
+      // Get selected projects data
+      const selectedProjectsData = projects.filter(project => selectedProjects.includes(project.id));
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      selectedProjectsData.forEach((project, index) => {
+        const paymentStatus = getPaymentStatus(project.terminPembayaran);
+        const totalValue = project.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        const paidValue = project.terminPembayaran
+          .filter(term => term.status === 'Sudah Dibayar')
+          .reduce((sum, term) => sum + term.nominal, 0);
+        
+        excelData.push({
+          "No": index + 1,
+          "Project Code": project.kodeProject,
+          "Project Name": project.projectName,
+          "Project Type": project.projectType,
+          "PKS/PO Number": project.noPKSPO,
+          "Vendor": project.namaVendor,
+          "Division": project.divisiInisiasi,
+          "Group": project.grupTerlibat,
+          "PKS/PO Date": project.tanggalPKSPO,
+          "BAPP Date": project.tanggalBAPP,
+          "End Date": project.tanggalBerakhir,
+          "Payment Status": paymentStatus.status,
+          "Total Value": formatCurrency(totalValue),
+          "Paid Value": formatCurrency(paidValue),
+          "Remaining Value": formatCurrency(totalValue - paidValue),
+          "Payment Terms Count": project.terminPembayaran.length,
+          "Paid Terms": project.terminPembayaran.filter(term => term.status === 'Sudah Dibayar').length,
+          "Description": project.keterangan,
+          "Created At": new Date(project.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(project.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Project Code
+        { wch: 30 },  // Project Name
+        { wch: 15 },  // Project Type
+        { wch: 20 },  // PKS/PO Number
+        { wch: 25 },  // Vendor
+        { wch: 15 },  // Division
+        { wch: 20 },  // Group
+        { wch: 12 },  // PKS/PO Date
+        { wch: 12 },  // BAPP Date
+        { wch: 12 },  // End Date
+        { wch: 20 },  // Payment Status
+        { wch: 18 },  // Total Value
+        { wch: 18 },  // Paid Value
+        { wch: 18 },  // Remaining Value
+        { wch: 15 },  // Payment Terms Count
+        { wch: 12 },  // Paid Terms
+        { wch: 40 },  // Description
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Selected Projects");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Finance_Projects_${selectedProjects.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedProjects.length} projects to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export projects. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export function based on current filter
+  const handleExportFiltered = async () => {
+    try {
+      setIsExporting(true);
+      
+      if (filteredProjects.length === 0) {
+        toast.error("No projects found with current filter");
+        return;
+      }
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      filteredProjects.forEach((project, index) => {
+        const paymentStatus = getPaymentStatus(project.terminPembayaran);
+        const totalValue = project.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        const paidValue = project.terminPembayaran
+          .filter(term => term.status === 'Sudah Dibayar')
+          .reduce((sum, term) => sum + term.nominal, 0);
+        
+        excelData.push({
+          "No": index + 1,
+          "Project Code": project.kodeProject,
+          "Project Name": project.projectName,
+          "Project Type": project.projectType,
+          "PKS/PO Number": project.noPKSPO,
+          "Vendor": project.namaVendor,
+          "Division": project.divisiInisiasi,
+          "Group": project.grupTerlibat,
+          "PKS/PO Date": project.tanggalPKSPO,
+          "BAPP Date": project.tanggalBAPP,
+          "End Date": project.tanggalBerakhir,
+          "Payment Status": paymentStatus.status,
+          "Total Value": formatCurrency(totalValue),
+          "Paid Value": formatCurrency(paidValue),
+          "Remaining Value": formatCurrency(totalValue - paidValue),
+          "Payment Terms Count": project.terminPembayaran.length,
+          "Paid Terms": project.terminPembayaran.filter(term => term.status === 'Sudah Dibayar').length,
+          "Description": project.keterangan,
+          "Created At": new Date(project.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(project.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Project Code
+        { wch: 30 },  // Project Name
+        { wch: 15 },  // Project Type
+        { wch: 20 },  // PKS/PO Number
+        { wch: 25 },  // Vendor
+        { wch: 15 },  // Division
+        { wch: 20 },  // Group
+        { wch: 12 },  // PKS/PO Date
+        { wch: 12 },  // BAPP Date
+        { wch: 12 },  // End Date
+        { wch: 20 },  // Payment Status
+        { wch: 18 },  // Total Value
+        { wch: 18 },  // Paid Value
+        { wch: 18 },  // Remaining Value
+        { wch: 15 },  // Payment Terms Count
+        { wch: 12 },  // Paid Terms
+        { wch: 40 },  // Description
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Projects");
+
+      // Generate filename with filter info and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const yearFilter = selectedYear === 'all' ? 'All_Years' : `Year_${selectedYear}`;
+      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      const filename = `Finance_Projects_${yearFilter}${searchFilter}_${filteredProjects.length}_items_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${filteredProjects.length} projects to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export projects. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedProjects.length === 0) {
+      toast.error("Please select projects to delete");
+      return;
+    }
+    
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(`Are you sure you want to delete ${selectedProjects.length} project(s)? This action cannot be undone.`);
+    
+    if (confirmDelete) {
+      try {
+        // Remove selected projects from the list
+        setProjects(prev => prev.filter(project => !selectedProjects.includes(project.id)));
+        setSelectedProjects([]);
+        setIsSelectionMode(false);
+        toast.success(`Successfully deleted ${selectedProjects.length} project(s)`);
+      } catch (error) {
+        console.error('Delete error:', error);
+        toast.error("Failed to delete projects. Please try again.");
+      }
+    }
+  };
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Rejected':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
-  };
-
-  const getBudgetColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-red-500';
-    if (percentage >= 75) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
+          <Sidebar />
+          <div className="flex-1 md:ml-60 p-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-8"></div>
+              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -107,182 +531,320 @@ export default function FinanceManagementPage() {
         <div className="flex-1 md:ml-60 p-6">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-6">
-              <BackButton />
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <FaDollarSign className="text-green-600 dark:text-green-400" size={24} />
-                </div>
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold">Finance Management</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    Finance Management
+                  </h1>
                   <p className="text-gray-600 dark:text-gray-400">
-                    Manage IT budgets, expenses, and financial planning
+                    Monitor and manage payment status for all projects
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Financial Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <FaWallet className="text-blue-600 dark:text-blue-400" size={20} />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Budget</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(950000)}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">
-                    <FaCreditCard className="text-red-600 dark:text-red-400" size={20} />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Spent</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(645000)}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <FaChartLine className="text-green-600 dark:text-green-400" size={20} />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Remaining</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(305000)}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <FaFileInvoiceDollar className="text-purple-600 dark:text-purple-400" size={20} />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Approvals</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">5</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Budget Allocation */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Budget Allocation by Category</h2>
-              <div className="space-y-4">
-                {budgetData.map((budget) => (
-                  <div key={budget.id} className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {budget.category}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {formatCurrency(budget.spent)} / {formatCurrency(budget.allocated)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${getBudgetColor(budget.percentage)}`}
-                          style={{ width: `${budget.percentage}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        <span>{budget.percentage}% used</span>
-                        <span>{formatCurrency(budget.remaining)} remaining</span>
-                      </div>
+                <div className="flex items-center gap-8">
+                  {/* Status Summary */}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {projects.filter(p => getPaymentStatus(p.terminPembayaran).status === 'Done').length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Completed
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Search and Filter Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search expenses..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {projects.filter(p => getPaymentStatus(p.terminPembayaran).status.includes('Progress')).length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      In Progress
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {projects.length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Total Projects
+                    </div>
+                  </div>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                  <FaFilter size={16} />
-                  Filter
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
-                  <FaPlus size={16} />
-                  New Expense
-                </button>
               </div>
             </div>
 
-            {/* Recent Expenses */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-semibold">Recent Expenses</h2>
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-red-700 dark:text-red-300">{error}</p>
               </div>
-              
+            )}
+
+            {/* Search Bar and Controls */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors min-w-[120px]"
+              >
+                <option value="all">All Years</option>
+                {[...new Set(projects.map(project => project.tanggalPKSPO.split('-')[0]))]
+                  .sort((a, b) => parseInt(b) - parseInt(a))
+                  .map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+              </select>
+              <button
+                onClick={toggleSelectionMode}
+                className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg ${
+                  isSelectionMode 
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                }`}
+              >
+                {isSelectionMode ? <FaTimes className="text-sm" /> : <FaCheck className="text-sm" />}
+                {isSelectionMode ? 'Cancel' : 'Select'}
+              </button>   
+              {/* Select All button - only show when in selection mode */}
+              {isSelectionMode && (
+                <button
+                  onClick={handleSelectAll}
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaCheck className="text-sm" />
+                  {selectedProjects.length === filteredProjects.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}    
+              {/* Export Button - Only show when year filter is not "all" OR when in selection mode with selected items */}
+              {(selectedYear !== 'all' || (isSelectionMode && selectedProjects.length > 0)) && (
+                <button
+                  onClick={isSelectionMode && selectedProjects.length > 0 ? handleExportSelected : handleExportFiltered}
+                  disabled={isExporting}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors whitespace-nowrap shadow-md hover:shadow-lg"
+                >
+                  <FaFileExcel className="text-sm" />
+                  {isExporting ? 'Exporting...' : 
+                    isSelectionMode && selectedProjects.length > 0 
+                      ? `Export (${selectedProjects.length})` 
+                      : 'Export'
+                  }
+                </button>
+              )}
+            </div>
+
+            {/* Selection Mode Toolbar - Only Counter and Delete */}
+            {isSelectionMode && selectedProjects.length > 0 && (
+              <div className="flex items-center justify-between gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
+                <span className="text-sm text-gray-600 dark:text-gray-400 px-2 py-1 bg-white dark:bg-gray-800 rounded">
+                  {selectedProjects.length} selected
+                </span>
+                
+                <button
+                  onClick={handleDeleteSelected}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm transition-colors"
+                >
+                  <FaTrash className="text-xs" />
+                  Delete
+                </button>
+              </div>
+            )}
+
+            {/* Data Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
+                      {/* Selection checkbox column - only show in selection mode */}
+                      {isSelectionMode && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          <input
+                            type="checkbox"
+                            checked={selectedProjects.length === filteredProjects.length && filteredProjects.length > 0}
+                            onChange={handleSelectAll}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                        </th>
+                      )}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Description
+                        No.
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Amount
+                        PKS/PO Number
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Date
+                        Project Name
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Category
+                        Vendor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Status
+                        Status Payment
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {recentExpenses.map((expense) => (
-                      <tr key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {expense.description}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-                          {formatCurrency(expense.amount)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {expense.date}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {expense.category}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(expense.status)}`}>
-                            {expense.status}
-                          </span>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {currentProjects.length === 0 ? (
+                      <tr>
+                        <td colSpan={isSelectionMode ? 6 : 5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                          {searchTerm ? 'No projects found matching your search.' : 'No projects available.'}
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      currentProjects.map((project, index) => {
+                        const paymentStatus = getPaymentStatus(project.terminPembayaran);
+                        const totalValue = project.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+                        
+                        return (
+                          <tr
+                            key={project.id}
+                            onClick={() => handleRowClick(project)}
+                            className={`hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
+                              isSelectionMode && selectedProjects.includes(project.id) 
+                                ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
+                                : ''
+                            }`}
+                          >
+                            {/* Selection checkbox column - only show in selection mode */}
+                            {isSelectionMode && (
+                              <td 
+                                className="px-6 py-4 whitespace-nowrap"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMultipleSelect(project.id);
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProjects.includes(project.id)}
+                                  onChange={() => {}}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                              </td>
+                            )}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {startIndex + index + 1}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                              {project.noPKSPO}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                              <div className="font-medium">{project.projectName}</div>
+                              <div className="text-gray-500 dark:text-gray-400">{project.kodeProject}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                              {project.namaVendor}
+                            </td> 
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${paymentStatus.color}`}>
+                                {paymentStatus.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-gray-700 dark:text-gray-300">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredProjects.length)} of {filteredProjects.length} projects
+                        {projects.length !== filteredProjects.length && (
+                          <span className="text-gray-500"> (filtered from {projects.length} total)</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Pagination Controls */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              className={`px-3 py-1 text-sm border rounded ${
+                                currentPage === pageNum
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        
+                        {totalPages > 5 && currentPage < totalPages - 2 && (
+                          <>
+                            <span className="px-2 text-gray-500">...</span>
+                            <button
+                              onClick={() => handlePageChange(totalPages)}
+                              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Project Payment Detail Modal */}
+        {showDetailModal && selectedProject && (
+          <ProjectPaymentDetailModal
+            project={selectedProject}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedProject(null);
+            }}
+            onUpdate={handleUpdateProject}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );

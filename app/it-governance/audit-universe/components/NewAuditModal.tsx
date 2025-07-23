@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FaTimes, FaUpload, FaFile, FaTrash, FaCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -41,6 +41,14 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
   const [files, setFiles] = useState<AuditFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

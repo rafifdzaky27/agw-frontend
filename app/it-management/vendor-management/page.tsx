@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import VendorModal from "./components/VendorModal";
 import VendorDetailModal from "./components/VendorDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -43,6 +44,7 @@ export default function VendorManagementPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -257,7 +259,99 @@ export default function VendorManagementPage() {
     setShowDeleteConfirm(false);
     setIsSelectionMode(false);
   };
+  const handleExportSelected = async () => {
+    if (selectedVendors.length === 0) {
+      toast.error("Please select vendors to export");
+      return;
+    }
 
+    try {
+      setIsExporting(true);
+      
+      // Get selected vendors data
+      const selectedVendorsData = vendors.filter(vendor => selectedVendors.includes(vendor.id));
+      
+      // Create Excel data - one row per PIC
+      const excelData: any[] = [];
+      let rowNumber = 1;
+      
+      selectedVendorsData.forEach(vendor => {
+        // Find PIC Utama (Primary PIC)
+        const primaryPIC = vendor.pics.find(pic => pic.role === "PIC Utama");
+        
+        if (primaryPIC) {
+          // Use PIC Utama data
+          excelData.push({
+            "No": rowNumber++,
+            "Nama Vendor": vendor.namaVendor,
+            "Alamat": vendor.alamat,
+            "No Telepon": vendor.noTlp,
+            "Portfolio Project": vendor.portofolioProject,
+            "PIC Nama": primaryPIC.nama,
+            "PIC Email": primaryPIC.email,
+            "PIC No HP": primaryPIC.noHP,
+            "PIC Role": primaryPIC.role,
+            "Created At": new Date(vendor.createdAt).toLocaleDateString('id-ID'),
+            "Updated At": new Date(vendor.updatedAt).toLocaleDateString('id-ID')
+          });
+        } else {
+          // If no PIC Utama found, create row with empty PIC data
+          excelData.push({
+            "No": rowNumber++,
+            "Nama Vendor": vendor.namaVendor,
+            "Alamat": vendor.alamat,
+            "No Telepon": vendor.noTlp,
+            "Portfolio Project": vendor.portofolioProject,
+            "PIC Nama": "-",
+            "PIC Email": "-",
+            "PIC No HP": "-",
+            "PIC Role": "-",
+            "Created At": new Date(vendor.createdAt).toLocaleDateString('id-ID'),
+            "Updated At": new Date(vendor.updatedAt).toLocaleDateString('id-ID')
+          });
+        }
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 25 },  // Nama Vendor
+        { wch: 40 },  // Alamat
+        { wch: 15 },  // No Telepon
+        { wch: 50 },  // Portfolio Project
+        { wch: 20 },  // PIC Nama
+        { wch: 25 },  // PIC Email
+        { wch: 15 },  // PIC No HP
+        { wch: 15 },  // PIC Role
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Vendor Data");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Vendors_${selectedVendors.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedVendors.length} vendors to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export vendors. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   if (loading) {
     return (
       <ProtectedRoute>
@@ -316,75 +410,76 @@ export default function VendorManagementPage() {
               </div>
             )}
 
-            {/* Controls */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  {!isSelectionMode ? (
-                    <>
-                      <button
-                        onClick={handleNewVendor}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaPlus className="text-sm" />
-                        New Vendor
-                      </button>
-                      
-                      <button
-                        onClick={toggleSelectionMode}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-                        title="Select multiple vendors for bulk operations"
-                      >
-                        <FaCheck className="text-sm" />
-                        Select
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={toggleSelectionMode}
-                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaTimes className="text-sm" />
-                        Cancel Selection
-                      </button>
-                      
-                      <button
-                        onClick={handleDeleteVendor}
-                        disabled={selectedVendors.length === 0}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaTrash className="text-sm" />
-                        Delete {selectedVendors.length > 0 && `(${selectedVendors.length})`}
-                      </button>
-                      
-                      {selectedVendors.length > 0 && (
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <FaCheck className="text-blue-500 mr-2" />
-                          {selectedVendors.length} of {filteredVendors.length} selected
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search vendors..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+            {/* Search Bar and Add Button */}
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search vendors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
               </div>
+              {!isSelectionMode ? (
+                <>
+                  <button
+                    onClick={toggleSelectionMode}
+                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                    title="Select multiple vendors for bulk operations"
+                  >
+                    <FaCheck className="text-sm" />
+                    Select
+                  </button>
+                  
+                  <button
+                    onClick={handleNewVendor}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaPlus className="text-sm" />
+                    New Vendor
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={toggleSelectionMode}
+                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaTimes className="text-sm" />
+                    Cancel
+                  </button>
+                  
+                  <button
+                    onClick={handleDeleteVendor}
+                    disabled={selectedVendors.length === 0}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaTrash className="text-sm" />
+                    Delete {selectedVendors.length > 0 && `(${selectedVendors.length})`}
+                  </button>
+                  
+                  <button
+                    onClick={handleExportSelected}
+                    disabled={selectedVendors.length === 0 || isExporting}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaFileExcel className="text-sm" />
+                    {isExporting ? 'Exporting...' : `Export ${selectedVendors.length > 0 ? `(${selectedVendors.length})` : ''}`}
+                  </button>                  
+                  {selectedVendors.length > 0 && (
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg whitespace-nowrap">
+                      <FaCheck className="text-blue-500 mr-2" />
+                      {selectedVendors.length} selected
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Data Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">

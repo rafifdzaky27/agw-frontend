@@ -380,8 +380,23 @@ export default function GovernanceTasks() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">Governance Tasks</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Governance Tasks
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage governance tasks with drag-and-drop board
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {tasks.length}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Tasks
+              </div>
+            </div>
           </div>
           {/* Search Bar */}
           <div className="flex gap-4 mb-6">
@@ -395,7 +410,7 @@ export default function GovernanceTasks() {
                               setSearchTerm(e.target.value);
                             
                             }}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           />
                         </div>
                         <button
@@ -462,9 +477,9 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                        <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -495,7 +510,7 @@ export default function GovernanceTasks() {
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
+                        <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
                           {filteredTasks.filter(task => task.status === 'not yet').length}
                         </span>
@@ -568,6 +583,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
   });
 
   const [isEdit, setIsEdit] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -808,6 +831,14 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     pic: "",
     tags: [] as string[]
   });
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

@@ -446,9 +446,24 @@ export default function ChangeManagement() {
             <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
                 <Sidebar />
                 <div className="flex-1 md:ml-60 p-6">   
-                    <h1 className="text-3xl font-bold mb-6 text-center">
-                        Change Requests Management
-                    </h1>
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                                Change Requests Management
+                            </h1>
+                            <p className="text-gray-600 dark:text-gray-400">
+                                Manage IT change requests with comprehensive tracking and approval workflow
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                {allRequests.length}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Total Requests
+                            </div>
+                        </div>
+                    </div>
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
                         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-stretch gap-4">
@@ -587,8 +602,74 @@ export default function ChangeManagement() {
                 </div>
             </div>
             {isAlertModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
+                <AlertModal
+                    isOpen={isAlertModalOpen}
+                    onClose={() => setIsAlertModalOpen(false)}
+                    alertRequesters={alertRequesters}
+                    setAlertRequesters={setAlertRequesters}
+                    setIsAddUserModalOpen={setIsAddUserModalOpen}
+                    alertSubject={alertSubject}
+                    setAlertSubject={setAlertSubject}
+                    alertText={alertText}
+                    setAlertText={setAlertText}
+                    handleSendAlerts={handleSendAlerts}
+                />
+            )}
+
+            {isAddUserModalOpen && (
+                <AddUserModal
+                    isOpen={isAddUserModalOpen}
+                    onClose={() => setIsAddUserModalOpen(false)}
+                    availableUsers={availableUsers}
+                    handleAddRequester={handleAddRequester}
+                    loading={loading}
+                    error={error}
+                />
+            )}
+        </ProtectedRoute>
+    );
+}
+
+// Alert Modal Component
+function AlertModal({ 
+    isOpen, 
+    onClose, 
+    alertRequesters, 
+    setAlertRequesters, 
+    setIsAddUserModalOpen, 
+    alertSubject, 
+    setAlertSubject, 
+    alertText, 
+    setAlertText, 
+    handleSendAlerts 
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    alertRequesters: RequesterInfo[];
+    setAlertRequesters: React.Dispatch<React.SetStateAction<RequesterInfo[]>>;
+    setIsAddUserModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    alertSubject: string;
+    setAlertSubject: React.Dispatch<React.SetStateAction<string>>;
+    alertText: string;
+    setAlertText: React.Dispatch<React.SetStateAction<string>>;
+    handleSendAlerts: () => void;
+}) {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
                         <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between flex-shrink-0">
                             <h2 className="text-lg font-bold">Request Alert</h2>
                             <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
@@ -666,44 +747,72 @@ export default function ChangeManagement() {
                         </div>
                     </div>
                 </div>
-            )}
+    );
+}
 
-            {isAddUserModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md text-gray-900 dark:text-white">
-                        <h2 className="text-lg font-bold mb-4 text-center">Add User</h2>
-                        {loading ? (
-                            <p className="text-center text-gray-500 dark:text-gray-300">Loading users...</p>
-                        ) : error ? (
-                            <p className="text-red-500 text-center">{error}</p>
-                        ) : (
-                            <div className="max-h-60 overflow-y-auto">
-                                {availableUsers.map(user => (
-                                    <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-200 dark:border-gray-700">
-                                        <span>{user.name}</span>
-                                        <button
-                                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
-                                            onClick={() => handleAddRequester(user)}
-                                        >
-                                            Add
-                                        </button>
-                                    </div>
-                                ))}
+// Add User Modal Component
+function AddUserModal({ 
+    isOpen, 
+    onClose, 
+    availableUsers, 
+    handleAddRequester, 
+    loading, 
+    error 
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    availableUsers: User[];
+    handleAddRequester: (user: User) => void;
+    loading: boolean;
+    error: string | null;
+}) {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md text-gray-900 dark:text-white">
+                <h2 className="text-lg font-bold mb-4 text-center">Add User</h2>
+                {loading ? (
+                    <p className="text-center text-gray-500 dark:text-gray-300">Loading users...</p>
+                ) : error ? (
+                    <p className="text-red-500 text-center">{error}</p>
+                ) : (
+                    <div className="max-h-60 overflow-y-auto">
+                        {availableUsers.map(user => (
+                            <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-200 dark:border-gray-700">
+                                <span>{user.name}</span>
+                                <button
+                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
+                                    onClick={() => handleAddRequester(user)}
+                                >
+                                    Add
+                                </button>
                             </div>
-                        )}
-                        <div className="mt-4">
-                            <button
-                                type="button"
-                                className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
-                                onClick={() => setIsAddUserModalOpen(false)}
-                            >
-                                Close
-                            </button>
-                        </div>
+                        ))}
                     </div>
+                )}
+                <div className="mt-4">
+                    <button
+                        type="button"
+                        className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
+                        onClick={onClose}
+                    >
+                        Close
+                    </button>
                 </div>
-            )}
-        </ProtectedRoute>
+            </div>
+        </div>
     );
 }
 

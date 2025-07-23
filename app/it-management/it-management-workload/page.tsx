@@ -368,8 +368,23 @@ export default function ManagementTasks() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">IT Management Tasks</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                IT Management Tasks
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage IT management tasks with drag-and-drop board
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {tasks.length}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Tasks
+              </div>
+            </div>
           </div>
 
           {/* Search Bar and Export */}
@@ -383,7 +398,7 @@ export default function ManagementTasks() {
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                 }}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
             <button
@@ -391,7 +406,7 @@ export default function ManagementTasks() {
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
             >
               <FaFileExcel />
-              Export to Excel
+              Export Excel
             </button>
             <button
               onClick={() => setShowCreateDialog(true)}
@@ -559,6 +574,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
   });
 
   const [isEdit, setIsEdit] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -794,6 +817,14 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     pic: "",
     tags: [] as string[]
   });
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

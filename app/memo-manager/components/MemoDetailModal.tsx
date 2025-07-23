@@ -218,7 +218,7 @@ export default function MemoDetailModal({ memo, onClose }: MemoDetailModalProps)
                   </h4>
                   <div className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     {memo.jenis === 'Memo' ? (
-                      <p>Format Memo: <strong>XXXXX/ITE-IAE/M/YYYY</strong></p>
+                      <p>Format Memo: <strong>XXXXX/ITE-IAG/M/YYYY</strong></p>
                     ) : (
                       <p>Format Surat: <strong>XXXXX/ITE-IAG/YYYY</strong></p>
                     )}

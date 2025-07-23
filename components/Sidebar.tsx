@@ -20,7 +20,8 @@ import {
   FaShieldAlt,
   FaCogs,
   FaSitemap,
-  FaFileAlt
+  FaFileAlt,
+  FaClipboardList
 } from "react-icons/fa";
 
 // Define navigation items with icons for better UX
@@ -39,6 +40,7 @@ const DROPDOWN_SECTIONS = [
       { name: "Audit Findings", href: "/it-governance/audit-findings" },
       { name: "Audit Universe", href: "/it-governance/audit-universe" },
       { name: "Policy Management", href: "/it-governance/policy-management" },
+      { name: "Report Management", href: "/it-governance/report-management" },
     ]
   },
   {

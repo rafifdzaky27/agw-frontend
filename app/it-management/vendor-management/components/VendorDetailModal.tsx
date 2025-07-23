@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { FaTimes, FaEdit, FaBuilding, FaPhone, FaMapMarkerAlt, FaUser, FaEnvelope, FaMobile, FaUserTie, FaStar } from "react-icons/fa";
 
 interface PIC {
@@ -28,6 +29,14 @@ interface VendorDetailModalProps {
 }
 
 export default function VendorDetailModal({ vendor, onClose, onEdit }: VendorDetailModalProps) {
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',

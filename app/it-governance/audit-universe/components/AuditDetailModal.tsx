@@ -45,6 +45,14 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   useEffect(() => {
     // Reset form data when audit changes
     setFormData({

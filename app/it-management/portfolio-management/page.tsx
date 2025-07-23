@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaCheck, FaTimes, FaChevronLeft, FaChevronRight, FaFileExcel } from "react-icons/fa";
+import * as XLSX from 'xlsx';
 import AgreementModal from "./components/AgreementModal";
 import AgreementDetailModal from "./components/AgreementDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -18,11 +19,20 @@ interface PaymentTerm {
   description: string;
 }
 
+interface AgreementFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  file?: File;
+}
+
 interface Agreement {
   id: string;
   kodeProject: string;
   projectName: string;
-  projectType: 'internal development' | 'procurement';
+  projectType: 'internal development' | 'procurement' | 'non procurement';
   divisiInisiasi: string;
   grupTerlibat: string;
   keterangan: string;
@@ -32,6 +42,7 @@ interface Agreement {
   tanggalBAPP: string;
   tanggalBerakhir: string;
   terminPembayaran: PaymentTerm[];
+  files: AgreementFile[];
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +61,7 @@ export default function PortfolioManagementPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   
   // Pagination state
@@ -57,6 +69,36 @@ export default function PortfolioManagementPage() {
   const [itemsPerPage] = useState(20); // Show 20 items per page
 
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+
+  // Generate mock files for agreements
+  const generateMockFiles = (agreementIndex: number): AgreementFile[] => {
+    const fileTypes = [
+      { ext: 'pdf', type: 'application/pdf', names: ['Contract', 'Agreement', 'Proposal', 'Specification', 'Requirements'] },
+      { ext: 'docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', names: ['Document', 'Report', 'Manual', 'Guide'] },
+      { ext: 'xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', names: ['Budget', 'Timeline', 'Analysis', 'Data'] },
+      { ext: 'pptx', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', names: ['Presentation', 'Slides', 'Overview'] }
+    ];
+    
+    const numFiles = Math.floor(Math.random() * 6) + 1; // 1-6 files per agreement
+    const files: AgreementFile[] = [];
+    
+    for (let j = 0; j < numFiles; j++) {
+      const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
+      const fileName = fileType.names[Math.floor(Math.random() * fileType.names.length)];
+      const fileSize = Math.floor(Math.random() * 5000000) + 100000; // 100KB - 5MB
+      const uploadDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      
+      files.push({
+        id: `file_${agreementIndex}_${j}`,
+        name: `${fileName}_${agreementIndex}_${j + 1}.${fileType.ext}`,
+        size: fileSize,
+        type: fileType.type,
+        uploadedAt: uploadDate.toISOString()
+      });
+    }
+    
+    return files;
+  };
 
   // Mock data for development - 200 entries for testing large dataset
   const generateMockAgreements = (): Agreement[] => {
@@ -120,7 +162,8 @@ export default function PortfolioManagementPage() {
       
       const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
       
-      const projectTypeValue: 'internal development' | 'procurement' = Math.random() > 0.5 ? 'procurement' : 'internal development';
+      const projectTypeOptions: ('internal development' | 'procurement' | 'non procurement')[] = ['internal development', 'procurement', 'non procurement'];
+      const projectTypeValue = projectTypeOptions[Math.floor(Math.random() * projectTypeOptions.length)];
       
       agreements.push({
         id: i.toString(),
@@ -131,15 +174,20 @@ export default function PortfolioManagementPage() {
         grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
         keterangan: projectTypeValue === 'internal development' 
           ? `Internal development project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project will be handled by our internal development team with focus on innovation and efficiency.`
-          : `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`,
+          : projectTypeValue === 'procurement'
+          ? `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`
+          : `Non-procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves internal resources without external procurement processes.`,
         namaVendor: projectTypeValue === 'procurement' ? vendors[Math.floor(Math.random() * vendors.length)] : '',
         noPKSPO: projectTypeValue === 'procurement' 
           ? (Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`)
-          : `INT/2024/${i.toString().padStart(3, '0')}`,
+          : projectTypeValue === 'internal development'
+          ? `INT/2024/${i.toString().padStart(3, '0')}`
+          : `NON/2024/${i.toString().padStart(3, '0')}`,
         tanggalPKSPO: pksDate.toISOString().split('T')[0],
         tanggalBAPP: bappDate.toISOString().split('T')[0],
         tanggalBerakhir: endDate.toISOString().split('T')[0],
-        terminPembayaran: projectTypeValue === 'procurement' ? paymentTerms : [],
+        terminPembayaran: projectTypeValue === 'procurement' || projectTypeValue === 'non procurement' ? paymentTerms : [],
+        files: generateMockFiles(i),
         createdAt: createdDate.toISOString(),
         updatedAt: createdDate.toISOString()
       });
@@ -185,10 +233,7 @@ export default function PortfolioManagementPage() {
     
     return agreements.filter(agreement =>
       agreement.kodeProject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.divisiInisiasi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.grupTerlibat.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agreement.namaVendor.toLowerCase().includes(searchTerm.toLowerCase())
+      agreement.projectName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [agreements, searchTerm]);
 
@@ -310,7 +355,103 @@ export default function PortfolioManagementPage() {
       setShowDeleteConfirm(true);
     }
   };
+  const handleExportSelected = async () => {
+    if (selectedAgreements.length === 0) {
+      toast.error("Please select agreements to export");
+      return;
+    }
 
+    try {
+      setIsExporting(true);
+      
+      // Get selected agreements data
+      const selectedAgreementsData = agreements.filter(agreement => selectedAgreements.includes(agreement.id));
+      
+      // Create Excel data
+      const excelData: any[] = [];
+      
+      selectedAgreementsData.forEach((agreement, index) => {
+        // Calculate total payment amount
+        const totalPayment = agreement.terminPembayaran.reduce((sum, term) => sum + term.nominal, 0);
+        
+        // Format payment terms as string
+        const paymentTermsText = agreement.terminPembayaran
+          .map(term => `${term.termin}: ${formatCurrency(term.nominal)} (${term.description})`)
+          .join('; ');
+        
+        // Count files
+        const fileCount = agreement.files.length;
+        const fileNames = agreement.files.map(file => file.name).join('; ');
+        
+        excelData.push({
+          "No": index + 1,
+          "Kode Project": agreement.kodeProject,
+          "Project Name": agreement.projectName,
+          "Project Type": agreement.projectType,
+          "Divisi Inisiasi": agreement.divisiInisiasi,
+          "Grup Terlibat": agreement.grupTerlibat,
+          "Keterangan": agreement.keterangan,
+          "Nama Vendor": agreement.namaVendor,
+          "No PKS/PO": agreement.noPKSPO,
+          "Tanggal PKS/PO": new Date(agreement.tanggalPKSPO).toLocaleDateString('id-ID'),
+          "Tanggal BAPP": new Date(agreement.tanggalBAPP).toLocaleDateString('id-ID'),
+          "Tanggal Berakhir": new Date(agreement.tanggalBerakhir).toLocaleDateString('id-ID'),
+          "Total Payment": formatCurrency(totalPayment),
+          "Payment Terms": paymentTermsText,
+          "File Count": fileCount,
+          "File Names": fileNames,
+          "Created At": new Date(agreement.createdAt).toLocaleDateString('id-ID'),
+          "Updated At": new Date(agreement.updatedAt).toLocaleDateString('id-ID')
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 15 },  // Kode Project
+        { wch: 30 },  // Project Name
+        { wch: 20 },  // Project Type
+        { wch: 20 },  // Divisi Inisiasi
+        { wch: 20 },  // Grup Terlibat
+        { wch: 40 },  // Keterangan
+        { wch: 25 },  // Nama Vendor
+        { wch: 20 },  // No PKS/PO
+        { wch: 15 },  // Tanggal PKS/PO
+        { wch: 15 },  // Tanggal BAPP
+        { wch: 15 },  // Tanggal Berakhir
+        { wch: 20 },  // Total Payment
+        { wch: 50 },  // Payment Terms
+        { wch: 10 },  // File Count
+        { wch: 50 },  // File Names
+        { wch: 12 },  // Created At
+        { wch: 12 }   // Updated At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Portfolio Data");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `Selected_Portfolio_${selectedAgreements.length}_${timestamp}.xlsx`;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(`Successfully exported ${selectedAgreements.length} agreements to Excel`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export agreements. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const handleEditFromDetail = () => {
     setShowDetailModal(false);
     setIsEditMode(true);
@@ -396,75 +537,76 @@ export default function PortfolioManagementPage() {
               </div>
             )}
 
-            {/* Controls */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  {!isSelectionMode ? (
-                    <>
-                      <button
-                        onClick={handleNewAgreement}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaPlus className="text-sm" />
-                        New Project
-                      </button>
-                      
-                      <button
-                        onClick={toggleSelectionMode}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-                        title="Select multiple agreements for bulk operations"
-                      >
-                        <FaCheck className="text-sm" />
-                        Select
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={toggleSelectionMode}
-                        className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaTimes className="text-sm" />
-                        Cancel Selection
-                      </button>
-                      
-                      <button
-                        onClick={handleDeleteAgreement}
-                        disabled={selectedAgreements.length === 0}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
-                      >
-                        <FaTrash className="text-sm" />
-                        Delete {selectedAgreements.length > 0 && `(${selectedAgreements.length})`}
-                      </button>
-                      
-                      {selectedAgreements.length > 0 && (
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <FaCheck className="text-blue-500 mr-2" />
-                          {selectedAgreements.length} of {filteredAgreements.length} selected
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search agreements..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
+            {/* Search Bar and Add Button */}
+            <div className="flex gap-4 mb-6">
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by project code or name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
               </div>
+              {!isSelectionMode ? (
+                <>
+                  <button
+                    onClick={toggleSelectionMode}
+                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                    title="Select multiple agreements for bulk operations"
+                  >
+                    <FaCheck className="text-sm" />
+                    Select
+                  </button>
+                  
+                  <button
+                    onClick={handleNewAgreement}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaPlus className="text-sm" />
+                    New Project
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={toggleSelectionMode}
+                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaTimes className="text-sm" />
+                    Cancel
+                  </button>
+                  
+                  <button
+                    onClick={handleDeleteAgreement}
+                    disabled={selectedAgreements.length === 0}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaTrash className="text-sm" />
+                    Delete {selectedAgreements.length > 0 && `(${selectedAgreements.length})`}
+                  </button>
+                  
+                  <button
+                    onClick={handleExportSelected}
+                    disabled={selectedAgreements.length === 0 || isExporting}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <FaFileExcel className="text-sm" />
+                    {isExporting ? 'Exporting...' : `Export ${selectedAgreements.length > 0 ? `(${selectedAgreements.length})` : ''}`}
+                  </button>                  
+                  {selectedAgreements.length > 0 && (
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 px-3 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg whitespace-nowrap">
+                      <FaCheck className="text-blue-500 mr-2" />
+                      {selectedAgreements.length} selected
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Data Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
@@ -551,9 +693,16 @@ export default function PortfolioManagementPage() {
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                               agreement.projectType === 'internal development' 
                                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : agreement.projectType === 'procurement'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
                             }`}>
-                              {agreement.projectType === 'internal development' ? 'Internal Development' : 'Procurement'}
+                              {agreement.projectType === 'internal development' 
+                                ? 'Internal Development' 
+                                : agreement.projectType === 'procurement'
+                                ? 'Procurement'
+                                : 'Non Procurement'
+                              }
                             </span>
                           </td>
                         </tr>
