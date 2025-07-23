@@ -1,27 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaSearch, FaChevronDown, FaChevronUp, FaFilter, FaFileExcel } from "react-icons/fa";
+import { FaPlus, FaSearch, FaFileExcel, FaFileAlt, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import * as XLSX from 'xlsx';
 import MemoModal from "./components/MemoModal";
 import toast from "react-hot-toast";
+import { memoApiService, MemoApiResponse, ApiResponse } from "@/utils/memoApi";
 
-// Define interfaces
-interface Memo {
-  id: string;
-  jenis: "Memo" | "Surat";
-  tanggal: string;
-  nomor: string;
-  kepada: string;
-  cc: string;
-  perihal: string;
-  pembuat: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Use the API response interface directly
+type Memo = MemoApiResponse;
 
 export default function MemoManagerPage() {
   const { user, token } = useAuth();
@@ -29,318 +19,80 @@ export default function MemoManagerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [jenisFilter, setJenisFilter] = useState<"" | "Memo" | "Surat">("");
+  const [typeFilter, setTypeFilter] = useState<"" | "memo" | "surat">("");
   const [showModal, setShowModal] = useState(false);
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // Generate mock data
-  const generateMockMemos = (): Memo[] => {
-    const memos: Memo[] = [];
-    const subjects = [
-      "Permohonan Cuti Tahunan Karyawan Divisi IT untuk periode liburan akhir tahun",
-      "Undangan Rapat Koordinasi Bulanan Tim Development dan Quality Assurance",
-      "Pemberitahuan Perubahan Jadwal Maintenance Server dan Sistem Backup",
-      "Laporan Kegiatan Bulanan Divisi IT dan Progress Project yang sedang berjalan",
-      "Permohonan Izin Kegiatan Training External untuk Tim Technical Support",
-      "Surat Tugas Dinas Luar Kota untuk Implementasi Sistem di Cabang Jakarta",
-      "Pemberitahuan Kebijakan Baru Mengenai Work From Home dan Hybrid Working",
-      "Undangan Pelatihan Karyawan tentang Cyber Security dan Data Protection",
-      "Laporan Evaluasi Kinerja Triwulan dan Rekomendasi Improvement",
-      "Permohonan Pengadaan Barang IT Hardware dan Software License",
-      "Surat Peringatan Kedisiplinan terkait Keterlambatan dan Absensi",
-      "Undangan Acara Perusahaan Annual Gathering dan Team Building Activity",
-      "Pemberitahuan Libur Nasional dan Jadwal Operasional selama Hari Raya",
-      "Laporan Keuangan Triwulan dan Budget Planning untuk Quarter berikutnya",
-      "Permohonan Perpanjangan Kontrak Vendor IT Support dan Maintenance",
-      "Surat Rekomendasi Karyawan untuk Program Sertifikasi Professional",
-      "Pemberitahuan Mutasi Jabatan dan Restrukturisasi Organisasi",
-      "Undangan Workshop Internal tentang Agile Development Methodology",
-      "Laporan Audit Internal Sistem Keamanan dan Compliance Check",
-      "Permohonan Bantuan Teknis untuk Troubleshooting Critical System Issue",
-      "Surat Pengantar Dokumen Proposal Project dan Technical Specification",
-      "Pemberitahuan Implementasi Sistem Baru dan Training Schedule",
-      "Undangan Sosialisasi Program Corporate Social Responsibility",
-      "Laporan Progres Proyek Digital Transformation dan Milestone Achievement",
-      "Permohonan Anggaran Tambahan untuk Infrastructure Upgrade Project"
-    ];
-
-    const recipients = [
-      "Direktur Utama PT. Teknologi Maju Indonesia",
-      "Manager IT Development dan Infrastructure",
-      "Kepala Divisi SDM dan General Affairs",
-      "Supervisor Operasional dan Quality Control",
-      "Team Leader Software Development",
-      "Koordinator Proyek Digital Transformation",
-      "Kepala Bagian Keuangan dan Accounting",
-      "Manager Marketing dan Business Development",
-      "Supervisor Quality Assurance dan Testing",
-      "Kepala Unit Produksi dan Manufacturing",
-      "Koordinator Training dan Human Development",
-      "Manager Procurement dan Vendor Management",
-      "Kepala Divisi Legal dan Compliance",
-      "Supervisor Maintenance dan Technical Support",
-      "Team Leader Customer Support dan Service",
-      "Koordinator Logistik dan Supply Chain",
-      "Manager Business Intelligence dan Analytics",
-      "Kepala Bagian Internal Audit",
-      "Supervisor Security dan Risk Management",
-      "Koordinator Customer Relationship Management"
-    ];
-
-    const creators = [
-      "Ahmad Rizki Rahman, S.Kom", "Sari Dewi Lestari, M.T", "Budi Santoso Wijaya, S.T",
-      "Maya Sari Putri, S.Kom", "Eko Prasetyo Nugroho, M.Kom", "Linda Wijaya Sari, S.E",
-      "Rizki Rahman Ahmad, S.T", "Dewi Lestari Sari, M.M", "Santoso Wijaya Budi, S.Kom",
-      "Putri Maya Sari, S.T", "Nugroho Eko Prasetyo, M.T", "Sari Linda Wijaya, S.E"
-    ];
-
-    const ccList = [
-      "Manager IT, Supervisor Operasional, Team Leader Development",
-      "Kepala Divisi SDM, Koordinator Training",
-      "Team Leader Development, Koordinator Proyek, Manager Marketing",
-      "Manager Marketing, Supervisor Quality Control",
-      "Supervisor Quality Control, Kepala Unit Produksi, Koordinator Training",
-      "Koordinator Training, Manager Procurement",
-      "Manager Procurement, Kepala Divisi Legal, Supervisor Maintenance",
-      "Supervisor Maintenance, Team Leader Support",
-      "Team Leader Support, Koordinator Logistik",
-      "Koordinator Logistik, Manager Business Development, Kepala Bagian Audit",
-      "", // Some empty CC
-      "Kepala Bagian Audit, Supervisor Security"
-    ];
-
-    // Generate data chronologically with 10 Surat and 40 Memo spanning 2024-2025
-    let memoCounter2024 = 1;
-    let suratCounter2024 = 1;
-    let memoCounter2025 = 1;
-    let suratCounter2025 = 1;
-
-    // Start from early 2024 and span to 2025
-    const startDate = new Date(2024, 0, 15); // January 15, 2024
-    const endDate = new Date(2025, 11, 15); // December 15, 2025
-    const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    
-    const totalDocs = 50;
-    const suratCount = 10;
-    const memoCount = 40;
-    
-    // Create array of document types in chronological order
-    const docTypes: ("Memo" | "Surat")[] = [];
-    
-    // Distribute surat evenly throughout the timeline (every 5th document approximately)
-    for (let i = 0; i < totalDocs; i++) {
-      if (i > 0 && i % 5 === 0 && docTypes.filter(d => d === "Surat").length < suratCount) {
-        docTypes.push("Surat");
-      } else {
-        docTypes.push("Memo");
-      }
-    }
-    
-    // Ensure we have exactly 10 Surat
-    while (docTypes.filter(d => d === "Surat").length < suratCount) {
-      const randomIndex = Math.floor(Math.random() * totalDocs);
-      if (docTypes[randomIndex] === "Memo") {
-        docTypes[randomIndex] = "Surat";
-      }
-    }
-    
-    // Generate documents chronologically
-    for (let i = 0; i < totalDocs; i++) {
-      // Calculate date spread across 2024-2025
-      const dayOffset = Math.floor((i / totalDocs) * totalDays) + Math.floor(Math.random() * 7); // Add some randomness
-      const createdDate = new Date(startDate.getTime() + dayOffset * 24 * 60 * 60 * 1000);
-      const year = createdDate.getFullYear();
-      const jenis = docTypes[i];
-      
-      let sequentialNumber: string;
-      let nomor: string;
-      
-      if (jenis === "Memo") {
-        if (year === 2024) {
-          sequentialNumber = memoCounter2024.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAG/M/2024`;
-          memoCounter2024++;
-        } else {
-          sequentialNumber = memoCounter2025.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAG/M/2025`;
-          memoCounter2025++;
-        }
-      } else {
-        if (year === 2024) {
-          sequentialNumber = suratCounter2024.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAG/2024`;
-          suratCounter2024++;
-        } else {
-          sequentialNumber = suratCounter2025.toString().padStart(5, '0');
-          nomor = `${sequentialNumber}/ITE-IAG/2025`;
-          suratCounter2025++;
-        }
-      }
-
-      memos.push({
-        id: (i + 1).toString(),
-        jenis: jenis,
-        tanggal: createdDate.toISOString().split('T')[0],
-        nomor: nomor,
-        kepada: recipients[Math.floor(Math.random() * recipients.length)],
-        cc: ccList[Math.floor(Math.random() * ccList.length)],
-        perihal: subjects[Math.floor(Math.random() * subjects.length)],
-        pembuat: creators[Math.floor(Math.random() * creators.length)],
-        createdAt: createdDate.toISOString(),
-        updatedAt: createdDate.toISOString()
-      });
-    }
-    
-    // Return sorted by document number (sequential order)
-    return memos.sort((a, b) => {
-      // Extract year and number from document number for proper sorting
-      const extractNumberInfo = (nomor: string) => {
-        const parts = nomor.split('/');
-        const number = parseInt(parts[0]);
-        const year = parseInt(parts[parts.length - 1]);
-        return { year, number };
-      };
-      
-      const aInfo = extractNumberInfo(a.nomor);
-      const bInfo = extractNumberInfo(b.nomor);
-      
-      // Sort by year first, then by number
-      if (aInfo.year !== bInfo.year) {
-        return aInfo.year - bInfo.year; // 2024 first, then 2025
-      }
-      return aInfo.number - bInfo.number; // 00001, 00002, 00003...
-    });
-  };
-
-  const mockMemos = generateMockMemos();
-
-  useEffect(() => {
-    fetchMemos();
-  }, [token]);
-
-  const fetchMemos = async () => {
+  const fetchMemos = useCallback(async () => {
     try {
       setLoading(true);
-      setTimeout(() => {
-        setMemos(mockMemos);
-        setLoading(false);
-      }, 1000);
-    } catch (err) {
-      setError("Failed to fetch memos");
+      setError(null);
+      
+      const response: ApiResponse<MemoApiResponse[]> = await memoApiService.getAllMemos(token!);
+      
+      if (response.success && response.data) {
+        // Sort by created_at descending (newest first)
+        const sortedMemos = response.data.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        setMemos(sortedMemos);
+      } else {
+        throw new Error(response.error || 'Failed to fetch memos');
+      }
+    } catch (error) {
+      console.error('Error fetching memos:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load memos');
+      toast.error('Failed to load memos');
+    } finally {
       setLoading(false);
-      toast.error("Failed to load memos");
     }
-  };
+  }, [token]);
 
-  // Filter memos based on search term and jenis
+  useEffect(() => {
+    if (token) {
+      fetchMemos();
+    }
+  }, [token, fetchMemos]);
+
+  // Filter memos based on search term and type
   const filteredMemos = useMemo(() => {
     let filtered = memos;
     
-    // Filter by jenis
-    if (jenisFilter) {
-      filtered = filtered.filter(memo => memo.jenis === jenisFilter);
+    // Filter by type
+    if (typeFilter) {
+      filtered = filtered.filter(memo => memo.type === typeFilter);
     }
     
     // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(memo =>
-        memo.nomor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        memo.kepada.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        memo.perihal.toLowerCase().includes(searchTerm.toLowerCase())
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(memo => 
+        memo.memo_number.toLowerCase().includes(searchLower) ||
+        memo.to.toLowerCase().includes(searchLower) ||
+        memo.cc.toLowerCase().includes(searchLower) ||
+        memo.reason.toLowerCase().includes(searchLower) ||
+        memo.created_by.toLowerCase().includes(searchLower) ||
+        memo.type.toLowerCase().includes(searchLower)
       );
     }
     
     return filtered;
-  }, [memos, searchTerm, jenisFilter]);
+  }, [memos, searchTerm, typeFilter]);
 
-  // Pagination logic
+  // Pagination calculations
   const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentMemos = filteredMemos.slice(startIndex, endIndex);
 
-  // Handle pagination
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  // Export function
-  const handleExport = async () => {
-    try {
-      setIsExporting(true);
-      
-      if (filteredMemos.length === 0) {
-        toast.error("No memos found to export");
-        return;
-      }
-      
-      // Create Excel data
-      const excelData: any[] = [];
-      
-      filteredMemos.forEach((memo, index) => {
-        excelData.push({
-          "No": index + 1,
-          "Jenis": memo.jenis,
-          "Tanggal": memo.tanggal,
-          "Nomor": memo.nomor,
-          "Kepada": memo.kepada,
-          "CC": memo.cc,
-          "Perihal": memo.perihal,
-          "Pembuat": memo.pembuat,
-          "Created At": new Date(memo.createdAt).toLocaleDateString('id-ID'),
-          "Updated At": new Date(memo.updatedAt).toLocaleDateString('id-ID')
-        });
-      });
-
-      // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
-      // Set column widths for better readability
-      const columnWidths = [
-        { wch: 5 },   // No
-        { wch: 8 },   // Jenis
-        { wch: 12 },  // Tanggal
-        { wch: 20 },  // Nomor
-        { wch: 30 },  // Kepada
-        { wch: 30 },  // CC
-        { wch: 50 },  // Perihal
-        { wch: 20 },  // Pembuat
-        { wch: 12 },  // Created At
-        { wch: 12 }   // Updated At
-      ];
-      worksheet['!cols'] = columnWidths;
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Memo Data");
-
-      // Generate filename with filter info and timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const jenisFilter_text = jenisFilter ? `_${jenisFilter}` : '';
-      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
-      const filename = `Memo_Manager${jenisFilter_text}${searchFilter}_${filteredMemos.length}_items_${timestamp}.xlsx`;
-
-      // Save file
-      XLSX.writeFile(workbook, filename);
-
-      // Show success message
-      toast.success(`Successfully exported ${filteredMemos.length} memos to Excel`);
-      
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error("Failed to export memos. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };  
-  // Reset page when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [jenisFilter, searchTerm]);
 
   // Handle row expansion
   const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
@@ -356,77 +108,149 @@ export default function MemoManagerPage() {
     });
   };
 
-  // Handle copy nomor to clipboard
-  const copyNomor = async (nomor: string, e: React.MouseEvent) => {
+  // Handle copy memo number to clipboard
+  const copyMemoNumber = async (memoNumber: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(nomor);
-      toast.success(`Nomor ${nomor} copied to clipboard`);
+      await navigator.clipboard.writeText(memoNumber);
+      toast.success(Nomor ${memoNumber} copied to clipboard);
     } catch (err) {
-      toast.error('Failed to copy nomor');
+      toast.error('Failed to copy memo number');
     }
   };
+
+  // Export function
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      
+      if (filteredMemos.length === 0) {
+        toast.error("No memos found to export");
+        return;
+      }
+      
+      // Create Excel data
+      const excelData: Record<string, string | number>[] = [];
+      
+      filteredMemos.forEach((memo, index) => {
+        excelData.push({
+          "No": index + 1,
+          "Type": memo.type === 'memo' ? 'Memo' : 'Surat',
+          "Memo Number": memo.memo_number,
+          "To": memo.to,
+          "CC": memo.cc || '-',
+          "Reason": memo.reason,
+          "Created By": memo.created_by,
+          "Created At": formatDate(memo.created_at)
+        });
+      });
+
+      // Create workbook and worksheet
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Set column widths for better readability
+      const columnWidths = [
+        { wch: 5 },   // No
+        { wch: 8 },   // Type
+        { wch: 25 },  // Memo Number
+        { wch: 30 },  // To
+        { wch: 30 },  // CC
+        { wch: 50 },  // Reason
+        { wch: 20 },  // Created By
+        { wch: 15 }   // Created At
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Memo Data");
+
+      // Generate filename with filter info and timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const typeFilterText = typeFilter ? _${typeFilter} : '';
+      const searchFilter = searchTerm ? _Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')} : '';
+      const filename = Memo_Manager${typeFilterText}${searchFilter}_${filteredMemos.length}_items_${timestamp}.xlsx;
+
+      // Save file
+      XLSX.writeFile(workbook, filename);
+
+      // Show success message
+      toast.success(Successfully exported ${filteredMemos.length} memos to Excel);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export memos. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter]);
 
   const handleNewMemo = () => {
     setShowModal(true);
   };
 
-  // Generate next number for new memo/letter
-  const generateNextNumber = (jenis: "Memo" | "Surat", tanggal: string): string => {
-    const inputYear = new Date(tanggal).getFullYear();
-    const currentYearMemos = memos.filter(memo => 
-      memo.jenis === jenis && 
-      new Date(memo.tanggal).getFullYear() === inputYear
-    );
-
-    const nextSequential = currentYearMemos.length + 1;
-    const sequentialNumber = nextSequential.toString().padStart(5, '0');
-
-    if (jenis === "Memo") {
-      return `${sequentialNumber}/ITE-IAG/M/${inputYear}`;
-    } else {
-      return `${sequentialNumber}/ITE-IAG/${inputYear}`;
+  const handleSaveMemo = async (memoData: { type: "memo" | "surat"; to: string; cc?: string; reason: string }) => {
+    try {
+      console.log('=== CREATING NEW MEMO ===');
+      console.log('Memo data:', memoData);
+      
+      // Add the current user's name as the creator
+      const memoDataWithCreator = {
+        ...memoData,
+        created_by: user?.name || user?.username || 'Unknown User'
+      };
+      
+      console.log('Memo data with creator:', memoDataWithCreator);
+      
+      const response: ApiResponse<MemoApiResponse> = await memoApiService.createMemo(memoDataWithCreator, token!);
+      console.log('API Response:', response);
+      
+      if (response.success) {
+        toast.success('Memo berhasil dibuat!');
+        setShowModal(false);
+        // Refresh the memos list
+        await fetchMemos();
+      } else {
+        throw new Error(response.error || 'Failed to create memo');
+      }
+    } catch (error) {
+      console.error('Error creating memo:', error);
+      toast.error(error instanceof Error ? error.message : 'Gagal membuat memo');
     }
   };
 
-  const handleSaveMemo = (memoData: Omit<Memo, 'id' | 'nomor' | 'pembuat' | 'createdAt' | 'updatedAt'>) => {
-    const newMemo: Memo = {
-      id: Date.now().toString(),
-      ...memoData,
-      nomor: generateNextNumber(memoData.jenis, memoData.tanggal),
-      pembuat: user?.name || "Current User",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Add new memo at the end (newest)
-    setMemos(prev => [...prev, newMemo]);
-    toast.success(`${memoData.jenis} "${memoData.perihal}" berhasil dibuat dengan nomor ${newMemo.nomor}`);
-    setShowModal(false);
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const formatType = (type: string) => {
+    return type === 'memo' ? 'Memo' : 'Surat';
   };
 
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
           <Sidebar />
-          <div className="flex-1 md:ml-60 p-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-8"></div>
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                ))}
-              </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading memos...</p>
             </div>
           </div>
         </div>
@@ -436,276 +260,301 @@ export default function MemoManagerPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
         <Sidebar />
-        <div className="flex-1 md:ml-60 p-6">
-          <div className="max-w-full mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    Memo Manager
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Kelola memo dan surat dengan sistem penomoran otomatis
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {memos.length}
-                  </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Total Documents
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-red-700 dark:text-red-300">{error}</p>
-              </div>
-            )}
-
-            {/* Search Bar and Add Button */}
-            <div className="flex gap-4 mb-6">
-              <div className="relative flex-1">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by number, recipient, subject..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div className="relative">
-                <select
-                  value={jenisFilter}
-                  onChange={(e) => setJenisFilter(e.target.value as "" | "Memo" | "Surat")}
-                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:border-blue-500 text-gray-900 dark:text-white cursor-pointer"
-                >
-                  <option value="">Filter by</option>
-                  <option value="Memo">Memo</option>
-                  <option value="Surat">Surat</option>
-                </select>
-                <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
-              </div>
-              <button
-                onClick={handleExport}
-                disabled={isExporting || filteredMemos.length === 0}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
-              >
-                <FaFileExcel className="text-sm" />
-                {isExporting ? 'Exporting...' : `Export (${filteredMemos.length})`}
-              </button> 
-              <button
-                onClick={handleNewMemo}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
-              >
-                <FaPlus className="text-sm" />
-                New Memo
-              </button>
-              </div>
-
-            {/* Data Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px]">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
-                        No.
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
-                        Jenis
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
-                        Tanggal
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
-                        Nomor
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-56">
-                        Kepada
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
-                        CC
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Perihal
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
-                        Pembuat
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {currentMemos.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                          {searchTerm ? 'No documents found matching your search.' : 'No documents available.'}
-                        </td>
-                      </tr>
-                    ) : (
-                      currentMemos.map((memo, index) => {
-                        const isExpanded = expandedRows.has(memo.id);
-                        return (
-                          <tr
-                            key={memo.id}
-                            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {startIndex + index + 1}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                memo.jenis === 'Memo' 
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                  : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                              }`}>
-                                {memo.jenis}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                              {formatDate(memo.tanggal)}
-                            </td>
-                            <td className="px-4 py-4 text-sm font-mono">
-                              <span 
-                                className="break-all cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                                onClick={(e) => copyNomor(memo.nomor, e)}
-                                title="Click to copy"
-                              >
-                                {memo.nomor}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                              <div className="max-w-56">
-                                <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                  {memo.kepada}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                              <div className="max-w-48">
-                                {memo.cc ? (
-                                  <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                    {memo.cc}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 italic">-</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                              <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                {memo.perihal}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                              <div className="flex items-center justify-between max-w-48">
-                                <div className="flex-1 min-w-0">
-                                  <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
-                                    {memo.pembuat}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={(e) => toggleRowExpansion(memo.id, e)}
-                                  className="ml-2 px-1 py-6 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
-                                >
-                                  {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
-                        Showing {startIndex + 1} to {Math.min(endIndex, filteredMemos.length)} of {filteredMemos.length} documents
-                        {memos.length !== filteredMemos.length && (
-                          <span className="text-gray-500"> (filtered from {memos.length} total)</span>
-                        )}
-                      </div>
+        
+        <div className="flex-1 flex flex-col overflow-hidden ml-64">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+            <div className="container mx-auto px-6 py-8 pl-2">
+              <div className="mb-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <FaFileAlt className="text-3xl text-blue-600 dark:text-blue-400" />
+                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                        Memo Manager
+                      </h1>
                     </div>
-                    
-                    {/* Pagination Controls */}
-                    <div className="flex items-center gap-2">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Kelola memo dan surat internal perusahaan
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {memos.length}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Total Documents
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                    </div>
+                    <div className="ml-auto pl-3">
                       <button
-                        onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setError(null)}
+                        className="text-red-400 hover:text-red-600 dark:hover:text-red-200"
                       >
-                        Previous
-                      </button>
-                      
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-1 text-sm border rounded ${
-                                currentPage === pageNum
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
-                        
-                        {totalPages > 5 && currentPage < totalPages - 2 && (
-                          <>
-                            <span className="px-2 text-gray-500">...</span>
-                            <button
-                              onClick={() => handlePageChange(totalPages)}
-                              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
-                            >
-                              {totalPages}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      
-                      <button
-                        onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Next
+                        <span className="sr-only">Dismiss</span>
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
                       </button>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Search Bar, Filter, Export and Add Button */}
+              <div className="flex gap-4 mb-6">
+                <div className="relative flex-1">
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari berdasarkan nomor, penerima, perihal, atau pembuat..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value as "" | "memo" | "surat")}
+                    className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white cursor-pointer"
+                  >
+                    <option value="">All Types</option>
+                    <option value="memo">Memo</option>
+                    <option value="surat">Surat</option>
+                  </select>
+                  <FaChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={12} />
+                </div>
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting || filteredMemos.length === 0}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <FaFileExcel className="text-sm" />
+                  {isExporting ? 'Exporting...' : Export (${filteredMemos.length})}
+                </button>
+                <button
+                  onClick={handleNewMemo}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <FaPlus className="text-sm" />
+                  New Memo
+                </button>
+              </div>
+
+              {/* Enhanced Data Table - EXACT MATCH TO PAGE-LAMA.TSX */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1200px]">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                          No.
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
+                          Jenis
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
+                          Tanggal
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
+                          Nomor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-44">
+                          Kepada
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
+                          CC
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Perihal
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
+                          Pembuat
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {currentMemos.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            {searchTerm ? 'No documents found matching your search.' : 'No documents available.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        currentMemos.map((memo, index) => {
+                          const isExpanded = expandedRows.has(memo.id.toString());
+                          return (
+                            <tr
+                              key={memo.id}
+                              className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {startIndex + index + 1}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  memo.type === 'memo' 
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                }`}>
+                                  {formatType(memo.type)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                {formatDate(memo.created_at)}
+                              </td>
+                              <td className="px-4 py-4 text-sm font-mono">
+                                <span 
+                                  className="break-all cursor-pointer text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                                  onClick={(e) => copyMemoNumber(memo.memo_number, e)}
+                                  title="Click to copy"
+                                >
+                                  {memo.memo_number}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                                <div className="max-w-44">
+                                  <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                    {memo.to}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                                <div className="max-w-48">
+                                  {memo.cc ? (
+                                    <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                      {memo.cc}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 italic">-</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                                <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                  {memo.reason}
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
+                                <div className="flex items-center justify-between max-w-48">
+                                  <div className="flex-1 min-w-0">
+                                    <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                      {memo.created_by}
+                                    </div>
+                                  </div>
+                                  <button
+                                  onClick={(e) => toggleRowExpansion(memo.id.toString(), e)}
+                                  className="ml-2 px-1 py-6 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+                                >
+                                  {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
+                                </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-700 dark:text-gray-300">
+                          Showing {startIndex + 1} to {Math.min(endIndex, filteredMemos.length)} of {filteredMemos.length} documents
+                          {memos.length !== filteredMemos.length && (
+                            <span className="text-gray-500"> (filtered from {memos.length} total)</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pagination Controls */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Previous
+                        </button>
+                        
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNum = totalPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                className={`px-3 py-1 text-sm border rounded ${
+                                  currentPage === pageNum
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                          
+                          {totalPages > 5 && currentPage < totalPages - 2 && (
+                            <>
+                              <span className="px-2 text-gray-500">...</span>
+                              <button
+                                onClick={() => handlePageChange(totalPages)}
+                                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
+                              >
+                                {totalPages}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        
+                        <button
+                          onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </main>
         </div>
 
-        {/* New Memo Modal */}
+        {/* Modal */}
         {showModal && (
           <MemoModal
             onSave={handleSaveMemo}
