@@ -430,7 +430,7 @@ export default function PolicyManagement() {
 
     // Generate filename with current date
     const currentDate = new Date().toISOString().split('T')[0];
-    const filename = policy_export_${currentDate}.xlsx;
+    const filename = `policy_export_${currentDate}.xlsx`;
 
     // Save file
     XLSX.writeFile(workbook, filename);
@@ -540,7 +540,7 @@ export default function PolicyManagement() {
                         ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                         : 'bg-green-600 hover:bg-green-700 text-white'
                     }`}
-                    title={selectedPolicies.size === 0 ? 'Select policies to export' : Export ${selectedPolicies.size} selected policies}
+                    title={selectedPolicies.size === 0 ? 'Select policies to export' : `Export ${selectedPolicies.size} selected policies`}
                   >
                     <FaFileExcel className="w-4 h-4" />
                     Export Excel
@@ -600,7 +600,7 @@ export default function PolicyManagement() {
                       
                       {/* Expand/collapse arrow */}
                       <svg
-                        className={w-5 h-5 transition-transform ${expandedAccordions[category] ? 'rotate-180' : ''}}
+                        className={`w-5 h-5 transition-transform ${expandedAccordions[category] ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

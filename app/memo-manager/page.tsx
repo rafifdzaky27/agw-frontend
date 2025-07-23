@@ -113,7 +113,7 @@ export default function MemoManagerPage() {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(memoNumber);
-      toast.success(Nomor ${memoNumber} copied to clipboard);
+      toast.success(`Nomor ${memoNumber} copied to clipboard`);
     } catch (err) {
       toast.error('Failed to copy memo number');
     }
@@ -167,15 +167,15 @@ export default function MemoManagerPage() {
 
       // Generate filename with filter info and timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const typeFilterText = typeFilter ? _${typeFilter} : '';
-      const searchFilter = searchTerm ? _Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')} : '';
-      const filename = Memo_Manager${typeFilterText}${searchFilter}_${filteredMemos.length}_items_${timestamp}.xlsx;
+      const typeFilterText = typeFilter ? `_${typeFilter}` : '';
+      const searchFilter = searchTerm ? `_Search_${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      const filename = `Memo_Manager${typeFilterText}${searchFilter}_${filteredMemos.length}_items_${timestamp}.xlsx`;
 
       // Save file
       XLSX.writeFile(workbook, filename);
 
       // Show success message
-      toast.success(Successfully exported ${filteredMemos.length} memos to Excel);
+      toast.success(`Successfully exported ${filteredMemos.length} memos to Excel`);
       
     } catch (error) {
       console.error('Export error:', error);
@@ -346,7 +346,7 @@ export default function MemoManagerPage() {
                   className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
                 >
                   <FaFileExcel className="text-sm" />
-                  {isExporting ? 'Exporting...' : Export (${filteredMemos.length})}
+                  {isExporting ? 'Exporting...' : `Export (${filteredMemos.length})`}
                 </button>
                 <button
                   onClick={handleNewMemo}
@@ -430,7 +430,7 @@ export default function MemoManagerPage() {
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                                 <div className="max-w-44">
-                                  <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                  <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                     {memo.to}
                                   </div>
                                 </div>
@@ -438,7 +438,7 @@ export default function MemoManagerPage() {
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                                 <div className="max-w-48">
                                   {memo.cc ? (
-                                    <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                    <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                       {memo.cc}
                                     </div>
                                   ) : (
@@ -447,14 +447,14 @@ export default function MemoManagerPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
-                                <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                   {memo.reason}
                                 </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900 dark:text-white">
                                 <div className="flex items-center justify-between max-w-48">
                                   <div className="flex-1 min-w-0">
-                                    <div className={break-words ${isExpanded ? '' : 'line-clamp-2'}}>
+                                    <div className={`break-words ${isExpanded ? '' : 'line-clamp-2'}`}>
                                       {memo.created_by}
                                     </div>
                                   </div>

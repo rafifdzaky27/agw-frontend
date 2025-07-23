@@ -21,7 +21,6 @@ import {
   FaCogs,
   FaSitemap,
   FaFileAlt,
-  FaClipboardList
 } from "react-icons/fa";
 
 // Define navigation items with icons for better UX
