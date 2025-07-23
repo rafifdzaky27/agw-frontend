@@ -87,7 +87,7 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function GovernanceTasks() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +99,7 @@ export default function GovernanceTasks() {
 
 
   // Get API URL from environment variable
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
   // Filter tasks based on search term
@@ -175,7 +175,12 @@ export default function GovernanceTasks() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/governance-tasks`);
+        const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { "Authorization": `Bearer ${token}` })
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -186,6 +191,7 @@ export default function GovernanceTasks() {
         // Convert single tag to tags array for backward compatibility
         const processedData = data.map((task: any) => ({
           ...task,
+          namaTugas: (task as any).nama_tugas || task.namaTugas, // Transform snake_case to camelCase
           tags: task.tags || (task.tag ? [task.tag] : [])
         }));
         
@@ -207,8 +213,18 @@ export default function GovernanceTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || (task as any).nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status,
+          tag: Array.isArray((task as any).tags) ? (task as any).tags.join(", ") : (task as any).tag || ""
+        }),
       });
       
       if (!response.ok) {
@@ -219,6 +235,7 @@ export default function GovernanceTasks() {
       // Ensure tags is an array
       const processedTask = {
         ...newTask,
+        namaTugas: newTask.nama_tugas || newTask.namaTugas, // Transform snake_case to camelCase
         tags: newTask.tags || (newTask.tag ? [newTask.tag] : [])
       };
       setTasks((prev: Task[]) => [...prev, processedTask]);
@@ -233,8 +250,18 @@ export default function GovernanceTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || (task as any).nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status,
+          tag: Array.isArray((task as any).tags) ? (task as any).tags.join(", ") : (task as any).tag || ""
+        }),
       });
       
       if (!response.ok) {
@@ -245,6 +272,7 @@ export default function GovernanceTasks() {
       // Ensure tags is an array
       const processedTask = {
         ...updatedTask,
+        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas, // Transform snake_case to camelCase
         tags: updatedTask.tags || (updatedTask.tag ? [updatedTask.tag] : [])
       };
       setTasks((prev: Task[]) =>

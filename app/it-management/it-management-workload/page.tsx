@@ -84,7 +84,7 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function ManagementTasks() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function ManagementTasks() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Get API URL from environment variable
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
   // CSV conversion function
@@ -174,7 +174,12 @@ export default function ManagementTasks() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/it-management-tasks`);
+        const response = await fetch(`${API_BASE_URL}/it-management-tasks`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { "Authorization": `Bearer ${token}` })
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -185,6 +190,7 @@ export default function ManagementTasks() {
         // Ensure tags field exists for all tasks
         const processedData = data.map((task: any) => ({
           ...task,
+          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
           tags: task.tags || []
         }));
         
@@ -205,8 +211,17 @@ export default function ManagementTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/it-management-tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status
+        }),
       });
       
       if (!response.ok) {
@@ -214,7 +229,12 @@ export default function ManagementTasks() {
       }
       
       const newTask = await response.json();
-      setTasks((prev: Task[]) => [...prev, newTask]);
+      // Transform snake_case to camelCase
+      const processedTask = {
+        ...newTask,
+        namaTugas: newTask.nama_tugas || newTask.namaTugas
+      };
+      setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
     } catch (error) {
       console.error("Failed to save data", error);
@@ -226,8 +246,17 @@ export default function ManagementTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/it-management-tasks/${task.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status
+        }),
       });
       
       if (!response.ok) {
@@ -235,7 +264,12 @@ export default function ManagementTasks() {
       }
       
       const updatedTask = await response.json();
-      setTasks((prev: Task[]) => prev.map(t => t.id === task.id ? updatedTask : t));
+      // Transform snake_case to camelCase
+      const processedTask = {
+        ...updatedTask,
+        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas
+      };
+      setTasks((prev: Task[]) => prev.map(t => t.id === task.id ? processedTask : t));
       setShowDialog(false);
     } catch (error) {
       console.error("Failed to update data", error);
@@ -570,6 +604,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
+          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
     tags: task.tags || []
   });
 
