@@ -81,7 +81,7 @@ export default function Dashboard() {
             setError(null);
 
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config/all`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/api/config/all`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -142,7 +142,7 @@ export default function Dashboard() {
                 { key: "request_email_alert_text", value: config.requestAlertBody },
             ];
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config`, { // Replace with your actual API endpoint
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/api/config`, { // Replace with your actual API endpoint
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

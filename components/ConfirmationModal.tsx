@@ -1,5 +1,5 @@
 // ConfirmationModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaArrowLeft } from 'react-icons/fa'; // Import Font Awesome
 
 interface MigrationHistory {
@@ -39,6 +39,18 @@ interface AlertModalProps {
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
+    // Block body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     return (
         <div className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 overflow-y-auto flex items-start justify-center transition-opacity duration-300 z-50 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
             <div className={`relative p-5 border border-gray-300 dark:border-gray-600 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -88,11 +100,18 @@ const PendingModal: React.FC<PendingModalProps> = ({ isOpen, onConfirm, onCancel
     const [selectedDate, setSelectedDate] = useState('');
     const [pendingReason, setPendingReason] = useState('');
 
-    React.useEffect(() => {
+    // Block body scroll when modal is open
+    useEffect(() => {
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
             setSelectedDate('');
             setPendingReason('');
+        } else {
+            document.body.style.overflow = 'unset';
         }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
     }, [isOpen]);
 
     return (
@@ -139,6 +158,18 @@ const PendingModal: React.FC<PendingModalProps> = ({ isOpen, onConfirm, onCancel
 };
 
 const PreviousMigrationsModal: React.FC<PreviousMigrationsModalProps> = ({ isOpen, onClose, history = [] }) => {
+    // Block body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
     // Sort history by recorded_at (latest first)
     const sortedHistory = [...history].sort(
         (a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime()

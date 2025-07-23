@@ -63,7 +63,7 @@ export default function RoleManagement() {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/api/users`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -103,7 +103,7 @@ export default function RoleManagement() {
 
     const handleUpdateUser = async (updatedUser: User) => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/${updatedUser.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/api/users/${updatedUser.id}`, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -146,7 +146,7 @@ export default function RoleManagement() {
 
     const handleAddUser = async (newUser: Omit<User, "id"> & { password: string }) => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_USER_SERVICE_URL}/api/users`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -240,6 +240,14 @@ function UserCard({ user, onSelect }: { user: User; onSelect: (user: User) => vo
 
 function UserModal({ user, onClose, onUpdate }: { user: User; onClose: () => void; onUpdate: (user: User) => void }) {
     const [editedUser, setEditedUser] = useState({ ...user }); // Initialize with a copy of the user data
+
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -348,6 +356,14 @@ function AddUserModal({ onClose, onAdd }: { onClose: () => void; onAdd: (newUser
         division: "",
         email: "",
     });
+
+    // Block body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { id, value } = e.target;

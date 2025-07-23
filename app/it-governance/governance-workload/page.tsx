@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch} from "react-icons/fa";
+import { FaSearch, FaPlus, FaFileExcel} from "react-icons/fa";
 
 // Define Task interface with multiple tags support
 interface Task {
@@ -87,7 +87,7 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function GovernanceTasks() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,9 +95,11 @@ export default function GovernanceTasks() {
   const [showDialog, setShowDialog] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  
+
 
   // Get API URL from environment variable
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
   // Filter tasks based on search term
@@ -115,12 +117,70 @@ export default function GovernanceTasks() {
     }
   }, [tasks, searchTerm]);
 
+  // Function to export tasks to Excel
+  const handleExportToExcel = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/governance-tasks/export/excel`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const { data, filename } = await response.json();
+      
+      // Create Excel file using a simple CSV approach (you can use libraries like xlsx for more advanced features)
+      const csvContent = convertToCSV(data);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename.replace('.xlsx', '.csv'));
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error("Failed to export tasks", error);
+      alert("Failed to export tasks. Please try again.");
+    }
+  }, [API_BASE_URL]);
+
+  // Helper function to convert JSON to CSV
+  const convertToCSV = (data: any[]) => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvHeaders = headers.join(',');
+    
+    const csvRows = data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      }).join(',')
+    );
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
+
   // Fetch data for governance tasks
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/governance-tasks`);
+        const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { "Authorization": `Bearer ${token}` })
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -131,6 +191,7 @@ export default function GovernanceTasks() {
         // Convert single tag to tags array for backward compatibility
         const processedData = data.map((task: any) => ({
           ...task,
+          namaTugas: (task as any).nama_tugas || task.namaTugas, // Transform snake_case to camelCase
           tags: task.tags || (task.tag ? [task.tag] : [])
         }));
         
@@ -152,8 +213,18 @@ export default function GovernanceTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || (task as any).nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status,
+          tag: Array.isArray((task as any).tags) ? (task as any).tags.join(", ") : (task as any).tag || ""
+        }),
       });
       
       if (!response.ok) {
@@ -164,6 +235,7 @@ export default function GovernanceTasks() {
       // Ensure tags is an array
       const processedTask = {
         ...newTask,
+        namaTugas: newTask.nama_tugas || newTask.namaTugas, // Transform snake_case to camelCase
         tags: newTask.tags || (newTask.tag ? [newTask.tag] : [])
       };
       setTasks((prev: Task[]) => [...prev, processedTask]);
@@ -178,8 +250,18 @@ export default function GovernanceTasks() {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(task),
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          nama_tugas: (task as any).namaTugas || (task as any).nama_tugas,
+          catatan: task.catatan,
+          tanggal: task.tanggal,
+          pic: task.pic,
+          status: task.status,
+          tag: Array.isArray((task as any).tags) ? (task as any).tags.join(", ") : (task as any).tag || ""
+        }),
       });
       
       if (!response.ok) {
@@ -190,6 +272,7 @@ export default function GovernanceTasks() {
       // Ensure tags is an array
       const processedTask = {
         ...updatedTask,
+        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas, // Transform snake_case to camelCase
         tags: updatedTask.tags || (updatedTask.tag ? [updatedTask.tag] : [])
       };
       setTasks((prev: Task[]) =>
@@ -311,23 +394,7 @@ export default function GovernanceTasks() {
       <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
       
       {/* Tags Display */}
-      {task.tags && task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {task.tags.slice(0, 3).map((tag, tagIndex) => (
-            <span
-              key={tagIndex}
-              className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs px-2 py-1 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {task.tags.length > 3 && (
-            <span className="inline-block bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs px-2 py-1 rounded-full">
-              +{task.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
+    
       
       <div className="flex justify-between items-center">
         <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
@@ -341,35 +408,54 @@ export default function GovernanceTasks() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold flex-1 text-center">Governance Tasks</h1>
-          </div>
-
-          {/* Search Bar */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-             <div className="flex-1 relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search tasks by tags, name, notes, or person in charge..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 pl-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  </div>
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-                    onClick={() => setShowCreateDialog(true)}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Add Task
-                  </button>
-                </div>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Governance Tasks
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage governance tasks with drag-and-drop board
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {tasks.length}
               </div>
-          
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Tasks
+              </div>
+            </div>
+          </div>
+          {/* Search Bar */}
+          <div className="flex gap-4 mb-6">
+                        <div className="relative flex-1">
+                          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Search tasks by name, notes, person in charge, or tags..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                            
+                            }}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                        <button
+                          onClick={handleExportToExcel}
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <FaFileExcel className="text-sm" />
+                          Export Excel
+                        </button>
+                        <button
+                          onClick={() => setShowCreateDialog(true)}
+                          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <FaPlus className="text-sm" />
+                          Add Task
+                        </button>
+                      </div>
           {loading ? (
             <div className="flex justify-center">
               <p className="text-gray-500 dark:text-gray-400">Loading governance tasks...</p>
@@ -385,7 +471,12 @@ export default function GovernanceTasks() {
                       ref={provided.innerRef}
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
-                      <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Not Started</h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Not Started</h2>
+                        <span className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300 text-sm px-2 py-1 rounded-full">
+                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                        </span>
+                      </div>
                       <div className="space-y-3 min-h-[32rem]">
                         {filteredTasks
                           .filter(task => task.status === 'not yet')
@@ -413,7 +504,12 @@ export default function GovernanceTasks() {
                       ref={provided.innerRef}
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
-                      <h2 className="text-lg font-semibold mb-4 text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
+                        <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
+                        </span>
+                      </div>
                       <div className="space-y-3 min-h-[32rem]">
                         {filteredTasks
                           .filter(task => task.status === 'on progress')
@@ -441,7 +537,12 @@ export default function GovernanceTasks() {
                       ref={provided.innerRef}
                       className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
                     >
-                      <h2 className="text-lg font-semibold mb-4 text-green-600 dark:text-green-300">Done</h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
+                        <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
+                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                        </span>
+                      </div>
                       <div className="space-y-3 min-h-[32rem]">
                         {filteredTasks
                           .filter(task => task.status === 'done')
@@ -511,6 +612,14 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
 
   const [isEdit, setIsEdit] = useState(false);
 
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
@@ -571,142 +680,145 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           </button>
         </div>
         
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {isEdit && (
-            <div>
-              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Task Name</div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Task Name</label>
+            {isEdit ? (
               <input
+                type="text"
                 name="namaTugas"
-                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.namaTugas}
                 onChange={handleChange}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
-            </div>
-          )}
-          
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
-            {!isEdit ? (
-              <div>{formatDate(formState.tanggal)}</div>
             ) : (
-              <input
-                type="date"
-                name="tanggal"
-                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-                value={formState.tanggal}
-                onChange={handleChange}
-              />
+              <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.namaTugas}</p>
             )}
           </div>
-          
+
           <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
-            {!isEdit ? (
-              <span className={`px-2 py-1 text-sm font-bold rounded-full ${getBadgeClass(formState.status)}`}>
-                {getStatusText(formState.status)}
-              </span>
+            <label className="block text-sm font-medium mb-2">Notes</label>
+            {isEdit ? (
+              <textarea
+                name="catatan"
+                value={formState.catatan}
+                onChange={handleChange}
+                rows={4}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
             ) : (
+              <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.catatan}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Deadline</label>
+              {isEdit ? (
+                <input
+                  type="date"
+                  name="tanggal"
+                  value={formState.tanggal}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{formatDate(task.tanggal)}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Person in Charge</label>
+              {isEdit ? (
+                <input
+                  type="text"
+                  name="pic"
+                  value={formState.pic}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              ) : (
+                <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.pic}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Status</label>
+            {isEdit ? (
               <select
                 name="status"
-                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 value={formState.status}
                 onChange={handleChange}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="not yet">Not Started</option>
                 <option value="on progress">In Progress</option>
                 <option value="done">Done</option>
               </select>
+            ) : (
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBadgeClass(task.status)}`}>
+                {getStatusText(task.status)}
+              </span>
             )}
           </div>
-        </div>
 
-        {/* Tags Section */}
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tags</div>
-          {!isEdit ? (
-            <div>
-              {formState.tags && formState.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {formState.tags.map((tag, index) => (
+          <div>
+            <label className="block text-sm font-medium mb-2">Tags</label>
+            {isEdit ? (
+              <TagInput
+                tags={formState.tags}
+                onChange={handleTagsChange}
+                placeholder="Add tags (press Enter or comma to add)..."
+              />
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {task.tags && task.tags.length > 0 ? (
+                  task.tags.map((tag, index) => (
                     <span
                       key={index}
                       className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full"
                     >
                       {tag}
                     </span>
-                  ))}
-                </div>
-              ) : (
-                <span className="text-gray-500">No tags</span>
-              )}
-            </div>
-          ) : (
-            <TagInput
-              tags={formState.tags}
-              onChange={handleTagsChange}
-              placeholder="Add tags (press Enter or comma to add)"
-            />
-          )}
+                  ))
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">No tags</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Notes</div>
-          {!isEdit ? (
-            <div>{formState.catatan}</div>
-          ) : (
-            <textarea
-              name="catatan"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              rows={4}
-              value={formState.catatan}
-              onChange={handleChange}
-            />
-          )}
-        </div>
-        
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
-          {!isEdit ? (
-            <div>{formState.pic}</div>
-          ) : (
-            <input
-              name="pic"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.pic}
-              onChange={handleChange}
-            />
-          )}
-        </div>
-        
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 mt-6">
           {isEdit ? (
             <>
               <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleSaveClick}
-              >
-                Save
-              </button>
-              <button
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
                 onClick={() => setIsEdit(false)}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleSaveClick}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Save Changes
               </button>
             </>
           ) : (
             <>
               <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={() => setIsEdit(true)}
-              >
-                Edit
-              </button>
-              <button
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
                 onClick={handleDeleteClick}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Delete
+              </button>
+              <button
+                onClick={() => setIsEdit(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Edit
               </button>
             </>
           )}
@@ -747,6 +859,14 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
     pic: "",
     tags: [] as string[]
   });
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
