@@ -12,23 +12,21 @@ import {
   FaBars, 
   FaTimes,
   FaHome, 
-  FaExchangeAlt, 
-  FaTasks, 
-  FaClipboardCheck, 
   FaCog,
   FaSignOutAlt,
   FaChevronRight,
-  FaBriefcase,
   FaChevronDown,
   FaChevronUp,
   FaShieldAlt,
   FaCogs,
-  FaSitemap
+  FaSitemap,
+  FaFileAlt
 } from "react-icons/fa";
 
 // Define navigation items with icons for better UX
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/dashboard", icon: FaHome },
+  { name: "Memo Manager", href: "/memo-manager", icon: FaFileAlt },
 ];
 
 // Define dropdown sections
@@ -48,10 +46,10 @@ const DROPDOWN_SECTIONS = [
     icon: FaCogs,
     items: [
       { name: "Management Workload", href: "/it-management/it-management-workload" },
-      { name: "Portfolio Management", href: "it-management/portfolio-management" },
       { name: "Change Management", href: "/it-management/change-management" },
-      { name: "Finance Management", href: "/it-management/finance-management" },
       { name: "Vendor Management", href: "/it-management/vendor-management" },
+      { name: "Portfolio Management", href: "/it-management/portfolio-management" },
+      { name: "Finance Management", href: "/it-management/finance-management" },
     ]
   },
   {
@@ -151,7 +149,7 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     return sectionItems.some(item => {
       // Handle exact matches for specific routes
       if (item.href === '/change-management' || 
-          item.href === '/portfolio-management') {
+          item.href === '/it-management/portfolio-management') {
         return pathname === item.href;
       }
       // Handle prefix matches for other routes
