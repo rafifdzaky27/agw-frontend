@@ -15,6 +15,7 @@ interface ConfirmationModalProps {
     isOpen: boolean;
     onConfirm: () => void;
     onCancel: () => void;
+    title?: string;
     message?: string;
 }
 
@@ -38,7 +39,7 @@ interface AlertModalProps {
     alertLimit?: number; // Make optional
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, message = "Are you sure you want to proceed?" }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm, onCancel, title = "Confirmation", message = "Are you sure you want to proceed?" }) => {
     // Block body scroll when modal is open
     useEffect(() => {
         if (isOpen) {
@@ -54,7 +55,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onConfirm
     return (
         <div className={`fixed top-0 left-0 w-full h-full bg-black bg-opacity-75 overflow-y-auto flex items-start justify-center transition-opacity duration-300 z-50 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} style={{ paddingTop: '10vh' }}>
             <div className={`relative p-5 border border-gray-300 dark:border-gray-600 w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 transition-transform duration-300 ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}>
-                <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Confirmation</h3>
+                <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">{title}</h3>
                 <div className="mt-2">
                     <p className="text-sm text-gray-500 dark:text-gray-300">{message}</p>
                 </div>

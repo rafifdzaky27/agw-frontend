@@ -97,6 +97,40 @@ export default function ArchitectureTasks() {
   const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
+  // Helper function to get auth headers
+  const getAuthHeaders = useCallback(() => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  }, [token]);
+
+  // Helper function to handle API responses
+  const handleApiResponse = async (response: Response, operation: string) => {
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      
+      if (response.status === 401) {
+        console.error(`Authentication failed for ${operation}:`, errorData);
+        throw new Error(`Authentication failed. Please check your login status and permissions.`);
+      } else if (response.status === 403) {
+        console.error(`Access denied for ${operation}:`, errorData);
+        throw new Error(`Access denied. You don't have permission to ${operation}. Required roles: ${errorData.requiredRoles?.join(', ') || 'it-architecture, master'}`);
+      } else if (response.status === 404) {
+        throw new Error(`Service not found. Please ensure the workload service is running.`);
+      } else {
+        throw new Error(errorData.error || errorData.message || `Failed to ${operation}`);
+      }
+    }
+    
+    return response.json();
+  };
+
   // CSV conversion function
   const convertToCSV = (data: any[]) => {
     if (data.length === 0) return '';
