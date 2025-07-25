@@ -84,41 +84,6 @@ export default function MemoManagerPage() {
     return filtered;
   }, [memos, searchTerm, typeFilter]);
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentMemos = filteredMemos.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Handle row expansion
-  const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(memoId)) {
-        newSet.delete(memoId);
-      } else {
-        newSet.add(memoId);
-      }
-      return newSet;
-    });
-  };
-
-  // Handle copy memo number to clipboard
-  const copyMemoNumber = async (memoNumber: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(memoNumber);
-      toast.success(`Nomor ${memoNumber} copied to clipboard`);
-    } catch (err) {
-      toast.error('Failed to copy memo number');
-    }
-  };
-
   // Export function
   const handleExport = async () => {
     try {
@@ -182,6 +147,41 @@ export default function MemoManagerPage() {
       toast.error("Failed to export memos. Please try again.");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredMemos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentMemos = filteredMemos.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle row expansion
+  const toggleRowExpansion = (memoId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(memoId)) {
+        newSet.delete(memoId);
+      } else {
+        newSet.add(memoId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle copy memo number to clipboard
+  const copyMemoNumber = async (memoNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(memoNumber);
+      toast.success(`Nomor ${memoNumber} copied to clipboard`);
+    } catch (err) {
+      toast.error('Failed to copy memo number');
     }
   };
 

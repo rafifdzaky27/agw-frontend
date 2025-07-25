@@ -9,27 +9,7 @@ import * as XLSX from 'xlsx';
 import NewAuditModal from "./components/NewAuditModal";
 import AuditDetailModal from "./components/AuditDetailModal";
 import toast from "react-hot-toast";
-
-// Define interfaces
-interface AuditFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: string;
-}
-
-interface Audit {
-  id: string;
-  auditName: string;
-  category: "Internal" | "Regulatory" | "External";
-  auditor: string;
-  date: string; // Format: YYYY-MM
-  scope: string;
-  files: AuditFile[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { auditApiService, Audit } from "@/utils/auditApi";
 
 export default function AuditUniversePage() {
   const { user, token } = useAuth();
@@ -51,935 +31,177 @@ export default function AuditUniversePage() {
   });
   const ITEMS_PER_PAGE = 10;
 
-  const BACKEND_IP = process.env.NEXT_PUBLIC_AUDIT_SERVICE_URL || "http://localhost:5002";
-
-  // Mock data for development - replace with actual API calls
-  const mockAudits: Audit[] = [
-    // Internal Audits
-    {
-      id: "1",
-      auditName: "IT Security Assessment 2024",
-      category: "Internal",
-      auditor: "John Smith",
-      date: "2024-03",
-      scope: "Comprehensive security review of all IT systems and infrastructure",
-      files: [
-        { id: "f1", name: "security-report.pdf", size: 2048000, type: "application/pdf", uploadedAt: "2024-03-01" }
-      ],
-      createdAt: "2024-03-01T10:00:00Z",
-      updatedAt: "2024-03-01T10:00:00Z"
-    },
-    {
-      id: "4",
-      auditName: "Financial Controls Review",
-      category: "Internal",
-      auditor: "Sarah Johnson",
-      date: "2024-02",
-      scope: "Assessment of internal financial controls and procedures",
-      files: [],
-      createdAt: "2024-02-10T09:00:00Z",
-      updatedAt: "2024-02-10T09:00:00Z"
-    },
-    {
-      id: "5",
-      auditName: "HR Process Audit",
-      category: "Internal",
-      auditor: "Mike Chen",
-      date: "2024-01",
-      scope: "Review of human resources processes and compliance with company policies",
-      files: [
-        { id: "f3", name: "hr-audit-findings.xlsx", size: 512000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2024-01-15" }
-      ],
-      createdAt: "2024-01-15T14:20:00Z",
-      updatedAt: "2024-01-15T14:20:00Z"
-    },
-    {
-      id: "6",
-      auditName: "Operational Efficiency Review",
-      category: "Internal",
-      auditor: "Lisa Wang",
-      date: "2023-12",
-      scope: "Analysis of operational processes and efficiency improvements",
-      files: [
-        { id: "f4", name: "operations-report.pdf", size: 1536000, type: "application/pdf", uploadedAt: "2023-12-20" },
-        { id: "f5", name: "efficiency-metrics.xlsx", size: 768000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-12-20" }
-      ],
-      createdAt: "2023-12-20T11:30:00Z",
-      updatedAt: "2023-12-20T11:30:00Z"
-    },
-    {
-      id: "7",
-      auditName: "Data Privacy Compliance Check",
-      category: "Internal",
-      auditor: "David Brown",
-      date: "2023-11",
-      scope: "Review of data privacy practices and GDPR compliance measures",
-      files: [],
-      createdAt: "2023-11-10T16:45:00Z",
-      updatedAt: "2023-11-10T16:45:00Z"
-    },
-    
-    // Regulatory Audits
-    {
-      id: "2",
-      auditName: "SOX Compliance Review",
-      category: "Regulatory",
-      auditor: "Jane Doe",
-      date: "2024-02",
-      scope: "Sarbanes-Oxley compliance assessment for financial reporting systems",
-      files: [],
-      createdAt: "2024-02-15T14:30:00Z",
-      updatedAt: "2024-02-15T14:30:00Z"
-    },
-    {
-      id: "8",
-      auditName: "PCI DSS Compliance Audit",
-      category: "Regulatory",
-      auditor: "Robert Taylor",
-      date: "2024-01",
-      scope: "Payment Card Industry Data Security Standard compliance verification",
-      files: [
-        { id: "f6", name: "pci-compliance-report.pdf", size: 2560000, type: "application/pdf", uploadedAt: "2024-01-25" }
-      ],
-      createdAt: "2024-01-25T13:15:00Z",
-      updatedAt: "2024-01-25T13:15:00Z"
-    },
-    {
-      id: "9",
-      auditName: "ISO 27001 Certification Audit",
-      category: "Regulatory",
-      auditor: "Emma Wilson",
-      date: "2023-12",
-      scope: "Information security management system certification audit",
-      files: [
-        { id: "f7", name: "iso27001-audit.docx", size: 1280000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-12-15" },
-        { id: "f8", name: "security-controls.xlsx", size: 896000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-12-15" }
-      ],
-      createdAt: "2023-12-15T10:20:00Z",
-      updatedAt: "2023-12-15T10:20:00Z"
-    },
-    {
-      id: "10",
-      auditName: "HIPAA Compliance Review",
-      category: "Regulatory",
-      auditor: "Dr. Amanda Lee",
-      date: "2023-11",
-      scope: "Health Insurance Portability and Accountability Act compliance assessment",
-      files: [],
-      createdAt: "2023-11-20T15:40:00Z",
-      updatedAt: "2023-11-20T15:40:00Z"
-    },
-    {
-      id: "11",
-      auditName: "GDPR Data Protection Audit",
-      category: "Regulatory",
-      auditor: "Thomas Mueller",
-      date: "2023-10",
-      scope: "General Data Protection Regulation compliance verification",
-      files: [
-        { id: "f9", name: "gdpr-assessment.pdf", size: 1792000, type: "application/pdf", uploadedAt: "2023-10-30" }
-      ],
-      createdAt: "2023-10-30T12:10:00Z",
-      updatedAt: "2023-10-30T12:10:00Z"
-    },
-    
-    // External Audits
-    {
-      id: "3",
-      auditName: "Third-Party Vendor Assessment",
-      category: "External",
-      auditor: "External Auditors Inc.",
-      date: "2024-01",
-      scope: "Review of third-party vendor security practices and compliance",
-      files: [
-        { id: "f2", name: "vendor-assessment.docx", size: 1024000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2024-01-20" }
-      ],
-      createdAt: "2024-01-20T09:15:00Z",
-      updatedAt: "2024-01-20T09:15:00Z"
-    },
-    {
-      id: "12",
-      auditName: "Annual Financial Audit",
-      category: "External",
-      auditor: "KPMG Audit Services",
-      date: "2023-12",
-      scope: "Independent financial statement audit and internal controls assessment",
-      files: [
-        { id: "f10", name: "financial-audit-report.pdf", size: 3072000, type: "application/pdf", uploadedAt: "2023-12-31" },
-        { id: "f11", name: "management-letter.docx", size: 640000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-12-31" }
-      ],
-      createdAt: "2023-12-31T17:00:00Z",
-      updatedAt: "2023-12-31T17:00:00Z"
-    },
-    {
-      id: "13",
-      auditName: "Cloud Security Assessment",
-      category: "External",
-      auditor: "CyberSec Solutions",
-      date: "2023-11",
-      scope: "Comprehensive cloud infrastructure security evaluation",
-      files: [
-        { id: "f12", name: "cloud-security-report.pdf", size: 2304000, type: "application/pdf", uploadedAt: "2023-11-15" }
-      ],
-      createdAt: "2023-11-15T14:25:00Z",
-      updatedAt: "2023-11-15T14:25:00Z"
-    },
-    {
-      id: "14",
-      auditName: "Penetration Testing Audit",
-      category: "External",
-      auditor: "SecureTest Labs",
-      date: "2023-10",
-      scope: "External penetration testing of web applications and network infrastructure",
-      files: [
-        { id: "f13", name: "pentest-report.pdf", size: 1856000, type: "application/pdf", uploadedAt: "2023-10-25" },
-        { id: "f14", name: "vulnerability-summary.xlsx", size: 448000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-10-25" }
-      ],
-      createdAt: "2023-10-25T11:50:00Z",
-      updatedAt: "2023-10-25T11:50:00Z"
-    },
-    {
-      id: "15",
-      auditName: "Business Continuity Audit",
-      category: "External",
-      auditor: "Risk Management Partners",
-      date: "2023-09",
-      scope: "Assessment of business continuity and disaster recovery capabilities",
-      files: [],
-      createdAt: "2023-09-20T13:35:00Z",
-      updatedAt: "2023-09-20T13:35:00Z"
-    },
-    
-    // Additional Internal Audits (16-35)
-    {
-      id: "16",
-      auditName: "Inventory Management Review",
-      category: "Internal",
-      auditor: "Alex Thompson",
-      date: "2023-10",
-      scope: "Review of inventory tracking and management processes",
-      files: [],
-      createdAt: "2023-10-05T08:30:00Z",
-      updatedAt: "2023-10-05T08:30:00Z"
-    },
-    {
-      id: "17",
-      auditName: "Customer Service Quality Audit",
-      category: "Internal",
-      auditor: "Maria Garcia",
-      date: "2023-09",
-      scope: "Assessment of customer service standards and performance metrics",
-      files: [{ id: "f15", name: "customer-survey.xlsx", size: 320000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-09-10" }],
-      createdAt: "2023-09-10T15:20:00Z",
-      updatedAt: "2023-09-10T15:20:00Z"
-    },
-    {
-      id: "18",
-      auditName: "Supply Chain Risk Assessment",
-      category: "Internal",
-      auditor: "Kevin Lee",
-      date: "2023-08",
-      scope: "Evaluation of supply chain vulnerabilities and risk mitigation strategies",
-      files: [],
-      createdAt: "2023-08-25T11:45:00Z",
-      updatedAt: "2023-08-25T11:45:00Z"
-    },
-    {
-      id: "19",
-      auditName: "IT Asset Management Audit",
-      category: "Internal",
-      auditor: "Rachel Kim",
-      date: "2023-08",
-      scope: "Review of IT asset tracking, lifecycle management, and disposal processes",
-      files: [{ id: "f16", name: "asset-inventory.pdf", size: 1200000, type: "application/pdf", uploadedAt: "2023-08-15" }],
-      createdAt: "2023-08-15T09:10:00Z",
-      updatedAt: "2023-08-15T09:10:00Z"
-    },
-    {
-      id: "20",
-      auditName: "Training and Development Review",
-      category: "Internal",
-      auditor: "James Wilson",
-      date: "2023-07",
-      scope: "Assessment of employee training programs and professional development initiatives",
-      files: [],
-      createdAt: "2023-07-30T14:25:00Z",
-      updatedAt: "2023-07-30T14:25:00Z"
-    },
-    {
-      id: "21",
-      auditName: "Procurement Process Audit",
-      category: "Internal",
-      auditor: "Linda Davis",
-      date: "2023-07",
-      scope: "Review of procurement policies, vendor selection, and purchase approval processes",
-      files: [{ id: "f17", name: "procurement-analysis.xlsx", size: 680000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-07-20" }],
-      createdAt: "2023-07-20T16:40:00Z",
-      updatedAt: "2023-07-20T16:40:00Z"
-    },
-    {
-      id: "22",
-      auditName: "Quality Management System Review",
-      category: "Internal",
-      auditor: "Michael Brown",
-      date: "2023-06",
-      scope: "Evaluation of quality control processes and continuous improvement initiatives",
-      files: [],
-      createdAt: "2023-06-15T10:15:00Z",
-      updatedAt: "2023-06-15T10:15:00Z"
-    },
-    {
-      id: "23",
-      auditName: "Environmental Compliance Check",
-      category: "Internal",
-      auditor: "Susan Miller",
-      date: "2023-06",
-      scope: "Assessment of environmental policies and waste management practices",
-      files: [{ id: "f18", name: "environmental-report.pdf", size: 1500000, type: "application/pdf", uploadedAt: "2023-06-10" }],
-      createdAt: "2023-06-10T13:50:00Z",
-      updatedAt: "2023-06-10T13:50:00Z"
-    },
-    {
-      id: "24",
-      auditName: "Business Process Optimization",
-      category: "Internal",
-      auditor: "Daniel Taylor",
-      date: "2023-05",
-      scope: "Analysis of business processes for efficiency improvements and automation opportunities",
-      files: [],
-      createdAt: "2023-05-25T12:30:00Z",
-      updatedAt: "2023-05-25T12:30:00Z"
-    },
-    {
-      id: "25",
-      auditName: "Risk Management Framework Review",
-      category: "Internal",
-      auditor: "Jennifer White",
-      date: "2023-05",
-      scope: "Evaluation of enterprise risk management processes and controls",
-      files: [{ id: "f19", name: "risk-assessment.docx", size: 890000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-05-15" }],
-      createdAt: "2023-05-15T11:20:00Z",
-      updatedAt: "2023-05-15T11:20:00Z"
-    },
-    {
-      id: "26",
-      auditName: "Facilities Management Audit",
-      category: "Internal",
-      auditor: "Robert Johnson",
-      date: "2023-04",
-      scope: "Review of facility maintenance, security, and space utilization",
-      files: [],
-      createdAt: "2023-04-20T09:45:00Z",
-      updatedAt: "2023-04-20T09:45:00Z"
-    },
-    {
-      id: "27",
-      auditName: "Project Management Review",
-      category: "Internal",
-      auditor: "Patricia Anderson",
-      date: "2023-04",
-      scope: "Assessment of project management methodologies and delivery performance",
-      files: [{ id: "f20", name: "project-metrics.xlsx", size: 450000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-04-10" }],
-      createdAt: "2023-04-10T14:15:00Z",
-      updatedAt: "2023-04-10T14:15:00Z"
-    },
-    {
-      id: "28",
-      auditName: "Communication Systems Audit",
-      category: "Internal",
-      auditor: "Christopher Lee",
-      date: "2023-03",
-      scope: "Review of internal and external communication channels and effectiveness",
-      files: [],
-      createdAt: "2023-03-30T16:00:00Z",
-      updatedAt: "2023-03-30T16:00:00Z"
-    },
-    {
-      id: "29",
-      auditName: "Performance Management Review",
-      category: "Internal",
-      auditor: "Michelle Martinez",
-      date: "2023-03",
-      scope: "Evaluation of employee performance review processes and goal setting",
-      files: [{ id: "f21", name: "performance-analysis.pdf", size: 720000, type: "application/pdf", uploadedAt: "2023-03-20" }],
-      createdAt: "2023-03-20T10:30:00Z",
-      updatedAt: "2023-03-20T10:30:00Z"
-    },
-    {
-      id: "30",
-      auditName: "Budget Planning and Control Audit",
-      category: "Internal",
-      auditor: "Steven Wilson",
-      date: "2023-02",
-      scope: "Review of budget preparation, monitoring, and variance analysis processes",
-      files: [],
-      createdAt: "2023-02-25T13:45:00Z",
-      updatedAt: "2023-02-25T13:45:00Z"
-    },
-    {
-      id: "31",
-      auditName: "Document Management System Review",
-      category: "Internal",
-      auditor: "Karen Thompson",
-      date: "2023-02",
-      scope: "Assessment of document storage, version control, and access management",
-      files: [{ id: "f22", name: "document-audit.docx", size: 560000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-02-15" }],
-      createdAt: "2023-02-15T11:10:00Z",
-      updatedAt: "2023-02-15T11:10:00Z"
-    },
-    {
-      id: "32",
-      auditName: "Sales Process Optimization",
-      category: "Internal",
-      auditor: "Mark Davis",
-      date: "2023-01",
-      scope: "Review of sales pipeline, lead management, and conversion processes",
-      files: [],
-      createdAt: "2023-01-30T15:25:00Z",
-      updatedAt: "2023-01-30T15:25:00Z"
-    },
-    {
-      id: "33",
-      auditName: "Compliance Training Effectiveness",
-      category: "Internal",
-      auditor: "Nancy Garcia",
-      date: "2023-01",
-      scope: "Evaluation of compliance training programs and employee understanding",
-      files: [{ id: "f23", name: "training-results.xlsx", size: 380000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-01-20" }],
-      createdAt: "2023-01-20T09:40:00Z",
-      updatedAt: "2023-01-20T09:40:00Z"
-    },
-    {
-      id: "34",
-      auditName: "Technology Infrastructure Review",
-      category: "Internal",
-      auditor: "Paul Rodriguez",
-      date: "2022-12",
-      scope: "Assessment of IT infrastructure, network security, and system performance",
-      files: [],
-      createdAt: "2022-12-15T14:20:00Z",
-      updatedAt: "2022-12-15T14:20:00Z"
-    },
-    {
-      id: "35",
-      auditName: "Customer Data Protection Audit",
-      category: "Internal",
-      auditor: "Laura Martinez",
-      date: "2022-12",
-      scope: "Review of customer data handling, storage, and privacy protection measures",
-      files: [{ id: "f24", name: "data-protection-report.pdf", size: 950000, type: "application/pdf", uploadedAt: "2022-12-10" }],
-      createdAt: "2022-12-10T12:55:00Z",
-      updatedAt: "2022-12-10T12:55:00Z"
-    },
-    
-    // Additional Regulatory Audits (36-55)
-    {
-      id: "36",
-      auditName: "Anti-Money Laundering Compliance",
-      category: "Regulatory",
-      auditor: "Financial Compliance Group",
-      date: "2023-09",
-      scope: "Assessment of AML policies, procedures, and transaction monitoring systems",
-      files: [{ id: "f25", name: "aml-compliance-report.pdf", size: 1800000, type: "application/pdf", uploadedAt: "2023-09-25" }],
-      createdAt: "2023-09-25T10:15:00Z",
-      updatedAt: "2023-09-25T10:15:00Z"
-    },
-    {
-      id: "37",
-      auditName: "Environmental Regulatory Compliance",
-      category: "Regulatory",
-      auditor: "Green Compliance Solutions",
-      date: "2023-08",
-      scope: "Review of environmental regulations compliance and reporting requirements",
-      files: [],
-      createdAt: "2023-08-20T13:30:00Z",
-      updatedAt: "2023-08-20T13:30:00Z"
-    },
-    {
-      id: "38",
-      auditName: "Labor Law Compliance Review",
-      category: "Regulatory",
-      auditor: "Employment Law Associates",
-      date: "2023-08",
-      scope: "Assessment of compliance with labor laws, wage regulations, and workplace safety",
-      files: [{ id: "f26", name: "labor-compliance.docx", size: 670000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-08-15" }],
-      createdAt: "2023-08-15T11:45:00Z",
-      updatedAt: "2023-08-15T11:45:00Z"
-    },
-    {
-      id: "39",
-      auditName: "Tax Compliance Audit",
-      category: "Regulatory",
-      auditor: "Tax Advisory Services",
-      date: "2023-07",
-      scope: "Review of tax filing accuracy, compliance with tax regulations, and documentation",
-      files: [],
-      createdAt: "2023-07-25T09:20:00Z",
-      updatedAt: "2023-07-25T09:20:00Z"
-    },
-    {
-      id: "40",
-      auditName: "Healthcare Compliance Review",
-      category: "Regulatory",
-      auditor: "Medical Compliance Experts",
-      date: "2023-07",
-      scope: "Assessment of healthcare regulations compliance and patient data protection",
-      files: [{ id: "f27", name: "healthcare-audit.pdf", size: 1400000, type: "application/pdf", uploadedAt: "2023-07-20" }],
-      createdAt: "2023-07-20T14:10:00Z",
-      updatedAt: "2023-07-20T14:10:00Z"
-    },
-    {
-      id: "41",
-      auditName: "Financial Services Regulation Audit",
-      category: "Regulatory",
-      auditor: "FinReg Compliance",
-      date: "2023-06",
-      scope: "Review of financial services regulations and consumer protection measures",
-      files: [],
-      createdAt: "2023-06-25T16:35:00Z",
-      updatedAt: "2023-06-25T16:35:00Z"
-    },
-    {
-      id: "42",
-      auditName: "Import/Export Compliance Check",
-      category: "Regulatory",
-      auditor: "Trade Compliance Solutions",
-      date: "2023-06",
-      scope: "Assessment of customs regulations, trade compliance, and documentation requirements",
-      files: [{ id: "f28", name: "trade-compliance.xlsx", size: 520000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-06-15" }],
-      createdAt: "2023-06-15T12:25:00Z",
-      updatedAt: "2023-06-15T12:25:00Z"
-    },
-    {
-      id: "43",
-      auditName: "Consumer Protection Compliance",
-      category: "Regulatory",
-      auditor: "Consumer Rights Auditors",
-      date: "2023-05",
-      scope: "Review of consumer protection laws compliance and fair trading practices",
-      files: [],
-      createdAt: "2023-05-30T10:50:00Z",
-      updatedAt: "2023-05-30T10:50:00Z"
-    },
-    {
-      id: "44",
-      auditName: "Intellectual Property Compliance",
-      category: "Regulatory",
-      auditor: "IP Compliance Group",
-      date: "2023-05",
-      scope: "Assessment of intellectual property protection and licensing compliance",
-      files: [{ id: "f29", name: "ip-audit-report.pdf", size: 1100000, type: "application/pdf", uploadedAt: "2023-05-25" }],
-      createdAt: "2023-05-25T15:15:00Z",
-      updatedAt: "2023-05-25T15:15:00Z"
-    },
-    {
-      id: "45",
-      auditName: "Telecommunications Regulatory Audit",
-      category: "Regulatory",
-      auditor: "Telecom Compliance Associates",
-      date: "2023-04",
-      scope: "Review of telecommunications regulations and service provider compliance",
-      files: [],
-      createdAt: "2023-04-25T13:40:00Z",
-      updatedAt: "2023-04-25T13:40:00Z"
-    },
-    {
-      id: "46",
-      auditName: "Energy Sector Compliance Review",
-      category: "Regulatory",
-      auditor: "Energy Regulatory Consultants",
-      date: "2023-04",
-      scope: "Assessment of energy sector regulations and environmental compliance",
-      files: [{ id: "f30", name: "energy-compliance.docx", size: 780000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-04-20" }],
-      createdAt: "2023-04-20T11:30:00Z",
-      updatedAt: "2023-04-20T11:30:00Z"
-    },
-    {
-      id: "47",
-      auditName: "Food Safety Regulatory Audit",
-      category: "Regulatory",
-      auditor: "Food Safety Compliance",
-      date: "2023-03",
-      scope: "Review of food safety regulations, HACCP compliance, and quality standards",
-      files: [],
-      createdAt: "2023-03-25T09:15:00Z",
-      updatedAt: "2023-03-25T09:15:00Z"
-    },
-    {
-      id: "48",
-      auditName: "Pharmaceutical Compliance Review",
-      category: "Regulatory",
-      auditor: "Pharma Regulatory Experts",
-      date: "2023-03",
-      scope: "Assessment of pharmaceutical regulations, drug safety, and manufacturing compliance",
-      files: [{ id: "f31", name: "pharma-audit.pdf", size: 1650000, type: "application/pdf", uploadedAt: "2023-03-20" }],
-      createdAt: "2023-03-20T14:45:00Z",
-      updatedAt: "2023-03-20T14:45:00Z"
-    },
-    {
-      id: "49",
-      auditName: "Transportation Safety Compliance",
-      category: "Regulatory",
-      auditor: "Transport Safety Auditors",
-      date: "2023-02",
-      scope: "Review of transportation safety regulations and vehicle compliance standards",
-      files: [],
-      createdAt: "2023-02-28T16:20:00Z",
-      updatedAt: "2023-02-28T16:20:00Z"
-    },
-    {
-      id: "50",
-      auditName: "Construction Industry Compliance",
-      category: "Regulatory",
-      auditor: "Construction Compliance Group",
-      date: "2023-02",
-      scope: "Assessment of construction regulations, building codes, and safety standards",
-      files: [{ id: "f32", name: "construction-audit.xlsx", size: 640000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-02-20" }],
-      createdAt: "2023-02-20T12:10:00Z",
-      updatedAt: "2023-02-20T12:10:00Z"
-    },
-    {
-      id: "51",
-      auditName: "Insurance Regulatory Compliance",
-      category: "Regulatory",
-      auditor: "Insurance Compliance Solutions",
-      date: "2023-01",
-      scope: "Review of insurance regulations, solvency requirements, and consumer protection",
-      files: [],
-      createdAt: "2023-01-25T10:35:00Z",
-      updatedAt: "2023-01-25T10:35:00Z"
-    },
-    {
-      id: "52",
-      auditName: "Aviation Safety Compliance Audit",
-      category: "Regulatory",
-      auditor: "Aviation Safety Consultants",
-      date: "2023-01",
-      scope: "Assessment of aviation safety regulations and maintenance compliance",
-      files: [{ id: "f33", name: "aviation-safety.pdf", size: 1320000, type: "application/pdf", uploadedAt: "2023-01-15" }],
-      createdAt: "2023-01-15T13:25:00Z",
-      updatedAt: "2023-01-15T13:25:00Z"
-    },
-    {
-      id: "53",
-      auditName: "Chemical Industry Compliance",
-      category: "Regulatory",
-      auditor: "Chemical Safety Auditors",
-      date: "2022-12",
-      scope: "Review of chemical handling, storage, and environmental compliance regulations",
-      files: [],
-      createdAt: "2022-12-20T15:50:00Z",
-      updatedAt: "2022-12-20T15:50:00Z"
-    },
-    {
-      id: "54",
-      auditName: "Gaming Industry Regulatory Review",
-      category: "Regulatory",
-      auditor: "Gaming Compliance Associates",
-      date: "2022-12",
-      scope: "Assessment of gaming regulations, licensing requirements, and responsible gaming measures",
-      files: [{ id: "f34", name: "gaming-compliance.docx", size: 890000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2022-12-15" }],
-      createdAt: "2022-12-15T11:40:00Z",
-      updatedAt: "2022-12-15T11:40:00Z"
-    },
-    {
-      id: "55",
-      auditName: "Real Estate Compliance Audit",
-      category: "Regulatory",
-      auditor: "Property Compliance Experts",
-      date: "2022-11",
-      scope: "Review of real estate regulations, property management compliance, and tenant rights",
-      files: [],
-      createdAt: "2022-11-30T09:30:00Z",
-      updatedAt: "2022-11-30T09:30:00Z"
-    },
-    
-    // Additional External Audits (56-75)
-    {
-      id: "56",
-      auditName: "Cybersecurity Maturity Assessment",
-      category: "External",
-      auditor: "CyberGuard Solutions",
-      date: "2023-08",
-      scope: "Comprehensive evaluation of cybersecurity posture and maturity level",
-      files: [{ id: "f35", name: "cyber-maturity-report.pdf", size: 2100000, type: "application/pdf", uploadedAt: "2023-08-30" }],
-      createdAt: "2023-08-30T14:20:00Z",
-      updatedAt: "2023-08-30T14:20:00Z"
-    },
-    {
-      id: "57",
-      auditName: "Digital Transformation Readiness",
-      category: "External",
-      auditor: "Tech Innovation Consultants",
-      date: "2023-08",
-      scope: "Assessment of digital transformation capabilities and technology adoption",
-      files: [],
-      createdAt: "2023-08-25T10:45:00Z",
-      updatedAt: "2023-08-25T10:45:00Z"
-    },
-    {
-      id: "58",
-      auditName: "Operational Excellence Review",
-      category: "External",
-      auditor: "Excellence Partners",
-      date: "2023-07",
-      scope: "Evaluation of operational processes and continuous improvement opportunities",
-      files: [{ id: "f36", name: "operational-excellence.xlsx", size: 750000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-07-30" }],
-      createdAt: "2023-07-30T16:15:00Z",
-      updatedAt: "2023-07-30T16:15:00Z"
-    },
-    {
-      id: "59",
-      auditName: "Market Risk Assessment",
-      category: "External",
-      auditor: "Risk Analytics Group",
-      date: "2023-07",
-      scope: "Analysis of market risks, competitive positioning, and strategic threats",
-      files: [],
-      createdAt: "2023-07-25T12:30:00Z",
-      updatedAt: "2023-07-25T12:30:00Z"
-    },
-    {
-      id: "60",
-      auditName: "Sustainability and ESG Audit",
-      category: "External",
-      auditor: "Green Future Auditors",
-      date: "2023-06",
-      scope: "Assessment of environmental, social, and governance practices and reporting",
-      files: [{ id: "f37", name: "esg-assessment.pdf", size: 1850000, type: "application/pdf", uploadedAt: "2023-06-30" }],
-      createdAt: "2023-06-30T13:50:00Z",
-      updatedAt: "2023-06-30T13:50:00Z"
-    },
-    {
-      id: "61",
-      auditName: "Customer Experience Evaluation",
-      category: "External",
-      auditor: "CX Excellence Partners",
-      date: "2023-06",
-      scope: "Review of customer journey, satisfaction metrics, and experience optimization",
-      files: [],
-      createdAt: "2023-06-25T11:20:00Z",
-      updatedAt: "2023-06-25T11:20:00Z"
-    },
-    {
-      id: "62",
-      auditName: "Supply Chain Resilience Audit",
-      category: "External",
-      auditor: "Supply Chain Experts",
-      date: "2023-05",
-      scope: "Evaluation of supply chain robustness, vendor relationships, and risk mitigation",
-      files: [{ id: "f38", name: "supply-chain-audit.docx", size: 920000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2023-05-30" }],
-      createdAt: "2023-05-30T15:40:00Z",
-      updatedAt: "2023-05-30T15:40:00Z"
-    },
-    {
-      id: "63",
-      auditName: "Innovation Capability Assessment",
-      category: "External",
-      auditor: "Innovation Consultancy",
-      date: "2023-05",
-      scope: "Review of innovation processes, R&D effectiveness, and product development",
-      files: [],
-      createdAt: "2023-05-25T09:10:00Z",
-      updatedAt: "2023-05-25T09:10:00Z"
-    },
-    {
-      id: "64",
-      auditName: "Brand and Reputation Audit",
-      category: "External",
-      auditor: "Brand Strategy Partners",
-      date: "2023-04",
-      scope: "Assessment of brand positioning, reputation management, and market perception",
-      files: [{ id: "f39", name: "brand-audit-report.pdf", size: 1450000, type: "application/pdf", uploadedAt: "2023-04-30" }],
-      createdAt: "2023-04-30T14:25:00Z",
-      updatedAt: "2023-04-30T14:25:00Z"
-    },
-    {
-      id: "65",
-      auditName: "Merger and Acquisition Due Diligence",
-      category: "External",
-      auditor: "M&A Advisory Services",
-      date: "2023-04",
-      scope: "Comprehensive due diligence review for potential acquisition targets",
-      files: [],
-      createdAt: "2023-04-25T16:35:00Z",
-      updatedAt: "2023-04-25T16:35:00Z"
-    },
-    {
-      id: "66",
-      auditName: "Competitive Intelligence Review",
-      category: "External",
-      auditor: "Market Intelligence Group",
-      date: "2023-03",
-      scope: "Analysis of competitive landscape, market trends, and strategic positioning",
-      files: [{ id: "f40", name: "competitive-analysis.xlsx", size: 680000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-03-30" }],
-      createdAt: "2023-03-30T12:15:00Z",
-      updatedAt: "2023-03-30T12:15:00Z"
-    },
-    {
-      id: "67",
-      auditName: "Digital Marketing Effectiveness Audit",
-      category: "External",
-      auditor: "Digital Marketing Experts",
-      date: "2023-03",
-      scope: "Evaluation of digital marketing strategies, ROI, and channel effectiveness",
-      files: [],
-      createdAt: "2023-03-25T10:50:00Z",
-      updatedAt: "2023-03-25T10:50:00Z"
-    },
-    {
-      id: "68",
-      auditName: "Organizational Culture Assessment",
-      category: "External",
-      auditor: "Culture Transformation Partners",
-      date: "2023-02",
-      scope: "Review of organizational culture, employee engagement, and cultural alignment",
-      files: [{ id: "f41", name: "culture-assessment.pdf", size: 1200000, type: "application/pdf", uploadedAt: "2023-02-28" }],
-      createdAt: "2023-02-28T13:30:00Z",
-      updatedAt: "2023-02-28T13:30:00Z"
-    },
-    {
-      id: "69",
-      auditName: "Technology Stack Evaluation",
-      category: "External",
-      auditor: "Tech Architecture Consultants",
-      date: "2023-02",
-      scope: "Assessment of technology architecture, scalability, and modernization needs",
-      files: [],
-      createdAt: "2023-02-25T15:20:00Z",
-      updatedAt: "2023-02-25T15:20:00Z"
-    },
-    {
-      id: "70",
-      auditName: "Financial Performance Benchmarking",
-      category: "External",
-      auditor: "Financial Benchmarking Associates",
-      date: "2023-01",
-      scope: "Comparison of financial performance against industry benchmarks and peers",
-      files: [{ id: "f42", name: "financial-benchmark.xlsx", size: 540000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", uploadedAt: "2023-01-30" }],
-      createdAt: "2023-01-30T11:45:00Z",
-      updatedAt: "2023-01-30T11:45:00Z"
-    },
-    {
-      id: "71",
-      auditName: "Strategic Planning Review",
-      category: "External",
-      auditor: "Strategy Consulting Group",
-      date: "2023-01",
-      scope: "Evaluation of strategic planning processes, goal setting, and execution capabilities",
-      files: [],
-      createdAt: "2023-01-25T09:30:00Z",
-      updatedAt: "2023-01-25T09:30:00Z"
-    },
-    {
-      id: "72",
-      auditName: "Regulatory Compliance Readiness",
-      category: "External",
-      auditor: "Compliance Readiness Partners",
-      date: "2022-12",
-      scope: "Assessment of readiness for upcoming regulatory changes and compliance requirements",
-      files: [{ id: "f43", name: "compliance-readiness.pdf", size: 1350000, type: "application/pdf", uploadedAt: "2022-12-30" }],
-      createdAt: "2022-12-30T14:10:00Z",
-      updatedAt: "2022-12-30T14:10:00Z"
-    },
-    {
-      id: "73",
-      auditName: "Crisis Management Preparedness",
-      category: "External",
-      auditor: "Crisis Management Consultants",
-      date: "2022-12",
-      scope: "Review of crisis management plans, response capabilities, and communication strategies",
-      files: [],
-      createdAt: "2022-12-25T16:40:00Z",
-      updatedAt: "2022-12-25T16:40:00Z"
-    },
-    {
-      id: "74",
-      auditName: "Data Analytics Maturity Assessment",
-      category: "External",
-      auditor: "Analytics Excellence Partners",
-      date: "2022-11",
-      scope: "Evaluation of data analytics capabilities, tools, and decision-making processes",
-      files: [{ id: "f44", name: "analytics-maturity.docx", size: 780000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", uploadedAt: "2022-11-30" }],
-      createdAt: "2022-11-30T12:25:00Z",
-      updatedAt: "2022-11-30T12:25:00Z"
-    },
-    {
-      id: "75",
-      auditName: "International Expansion Readiness",
-      category: "External",
-      auditor: "Global Expansion Advisors",
-      date: "2022-11",
-      scope: "Assessment of capabilities and readiness for international market expansion",
-      files: [],
-      createdAt: "2022-11-25T10:15:00Z",
-      updatedAt: "2022-11-25T10:15:00Z"
-    }
-  ];
-
   useEffect(() => {
-    fetchAudits();
+    if (token) {
+      fetchAudits();
+    }
   }, [token]);
+
+  // Refetch when search or year filter changes
+  useEffect(() => {
+    if (token) {
+      fetchAudits();
+    }
+  }, [searchTerm, selectedYear, token]);
 
   const fetchAudits = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${BACKEND_IP}/api/audits`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-      // const data = await response.json();
-      // setAudits(data);
+      setError(null);
       
-      // For now, use mock data
-      setTimeout(() => {
-        setAudits(mockAudits);
-        setLoading(false);
-      }, 1000);
+      // Ensure we have a valid token
+      if (!token) {
+        throw new Error('Authentication token is missing. Please log in again.');
+      }
+      
+      const response = await auditApiService.getAllAudits(token, {
+        year: selectedYear !== 'all' ? selectedYear : undefined,
+        search: searchTerm || undefined
+      });
+      
+      if (response.success && response.data) {
+        setAudits(response.data);
+        console.log('✅ Successfully fetched audits:', response.data.length);
+      } else {
+        // Handle specific error cases
+        const errorMessage = response.error || 'Failed to fetch audits';
+        if (errorMessage.includes('token') || errorMessage.includes('auth')) {
+          throw new Error('Authentication failed. Please log in again.');
+        }
+        throw new Error(errorMessage);
+      }
     } catch (err) {
-      setError("Failed to fetch audits");
+      console.error('❌ Error fetching audits:', err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch audits";
+      setError(errorMessage);
+      
+      // Show user-friendly error messages
+      if (errorMessage.includes('Authentication') || errorMessage.includes('token')) {
+        toast.error("Please log in again to access audits");
+      } else if (errorMessage.includes('Network') || errorMessage.includes('fetch')) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("Failed to load audits. Please try again.");
+      }
+      
+      // Set empty array to prevent UI issues
+      setAudits([]);
+    } finally {
       setLoading(false);
-      toast.error("Failed to load audits");
     }
   };
 
   const handleCreateAudit = async (auditData: Omit<Audit, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // TODO: Replace with actual API call
-      const newAudit: Audit = {
-        ...auditData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      // Validate required fields before sending
+      if (!auditData.name?.trim()) {
+        toast.error("Audit name is required");
+        return;
+      }
+      if (!auditData.category) {
+        toast.error("Category is required");
+        return;
+      }
+      if (!auditData.auditor?.trim()) {
+        toast.error("Auditor is required");
+        return;
+      }
+      if (!auditData.date) {
+        toast.error("Date is required");
+        return;
+      }
+      if (!auditData.scope?.trim()) {
+        toast.error("Scope is required");
+        return;
+      }
+      
+      // Ensure we have a valid token
+      if (!token) {
+        toast.error("Authentication token is missing. Please log in again.");
+        return;
+      }
+      
+      // Extract actual File objects from the files array
+      const actualFiles: File[] = [];
+      if (auditData.files && auditData.files.length > 0) {
+        auditData.files.forEach(fileData => {
+          if (fileData.file instanceof File) {
+            actualFiles.push(fileData.file);
+          }
+        });
+      }
+      
+      const createData = {
+        name: auditData.name.trim(),
+        category: auditData.category,
+        auditor: auditData.auditor.trim(),
+        date: auditData.date,
+        scope: auditData.scope.trim(),
+        files: actualFiles
       };
       
-      setAudits(prev => [...prev, newAudit]);
-      setShowNewAuditModal(false);
-      toast.success("Audit created successfully");
+      console.log('🔍 DEBUG - Data being sent to API:', {
+        name: createData.name,
+        category: createData.category,
+        auditor: createData.auditor,
+        date: createData.date,
+        scope: createData.scope,
+        filesCount: createData.files?.length || 0
+      });
+      
+      const response = await auditApiService.createAudit(createData, token);
+      
+      if (response.success) {
+        toast.success("Audit created successfully");
+        setShowNewAuditModal(false);
+        await fetchAudits(); // Refresh the list
+      } else {
+        // Handle specific error cases
+        const errorMessage = response.error || 'Failed to create audit';
+        if (errorMessage.includes('Missing required fields')) {
+          toast.error("Please fill in all required fields");
+        } else if (errorMessage.includes('token') || errorMessage.includes('auth')) {
+          toast.error("Authentication failed. Please log in again.");
+        } else {
+          toast.error(errorMessage);
+        }
+        throw new Error(errorMessage);
+      }
     } catch (err) {
-      toast.error("Failed to create audit");
+      console.error('❌ Error creating audit:', err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to create audit";
+      
+      // Only show toast if we haven't already shown one above
+      if (!errorMessage.includes('required fields') && 
+          !errorMessage.includes('Authentication') && 
+          !errorMessage.includes('token')) {
+        toast.error("Failed to create audit. Please try again.");
+      }
     }
   };
 
   const handleUpdateAudit = async (auditData: Audit) => {
     try {
-      // TODO: Replace with actual API call
-      const updatedAudit = {
-        ...auditData,
-        updatedAt: new Date().toISOString(),
-      };
+      const response = await auditApiService.updateAudit(auditData.id, {
+        name: auditData.name ?? '',
+        category: auditData.category,
+        auditor: auditData.auditor ?? '',
+        date: auditData.date ?? '',
+        scope: auditData.scope ?? '',
+        files: auditData.files?.map(f => f.file).filter(Boolean) as File[]
+      }, token ?? '');
       
-      setAudits(prev => prev.map(audit => 
-        audit.id === updatedAudit.id ? updatedAudit : audit
-      ));
-      setShowDetailModal(false);
-      setSelectedAudit(null);
-      toast.success("Audit updated successfully");
+      if (response.success) {
+        toast.success("Audit updated successfully");
+        setShowDetailModal(false);
+        setSelectedAudit(null);
+        await fetchAudits(); // Refresh the list
+      } else {
+        throw new Error(response.error || 'Failed to update audit');
+      }
     } catch (err) {
-      toast.error("Failed to update audit");
+      console.error('Error updating audit:', err);
+      toast.error(err instanceof Error ? err.message : "Failed to update audit");
     }
   };
 
@@ -1029,7 +251,7 @@ export default function AuditUniversePage() {
       const selectedAuditsData = audits.filter(audit => selectedAudits.includes(audit.id));
       
       // Create Excel data
-      const excelData: any[] = [];
+      const excelData: Record<string, string | number>[] = [];
       
       selectedAuditsData.forEach((audit, index) => {
         // Count files
@@ -1048,7 +270,7 @@ export default function AuditUniversePage() {
         
         excelData.push({
           "No": index + 1,
-          "Audit Name": audit.auditName,
+          "Audit Name": audit.name,
           "Category": audit.category,
           "Auditor": audit.auditor,
           "Date": audit.date,
@@ -1102,7 +324,7 @@ export default function AuditUniversePage() {
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedAudits.length === 0) {
       toast.error("Please select audits to delete");
       return;
@@ -1113,14 +335,19 @@ export default function AuditUniversePage() {
     
     if (confirmDelete) {
       try {
-        // Remove selected audits from the list
-        setAudits(prev => prev.filter(audit => !selectedAudits.includes(audit.id)));
-        setSelectedAudits([]);
-        setIsSelectionMode(false);
-        toast.success(`Successfully deleted ${selectedAudits.length} audit(s)`);
+        const response = await auditApiService.deleteMultipleAudits(selectedAudits, token ?? '');
+        
+        if (response.success) {
+          toast.success(`Successfully deleted ${selectedAudits.length} audit(s)`);
+          setSelectedAudits([]);
+          setIsSelectionMode(false);
+          await fetchAudits(); // Refresh the list
+        } else {
+          throw new Error(response.error || 'Failed to delete audits');
+        }
       } catch (error) {
         console.error('Delete error:', error);
-        toast.error("Failed to delete audits. Please try again.");
+        toast.error(error instanceof Error ? error.message : "Failed to delete audits. Please try again.");
       }
     }
   };
@@ -1133,7 +360,7 @@ export default function AuditUniversePage() {
       const filteredAudits = audits.filter(audit => 
         (selectedYear === 'all' || audit.date.split('-')[0] === selectedYear) &&
         (searchTerm === '' ||
-         audit.auditName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
          audit.auditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
          audit.scope.toLowerCase().includes(searchTerm.toLowerCase()))
       );
@@ -1144,7 +371,7 @@ export default function AuditUniversePage() {
       }
       
       // Create Excel data
-      const excelData: any[] = [];
+      const excelData: Record<string, string | number>[] = [];
       
       filteredAudits.forEach((audit, index) => {
         // Count files
@@ -1163,7 +390,7 @@ export default function AuditUniversePage() {
         
         excelData.push({
           "No": index + 1,
-          "Audit Name": audit.auditName,
+          "Audit Name": audit.name,
           "Category": audit.category,
           "Auditor": audit.auditor,
           "Date": audit.date,
@@ -1218,23 +445,24 @@ export default function AuditUniversePage() {
       setIsExporting(false);
     }
   };
+
   const formatDate = (dateString: string) => {
     const [year, month] = dateString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
   };
 
-  const getAuditsByCategory = (category: string) => {
+  const getAuditsByCategory = (category: 'Internal' | 'Regulatory' | 'External') => {
     const filtered = audits.filter(audit => 
       audit.category === category &&
       (selectedYear === 'all' || audit.date.split('-')[0] === selectedYear) &&
       (searchTerm === '' ||
-       audit.auditName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       audit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
        audit.auditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
        audit.scope.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     
-    const page = currentPage[category as keyof typeof currentPage];
+    const page = currentPage[category];
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     
@@ -1246,7 +474,7 @@ export default function AuditUniversePage() {
     };
   };
 
-  const handlePageChange = (category: string, page: number) => {
+  const handlePageChange = (category: 'Internal' | 'Regulatory' | 'External', page: number) => {
     setCurrentPage(prev => ({
       ...prev,
       [category]: page
@@ -1263,7 +491,7 @@ export default function AuditUniversePage() {
 
   const AuditCard = ({ audit }: { audit: Audit }) => {
     // Check if audit name is likely 2 lines (rough estimation based on length)
-    const isLongTitle = audit.auditName.length > 35;
+    const isLongTitle = audit.name.length > 35;
     const scopeClampClass = isLongTitle ? 'line-clamp-2' : 'line-clamp-3';
     
     return (
@@ -1294,7 +522,7 @@ export default function AuditUniversePage() {
         )}
         <div className="flex items-start justify-between mb-4">
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
-            {audit.auditName}
+            {audit.name}
           </h3>
           <FaEdit className="text-gray-400 hover:text-blue-500 text-sm flex-shrink-0 ml-2" />
         </div>

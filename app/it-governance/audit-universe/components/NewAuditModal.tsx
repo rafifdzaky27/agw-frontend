@@ -3,27 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaTimes, FaUpload, FaFile, FaTrash, FaCalendarAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
-
-interface AuditFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  uploadedAt: string;
-  file?: File; // For new files being uploaded
-}
-
-interface Audit {
-  id: string;
-  auditName: string;
-  category: "Internal" | "Regulatory" | "External";
-  auditor: string;
-  date: string; // Format: YYYY-MM
-  scope: string;
-  files: AuditFile[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { Audit, AuditFile } from "@/utils/auditApi";
 
 interface NewAuditModalProps {
   onClose: () => void;
@@ -32,7 +12,7 @@ interface NewAuditModalProps {
 
 export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
   const [formData, setFormData] = useState({
-    auditName: "",
+    name: "",
     category: "Internal" as "Internal" | "Regulatory" | "External",
     auditor: "",
     date: "",
@@ -102,7 +82,7 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
     e.preventDefault();
     
     // Validation
-    if (!formData.auditName.trim()) {
+    if (!formData.name.trim()) {
       toast.error("Audit name is required");
       return;
     }
@@ -125,12 +105,12 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
       // TODO: Handle file uploads to server here
       // For now, we'll just pass the file metadata
       const auditData = {
-        auditName: formData.auditName.trim(),
+        name: formData.name.trim(),
         category: formData.category,
         auditor: formData.auditor.trim(),
         date: formData.date,
         scope: formData.scope.trim(),
-        files: files.map(({ file, ...fileData }) => fileData) // Remove File object for now
+        files: files // Keep the full file objects with File instances
       };
 
       await onSave(auditData);
@@ -168,14 +148,14 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Audit Name */}
           <div>
-            <label htmlFor="auditName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Audit Name *
             </label>
             <input
               type="text"
-              id="auditName"
-              name="auditName"
-              value={formData.auditName}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
               placeholder="Enter audit name"

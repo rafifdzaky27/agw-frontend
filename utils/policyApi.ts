@@ -1,5 +1,5 @@
 // API service for policy management
-const API_BASE_URL = process.env.NEXT_PUBLIC_POLICY_API_BASE_URL || 'http://localhost:5003';
+const API_BASE_URL = process.env.NEXT_PUBLIC_POLICY_API_BASE_URL || 'http://localhost:5010';
 
 console.log('Policy API Base URL:', API_BASE_URL);
 
