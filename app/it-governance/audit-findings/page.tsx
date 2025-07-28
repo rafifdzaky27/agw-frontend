@@ -169,6 +169,12 @@ export default function AuditFindings() {
         setAuditFindings(prev => prev.filter(f => f.id !== id));
         setFilteredFindings(prev => prev.filter(f => f.id !== id));
         toast.success("Audit finding deleted successfully!");
+        
+        // Close detail modal if the deleted item is currently being viewed
+        if (currentFinding && currentFinding.id === id) {
+          setShowDialog(false);
+          setCurrentFinding(null);
+        }
       } else {
         toast.error(response.error || 'Failed to delete audit finding');
       }
@@ -179,7 +185,7 @@ export default function AuditFindings() {
       setShowDeleteConfirm(false);
       setFindingToDelete(null);
     }
-  }, [token]);
+  }, [token, currentFinding]);
 
   // Show finding details
   const handleShow = useCallback((id: string | number) => {
@@ -370,6 +376,11 @@ export default function AuditFindings() {
     }
   };
 
+  const cancelDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    setFindingToDelete(null);
+  };
+
   if (authLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
@@ -384,7 +395,7 @@ export default function AuditFindings() {
               {/* Header */}
               <div className="mb-6">
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Audit Findings Management
+                  Audit Findings
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 text-sm lg:text-base">
                   Track and manage audit findings with drag-and-drop status updates
@@ -824,95 +835,18 @@ export default function AuditFindings() {
 
       {/* Detail Modal */}
       {showDialog && currentFinding && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Finding Details</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => currentFinding && confirmDelete(currentFinding.id)}
-                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                  >
-                    <FaTrash className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowDialog(false)}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    <FaTimes className="w-6 h-6" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {currentFinding?.name || 'Unknown Finding'}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className={`px-3 py-1 text-sm font-medium rounded-full ${currentFinding ? getBadgeClass(currentFinding.status) : 'bg-gray-100'}`}>
-                        {currentFinding ? getStatusText(currentFinding.status) : 'Unknown'}
-                      </span>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        currentFinding ? getPriorityBadgeClass(calculatePriority(currentFinding.commitment_date)) : 'bg-gray-100'
-                      }`}>
-                        {currentFinding ? getPriorityText(calculatePriority(currentFinding.commitment_date)) : 'Unknown'} Priority
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Progress</div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {currentFinding?.progress_pemenuhan || 'Unknown'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Category</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{currentFinding?.category || 'Unknown'}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Person in Charge</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{currentFinding?.person_in_charge || 'Unknown'}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Root Cause</h4>
-                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{currentFinding?.root_cause || 'No information available'}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Recommendation</h4>
-                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{currentFinding?.recommendation || 'No information available'}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Commitment</h4>
-                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{currentFinding?.commitment || 'No information available'}</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Commitment Date</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{currentFinding?.commitment_date ? formatDate(currentFinding.commitment_date) : 'Unknown'}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Last Updated</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{currentFinding?.updated_at ? formatDate(currentFinding.updated_at) : 'Unknown'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <FindingDetailModal
+          finding={currentFinding}
+          onClose={() => setShowDialog(false)}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          formatDate={formatDate}
+          getBadgeClass={getBadgeClass}
+          getStatusText={getStatusText}
+          calculatePriority={calculatePriority}
+          getPriorityBadgeClass={getPriorityBadgeClass}
+          getPriorityText={getPriorityText}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
@@ -920,14 +854,359 @@ export default function AuditFindings() {
         <ConfirmationModal
           isOpen={showDeleteConfirm}
           onConfirm={handleDeleteConfirm}
-          onCancel={() => {
-            setShowDeleteConfirm(false);
-            setFindingToDelete(null);
-          }}
+          onCancel={cancelDeleteConfirm}
           title="Delete Finding"
           message="Are you sure you want to delete this audit finding? This action cannot be undone."
         />
       )}
     </ProtectedRoute>
+  );
+}
+
+// Define props interface for FindingDetailModal
+interface FindingDetailModalProps {
+  finding: AuditFinding | null;
+  onClose: () => void;
+  onSave: (finding: AuditFinding) => void;
+  onDelete: (id: string) => void;
+  formatDate: (dateString: string) => string;
+  getBadgeClass: (status: AuditFinding['status']) => string;
+  getStatusText: (status: AuditFinding['status']) => string;
+  calculatePriority: (commitmentDate: string) => 'high' | 'medium' | 'low';
+  getPriorityBadgeClass: (priority: 'high' | 'medium' | 'low') => string;
+  getPriorityText: (priority: 'high' | 'medium' | 'low') => string;
+}
+
+// Finding Detail Modal Component with Edit functionality
+function FindingDetailModal({ 
+  finding, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  formatDate, 
+  getBadgeClass, 
+  getStatusText,
+  calculatePriority,
+  getPriorityBadgeClass,
+  getPriorityText
+}: FindingDetailModalProps) {
+  const [formState, setFormState] = useState<AuditFinding>({
+    id: finding?.id || "",
+    name: finding?.name || "",
+    category: finding?.category || "",
+    root_cause: finding?.root_cause || "",
+    recommendation: finding?.recommendation || "",
+    commitment: finding?.commitment || "",
+    commitment_date: finding?.commitment_date || "",
+    person_in_charge: finding?.person_in_charge || "",
+    status: finding?.status || "not started",
+    progress_pemenuhan: finding?.progress_pemenuhan || "",
+    created_at: finding?.created_at || "",
+    updated_at: finding?.updated_at || ""
+  });
+
+  const [isEdit, setIsEdit] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Function to open confirmation modal
+  const handleSaveClick = () => {
+    setIsConfirmationOpen(true);
+  };
+
+  // Function to confirm save after modal confirmation
+  const confirmSave = () => {
+    onSave(formState);
+    setIsConfirmationOpen(false);
+    setIsEdit(false);
+  };
+
+  const cancelSave = () => {
+    setIsConfirmationOpen(false);
+  };
+
+  // Function to open delete confirmation modal
+  const handleDeleteClick = () => {
+    setIsDeleteConfirmationOpen(true);
+  };
+
+  // Function to confirm delete after modal confirmation
+  const confirmModalDelete = () => {
+    if (finding) {
+      onDelete(finding.id);
+      // Close the detail modal immediately after calling delete
+      onClose();
+    }
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const priority = calculatePriority(formState.commitment_date);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            {!isEdit ? (
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{formState.category}</h2>
+            ) : (
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Audit Finding</h2>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <FaTimes className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* Header Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="col-span-2">
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Finding Name</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white">{formState.name}</div>
+                ) : (
+                  <input
+                    name="name"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    value={formState.name}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+
+              {isEdit && (
+                <div>
+                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Category</div>
+                  <input
+                    name="category"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    value={formState.category}
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Priority</div>
+                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPriorityBadgeClass(priority)}`}>
+                  {getPriorityText(priority)}
+                </span>
+              </div>
+
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Commitment Date</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white">{formatDate(formState.commitment_date)}</div>
+                ) : (
+                  <input
+                    type="date"
+                    name="commitment_date"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    value={formState.commitment_date}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Baris Baru untuk Status dan Person in Charge */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Status</div>
+                {!isEdit ? (
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getBadgeClass(formState.status)}`}>
+                    {getStatusText(formState.status)}
+                  </span>
+                ) : (
+                  <select
+                    name="status"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    value={formState.status}
+                    onChange={handleChange}
+                  >
+                    <option value="not started">Not Started</option>
+                    <option value="in progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Person in Charge</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white">{formState.person_in_charge}</div>
+                ) : (
+                  <input
+                    name="person_in_charge"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    value={formState.person_in_charge}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+
+              {/* Kolom ketiga kosong untuk alignment */}
+              <div></div>
+            </div>
+
+            {/* Details Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Root Cause</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.root_cause}</div>
+                ) : (
+                  <textarea
+                    name="root_cause"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    rows={4}
+                    value={formState.root_cause}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Recommendation</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.recommendation}</div>
+                ) : (
+                  <textarea
+                    name="recommendation"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    rows={4}
+                    value={formState.recommendation}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Commitment</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.commitment}</div>
+                ) : (
+                  <textarea
+                    name="commitment"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    rows={4}
+                    value={formState.commitment}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Progress Section - Baris baru di bawah Details Section */}
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Progress</div>
+                {!isEdit ? (
+                  <div className="text-gray-900 dark:text-white">{formState.progress_pemenuhan}</div>
+                ) : (
+                  <textarea
+                    name="progress_pemenuhan"
+                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                    rows={3}
+                    value={formState.progress_pemenuhan}
+                    onChange={handleChange}
+                    placeholder="Describe fulfillment progress..."
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Timestamps */}
+            {!isEdit && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div>
+                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Created At</div>
+                  <div className="text-gray-600 dark:text-gray-400">{formState.created_at ? formatDate(formState.created_at) : 'Unknown'}</div>
+                </div>
+                
+                <div>
+                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Last Updated</div>
+                  <div className="text-gray-600 dark:text-gray-400">{formState.updated_at ? formatDate(formState.updated_at) : 'Unknown'}</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-600 mt-6">
+            {isEdit ? (
+              <>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                  onClick={handleSaveClick}
+                >
+                  <FaSave className="w-4 h-4" />
+                  Save Changes
+                </button>
+                <button
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  onClick={() => setIsEdit(false)}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                  onClick={() => setIsEdit(true)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                  onClick={handleDeleteClick}
+                >
+                  <FaTrash className="w-4 h-4" />
+                  Delete
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Confirmation Modals */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            title="Save Changes"
+            message="Are you sure you want to save changes to this audit finding?"
+          />
+           
+          <ConfirmationModal
+            isOpen={isDeleteConfirmationOpen}
+            onConfirm={confirmModalDelete}
+            onCancel={cancelDelete}
+            title="Delete Finding"
+            message="Are you sure you want to delete this audit finding? This action cannot be undone."
+          />
+        </div>
+      </div>
+    </div>
   );
 }
