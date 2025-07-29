@@ -106,13 +106,13 @@ export default function ChangeManagement() {
 
           try {
               const [subjectResponse, textResponse] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=blast_email_alert_subject`, {
+                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_subject`, {
                       method: "GET",
                       headers: {
                           Authorization: `Bearer ${token}`,
                       },
                   }),
-                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=blast_email_alert_text`, {
+                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_text`, {
                       method: "GET",
                       headers: {
                           Authorization: `Bearer ${token}`,
@@ -169,7 +169,7 @@ export default function ChangeManagement() {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/requests`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -264,7 +264,7 @@ export default function ChangeManagement() {
             if (!token) return;
 
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/users`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -370,7 +370,7 @@ export default function ChangeManagement() {
                 body.text = text;
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/email`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/users/email`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -672,7 +672,7 @@ function AlertModal({
             <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
                         <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between flex-shrink-0">
                             <h2 className="text-lg font-bold">Request Alert</h2>
-                            <button onClick={() => setIsAlertModalOpen(false)} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
+                            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
                                 <FaTimes className="h-6 w-6" />
                             </button>
                         </div>
@@ -734,7 +734,7 @@ function AlertModal({
                         <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-2 flex-shrink-0">
                             <button
                                 className="w-full sm:w-auto bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200"
-                                onClick={() => setIsAlertModalOpen(false)}
+                                onClick={onClose}
                             >
                                 Cancel
                             </button>
