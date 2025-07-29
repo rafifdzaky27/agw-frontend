@@ -9,10 +9,11 @@ import toast from "react-hot-toast";
 interface AddPolicyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (policyData: CreatePolicyRequest, file?: File) => void;
+  onSubmit?: (policyData: CreatePolicyRequest, file?: File) => Promise<void>;
+  onSave?: (policyData: CreatePolicyRequest, file?: File) => Promise<void>;
 }
 
-export default function AddPolicyModal({ isOpen, onClose, onSave }: AddPolicyModalProps) {
+export default function AddPolicyModal({ isOpen, onClose, onSubmit, onSave }: AddPolicyModalProps) {
   const { user } = useAuth();
   const [formState, setFormState] = useState({
     no_dokumen: "",
@@ -71,7 +72,10 @@ export default function AddPolicyModal({ isOpen, onClose, onSave }: AddPolicyMod
       ...formState,
       created_by: user?.name || user?.username || 'Unknown User'
     };
-    onSave(policyData, selectedFile || undefined);
+    const handler = onSave || onSubmit;
+    if (handler) {
+      handler(policyData, selectedFile || undefined);
+    }
     setIsConfirmationOpen(false);
     // Reset form
     setFormState({
