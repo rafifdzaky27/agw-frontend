@@ -178,7 +178,7 @@ export default function ChangeRequestForm() {
       });
 
       setTimeout(() => {
-        router.push('/change-management');
+        router.push('/it-management/change-management');
       }, 1000);
 
     } catch (err) {
