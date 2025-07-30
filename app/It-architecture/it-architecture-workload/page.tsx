@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch, FaPlus, FaFileExcel, FaClipboardList} from "react-icons/fa";
+import { FaSearch, FaPlus, FaFileExcel, FaClipboardList, FaTimes, FaEdit, FaSave } from "react-icons/fa";
 
 // Define Task interface with multiple tags support
 interface Task {
@@ -752,140 +752,155 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold">IT Architecture Task Details</h3>
-          <button
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {isEdit ? 'Edit Task' : 'Task Details'}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Task Name</label>
-            {isEdit ? (
-              <input
-                type="text"
-                name="namaTugas"
-                value={formState.namaTugas}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.namaTugas}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Notes</label>
-            {isEdit ? (
-              <textarea
-                name="catatan"
-                value={formState.catatan}
-                onChange={handleChange}
-                rows={4}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            ) : (
-              <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.catatan}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Deadline</label>
-              {isEdit ? (
-                <input
-                  type="date"
-                  name="tanggal"
-                  value={formState.tanggal}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              ) : (
-                <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{formatDate(task.tanggal)}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Person in Charge</label>
-              {isEdit ? (
-                <input
-                  type="text"
-                  name="pic"
-                  value={formState.pic}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              ) : (
-                <p className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">{task.pic}</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Status</label>
-            {isEdit ? (
-              <select
-                name="status"
-                value={formState.status}
-                onChange={handleChange}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="not yet">Not Started</option>
-                <option value="on progress">In Progress</option>
-                <option value="done">Completed</option>
-              </select>
-            ) : (
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBadgeClass(task.status)}`}>
-                {getStatusText(task.status)}
-              </span>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Tags</label>
-            {isEdit ? (
-              <TagInput
-                tags={formState.tags}
-                onChange={handleTagsChange}
-                placeholder="Add tags (press Enter or comma to add)..."
-              />
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {task.tags && task.tags.length > 0 ? (
-                  task.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full"
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Task Name</label>
+                  {isEdit ? (
+                    <input
+                      type="text"
+                      name="namaTugas"
+                      value={formState.namaTugas}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{task.namaTugas}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person in Charge</label>
+                  {isEdit ? (
+                    <input
+                      type="text"
+                      name="pic"
+                      value={formState.pic}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{task.pic}</div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deadline</label>
+                  {isEdit ? (
+                    <input
+                      type="date"
+                      name="tanggal"
+                      value={formState.tanggal}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{formatDate(task.tanggal)}</div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                  {isEdit ? (
+                    <select
+                      name="status"
+                      value={formState.status}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                     >
-                      {tag}
+                      <option value="not yet">Not Started</option>
+                      <option value="on progress">In Progress</option>
+                      <option value="done">Completed</option>
+                    </select>
+                  ) : (
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBadgeClass(task.status)}`}>
+                      {getStatusText(task.status)}
                     </span>
-                  ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Task Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Task Details</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                {isEdit ? (
+                  <textarea
+                    name="catatan"
+                    value={formState.catatan}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                  />
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400 italic">No tags</p>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">{task.catatan}</div>
                 )}
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                {isEdit ? (
+                  <TagInput
+                    tags={formState.tags}
+                    onChange={handleTagsChange}
+                    placeholder="Add tags (press Enter or comma to add)..."
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {task.tags && task.tags.length > 0 ? (
+                      task.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm px-3 py-1 rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 italic">No tags</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
           {isEdit ? (
             <>
               <button
                 onClick={() => setIsEdit(false)}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-6 py-2 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm"
               >
                 Save Changes
               </button>
@@ -894,14 +909,15 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             <>
               <button
                 onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm"
               >
                 Delete
               </button>
               <button
                 onClick={() => setIsEdit(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
               >
+                <FaEdit className="w-4 h-4" />
                 Edit
               </button>
             </>
@@ -970,113 +986,146 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Add New Task</h3>
-          <button
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Task Name</div>
-            <input
-              name="namaTugas"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              placeholder="Enter task name"
-              value={formState.namaTugas}
-              onChange={handleChange}
-            />
-          </div>
-          
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Deadline</div>
-            <input
-              type="date"
-              name="tanggal"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.tanggal}
-              onChange={handleChange}
-            />
-          </div>
-          
-          <div>
-            <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Status</div>
-            <select
-              name="status"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.status}
-              onChange={handleChange}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Add New Task
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
-              <option value="not yet">Not Started</option>
-              <option value="on progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+              <FaTimes className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Tags Section */}
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tags</div>
-          <TagInput
-            tags={formState.tags}
-            onChange={handleTagsChange}
-            placeholder="Add tags (press Enter or comma to add)"
-          />
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Examples: urgent, review, compliance, security, documentation
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Task Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="namaTugas"
+                    value={formState.namaTugas}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="Enter task name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Person in Charge <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="pic"
+                    value={formState.pic}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="Enter person or team responsible"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Deadline <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="tanggal"
+                    value={formState.tanggal}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="status"
+                    value={formState.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    required
+                  >
+                    <option value="not yet">Not Started</option>
+                    <option value="on progress">In Progress</option>
+                    <option value="done">Done</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Task Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Task Details</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Notes <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="catatan"
+                  value={formState.catatan}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                  placeholder="Enter task details"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                <TagInput
+                  tags={formState.tags}
+                  onChange={handleTagsChange}
+                  placeholder="Add tags (press Enter or comma to add)"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Examples: urgent, review, compliance, security, documentation
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Notes</div>
-          <textarea
-            name="catatan"
-            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-            placeholder="Enter task details"
-            rows={4}
-            value={formState.catatan}
-            onChange={handleChange}
-          />
-        </div>
-        
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Person in Charge</div>
-          <input
-            name="pic"
-            className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-            placeholder="Enter person or team responsible"
-            value={formState.pic}
-            onChange={handleChange}
-          />
-        </div>
-        
-        <div className="flex justify-end gap-3">
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleSaveClick}
-          >
-            Save
-          </button>
-          <button
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
             onClick={onClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             Cancel
           </button>
-          {/* Confirmation Modal for TaskCreateDialog */}
-          <ConfirmationModal
-            isOpen={isConfirmationOpen}
-            onConfirm={confirmSave}
-            onCancel={() => setIsConfirmationOpen(false)}
-            message="Are you sure you want to create this task?"
-          />
+          <button
+            onClick={handleSaveClick}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <FaSave className="w-4 h-4" />
+            Create Task
+          </button>
         </div>
+
+        {/* Confirmation Modal for TaskCreateDialog */}
+        <ConfirmationModal
+          isOpen={isConfirmationOpen}
+          onConfirm={confirmSave}
+          onCancel={() => setIsConfirmationOpen(false)}
+          message="Are you sure you want to create this task?"
+        />
       </div>
     </div>
   );

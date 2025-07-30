@@ -285,245 +285,329 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {isEditing ? 'Edit Audit' : 'Audit Details'}
             </h2>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(audit.category)}`}>
-              {audit.category}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-              >
-                <FaEdit className="text-sm" />
-                Edit
-              </button>
-            )}
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
-              <FaTimes className="text-xl" />
+              <FaTimes className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        {isEditing ? (
-          /* Edit Form */
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Audit Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Audit Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                required
-              />
-            </div>
-
-            {/* Category and Date Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category *
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  required
-                >
-                  <option value="Internal">Internal</option>
-                  <option value="Regulatory">Regulatory</option>
-                  <option value="External">External</option>
-                </select>
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          {isEditing ? (
+            /* Edit Form */
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getCategoryColor(audit.category)}`}>
+                    {audit.category}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Audit Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      required
+                    >
+                      <option value="Internal">Internal</option>
+                      <option value="Regulatory">Regulatory</option>
+                      <option value="External">External</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="auditor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Auditor <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="auditor"
+                      name="auditor"
+                      value={formData.auditor}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Date (Month/Year) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="month"
+                      id="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      max={getCurrentYearMonth()}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date (Month/Year) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="month"
-                    id="date"
-                    name="date"
-                    value={formData.date}
+
+              {/* Audit Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Audit Details</h3>
+                <div>
+                  <label htmlFor="scope" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Scope <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="scope"
+                    name="scope"
+                    value={formData.scope}
                     onChange={handleInputChange}
-                    max={getCurrentYearMonth()}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    rows={4}
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
                     required
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Auditor */}
-            <div>
-              <label htmlFor="auditor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Auditor *
-              </label>
-              <input
-                type="text"
-                id="auditor"
-                name="auditor"
-                value={formData.auditor}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                required
-              />
-            </div>
-
-            {/* Scope */}
-            <div>
-              <label htmlFor="scope" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Scope *
-              </label>
-              <textarea
-                id="scope"
-                name="scope"
-                value={formData.scope}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-vertical"
-                required
-              />
-            </div>
-
-            {/* File Management */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Documents
-              </label>
+              {/* File Management */}
               <div className="space-y-4">
-                {/* Existing Files */}
-                {files.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Existing Files ({files.length})
-                    </h4>
-                    <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
-                      {files.map(file => (
-                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded border">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <FaFile className="text-blue-500 text-sm flex-shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
-                              </p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Documents</h3>
+                <div className="space-y-4">
+                  {/* Existing Files */}
+                  {files.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Existing Files ({files.length})
+                      </h4>
+                      <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
+                        {files.map(file => (
+                          <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded border">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <FaFile className="text-blue-500 text-sm flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadFile(file)}
+                                className="text-blue-500 hover:text-blue-700 p-1"
+                                title="Download"
+                              >
+                                <FaDownload className="text-sm" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExistingFile(file.id)}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                title="Remove"
+                              >
+                                <FaTrash className="text-sm" />
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload New Files */}
+                  <div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      multiple
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <FaUpload className="text-sm" />
+                      Upload New Files
+                    </button>
+                  </div>
+
+                  {/* New Files to Upload */}
+                  {newFiles.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        New Files to Upload ({newFiles.length})
+                      </h4>
+                      <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
+                        {newFiles.map(file => (
+                          <div key={file.id} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <FaFile className="text-green-500 text-sm flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {formatFileSize(file.size)} • New file
+                                </p>
+                              </div>
+                            </div>
                             <button
                               type="button"
-                              onClick={() => handleDownloadFile(file)}
-                              className="text-blue-500 hover:text-blue-700 p-1"
-                              title="Download"
-                            >
-                              <FaDownload className="text-sm" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveExistingFile(file.id)}
+                              onClick={() => handleRemoveNewFile(file.id)}
                               className="text-red-500 hover:text-red-700 p-1"
-                              title="Remove"
                             >
                               <FaTrash className="text-sm" />
                             </button>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Upload New Files */}
-                <div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    multiple
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <FaUpload className="text-sm" />
-                    Upload New Files
-                  </button>
+                  )}
                 </div>
-
-                {/* New Files to Upload */}
-                {newFiles.length > 0 && (
+              </div>
+            </form>
+          ) : (
+            /* View Mode */
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getCategoryColor(audit.category)}`}>
+                    {audit.category}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      New Files to Upload ({newFiles.length})
-                    </h4>
-                    <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
-                      {newFiles.map(file => (
-                        <div key={file.id} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <FaFile className="text-green-500 text-sm flex-shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatFileSize(file.size)} • New file
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveNewFile(file.id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                          >
-                            <FaTrash className="text-sm" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Audit Name</label>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{audit.name}</div>
                   </div>
-                )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Auditor</label>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{audit.auditor}</div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <FaCalendarAlt className="text-blue-500 text-sm" />
+                    {formatDate(audit.date)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Audit Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Audit Details</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scope</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">{audit.scope}</div>
+                </div>
+              </div>
+
+              {/* Documents */}
+              {audit.files.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Documents ({audit.files.length})</h3>
+                  <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+                    {audit.files.map(file => (
+                      <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
+                          <FaFile className="text-blue-500 text-lg flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadFile(file);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                        >
+                          <FaDownload className="text-sm" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Audit Trail */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Audit Trail</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{(audit.createdAt || audit.created_at) ? formatDateTime((audit.createdAt || audit.created_at)!) : 'Unknown'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Updated</label>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{(audit.updatedAt || audit.updated_at) ? formatDateTime((audit.updatedAt || audit.updated_at)!) : 'Unknown'}</div>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
+          {isEditing ? (
+            <>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
-                type="submit"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-md transition-colors flex items-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
               >
                 {isSubmitting ? (
                   <>
@@ -532,90 +616,22 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                   </>
                 ) : (
                   <>
-                    <FaSave className="text-sm" />
+                    <FaSave className="w-4 h-4" />
                     Save Changes
                   </>
                 )}
               </button>
-            </div>
-          </form>
-        ) : (
-          /* View Mode */
-          <div className="p-6 space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  {audit.name}
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Auditor</label>
-                    <p className="text-gray-900 dark:text-white">{audit.auditor}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Date</label>
-                    <p className="text-gray-900 dark:text-white flex items-center gap-2">
-                      <FaCalendarAlt className="text-blue-500 text-sm" />
-                      {formatDate(audit.date)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
-                  <p className="text-gray-900 dark:text-white">{(audit.createdAt || audit.created_at) ? formatDateTime((audit.createdAt || audit.created_at)!) : 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</label>
-                  <p className="text-gray-900 dark:text-white">{(audit.updatedAt || audit.updated_at) ? formatDateTime((audit.updatedAt || audit.updated_at)!) : 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Scope */}
-            <div>
-              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Scope</label>
-              <p className="text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{audit.scope}</p>
-            </div>
-
-            {/* Files */}
-            {audit.files.length > 0 && (
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 block">
-                  Documents ({audit.files.length})
-                </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
-                  {audit.files.map(file => (
-                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                      <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
-                        <FaFile className="text-blue-500 text-lg flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadFile(file);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                      >
-                        <FaDownload className="text-sm" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <FaEdit className="w-4 h-4" />
+              Edit
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

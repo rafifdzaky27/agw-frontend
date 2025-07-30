@@ -8,7 +8,7 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { policyApiService, PolicyApiResponse, CreatePolicyRequest, UpdatePolicyRequest, ApiResponse } from "@/utils/policyApi";
 import toast from "react-hot-toast";
 import AddPolicyModal from "./components/AddPolicyModal";
-import { FaSearch, FaFileExcel, FaTimes, FaCheck } from "react-icons/fa";
+import { FaSearch, FaFileExcel, FaTimes, FaCheck, FaEdit, FaSave, FaFile, FaDownload } from "react-icons/fa";
 import * as XLSX from 'xlsx';
 
 // Use real API service
@@ -760,6 +760,8 @@ interface PolicyDetailDialogProps {
   formatFileSize: (bytes: number) => string;
 }
 
+
+
 function PolicyDetailDialog({ policy, onClose, onFileDownload, isDocumentOld, formatDate, formatFileSize }: PolicyDetailDialogProps) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -768,118 +770,151 @@ function PolicyDetailDialog({ policy, onClose, onFileDownload, isDocumentOld, fo
     };
   }, []);
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleOpenFile = async (policy: Policy) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+      
+      const blob = await apiService.downloadPolicyFile(policy.id, token);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error opening file:', error);
+      toast.error('Failed to open file');
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-3/4 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <h3 className="text-2xl font-bold">{policy.nama_dokumen}</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Policy Details</h2>
+              {isDocumentOld(policy.tanggal_dokumen) && (
+                <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Needs Review
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Document Number</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{policy.no_dokumen}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
+                      {policy.kategori}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Document Name</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{policy.nama_dokumen}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Document Date</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{formatDate(policy.tanggal_dokumen)}</div>
+                </div>
+              </div>
+            </div>
+            {/* Documents */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Documents (1)</h3>
+              {policy.file_name ? (
+                <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => handleOpenFile(policy)}>
+                      <FaFile className="text-blue-500 text-lg flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                          {policy.file_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {policy.file_size ? formatFileSize(policy.file_size) : 'Unknown size'} • Uploaded {formatDateTime(policy.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFileDownload(policy.id, policy.file_name!);
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                    >
+                      <FaDownload className="text-sm" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  No documents attached to this policy
+                </div>
+              )}
+            </div>
             {isDocumentOld(policy.tanggal_dokumen) && (
-              <div className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                Document Needs Review
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Document Review Required</h4>
+                    <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                      This document is more than one year old and may need to be reviewed or updated to ensure it remains current and relevant.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
           <button
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-4">
-            <div>
-              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">No Dokumen</div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">{policy.no_dokumen}</div>
-            </div>
-            
-            <div>
-              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Kategori</div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm">
-                  {policy.kategori}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Dokumen</div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">{policy.nama_dokumen}</div>
-            </div>
-            
-            <div>
-              <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Dokumen</div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">{formatDate(policy.tanggal_dokumen)}</div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-3">Attached Files</div>
-          {policy.file_name ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">{policy.file_name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {policy.file_size ? formatFileSize(policy.file_size) : 'Unknown size'}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => onFileDownload(policy.id, policy.file_name!)}
-                  className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full transition-colors"
-                  title="Download File"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              No files attached to this policy
-            </div>
-          )}
-        </div>
-        
-        {isDocumentOld(policy.tanggal_dokumen) && (
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <div>
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">Document Review Required</h4>
-                <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-                  This document is more than one year old and may need to be reviewed or updated to ensure it remains current and relevant.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-end gap-3">
-          <button
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded"
-            onClick={onClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             Close
           </button>
@@ -911,6 +946,24 @@ function EditPolicyDialog({ policy, onClose, onSave }: EditPolicyDialogProps) {
       document.body.style.overflow = 'unset';
     };
   }, []);
+
+  const handleOpenFile = async (policy: Policy) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+      
+      const blob = await apiService.downloadPolicyFile(policy.id, token);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error opening file:', error);
+      toast.error('Failed to open file');
+    }
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -955,176 +1008,201 @@ function EditPolicyDialog({ policy, onClose, onSave }: EditPolicyDialogProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-3/4 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Edit Policy</h3>
-          <button
-            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">No Dokumen *</label>
-            <input
-              name="no_dokumen"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.no_dokumen}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Kategori *</label>
-            <select
-              name="kategori"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.kategori}
-              onChange={handleChange}
-              required
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Policy</h2>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
-              <option value="Kebijakan">Kebijakan</option>
-              <option value="SOP">SOP</option>
-              <option value="Pedoman">Pedoman</option>
-              <option value="Petunjuk Teknis">Petunjuk Teknis</option>
-            </select>
-          </div>
-          
-          <div className="md:col-span-2">
-            <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Nama Dokumen *</label>
-            <input
-              name="nama_dokumen"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.nama_dokumen}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">Tanggal Dokumen *</label>
-            <input
-              name="tanggal_dokumen"
-              type="date"
-              className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              value={formState.tanggal_dokumen}
-              onChange={handleChange}
-              required
-            />
+              <FaTimes className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* File Management Section */}
-        <div className="mb-6">
-          <div className="font-bold text-gray-700 dark:text-gray-300 mb-3">File Management</div>
-          
-          {/* Current File Display */}
-          {policy.file_name && !deleteCurrentFile && (
-            <div className="mb-4">
-              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">Current File:</h4>
-              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">{policy.file_name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {policy.file_size ? formatFileSize(policy.file_size) : 'Unknown size'}
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Document Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="no_dokumen"
+                    value={formState.no_dokumen}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="Enter document number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="kategori"
+                    value={formState.kategori}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                  >
+                    <option value="Kebijakan">Kebijakan</option>
+                    <option value="SOP">SOP</option>
+                    <option value="Pedoman">Pedoman</option>
+                    <option value="Petunjuk Teknis">Petunjuk Teknis</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Document Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="nama_dokumen"
+                    value={formState.nama_dokumen}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                    placeholder="Enter document name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Document Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="tanggal_dokumen"
+                    type="date"
+                    value={formState.tanggal_dokumen}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* File Management */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">File Management</h3>
+              {/* Current File Display */}
+              {policy.file_name && !deleteCurrentFile && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current File:</h4>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => handleOpenFile(policy)}>
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                        <svg className="w-6 h-6 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                          {policy.file_name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {policy.file_size ? formatFileSize(policy.file_size) : 'Unknown size'} • PDF Document
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleDeleteCurrentFile}
+                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors"
+                      title="Remove current file"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
+              )}
+
+              {/* File Deletion Confirmation */}
+              {deleteCurrentFile && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="font-medium">Current file will be deleted when you save changes</span>
+                  </div>
                 </div>
-                <button
-                  onClick={handleDeleteCurrentFile}
-                  className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors"
-                  title="Remove current file"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* File Deletion Confirmation */}
-          {deleteCurrentFile && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <span className="font-medium">Current file will be deleted when you save changes</span>
+              {/* Upload New File */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {policy.file_name && !deleteCurrentFile ? 'Replace with New File (PDF):' : 'Upload New File (PDF):'}
+                </h4>
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf"
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Supported format: PDF (Max 10MB)
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Upload New File */}
-          <div>
-            <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">
-              {policy.file_name && !deleteCurrentFile ? 'Replace with New File (PDF):' : 'Upload New File (PDF):'}
-            </h4>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-              <input
-                type="file"
-                onChange={handleFileChange}
-                accept=".pdf"
-                className="w-full p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
-              />
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Supported format: PDF (Max 10MB)
-              </p>
+              {/* New File Preview */}
+              {selectedFile && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New File Selected:</h4>
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">{selectedFile.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{formatFileSize(selectedFile.size)}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSelectedFile(null)}
+                      className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors"
+                      title="Remove selected file"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* New File Preview */}
-          {selectedFile && (
-            <div className="mt-4">
-              <h4 className="font-semibold mb-2 text-gray-700 dark:text-gray-300">New File Selected:</h4>
-              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="font-medium">{selectedFile.name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{formatFileSize(selectedFile.size)}</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedFile(null)}
-                  className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors"
-                  title="Remove selected file"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="flex justify-end gap-3">
-          <button 
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded transition-colors" 
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
+          <button
             onClick={onClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             Cancel
           </button>
-          <button 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors" 
+          <button
             onClick={handleSave}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
           >
+            <FaSave className="w-4 h-4" />
             Save Changes
           </button>
         </div>

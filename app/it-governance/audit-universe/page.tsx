@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -31,20 +31,7 @@ export default function AuditUniversePage() {
   });
   const ITEMS_PER_PAGE = 10;
 
-  useEffect(() => {
-    if (token) {
-      fetchAudits();
-    }
-  }, [token]);
-
-  // Refetch when search or year filter changes
-  useEffect(() => {
-    if (token) {
-      fetchAudits();
-    }
-  }, [searchTerm, selectedYear, token]);
-
-  const fetchAudits = async () => {
+  const fetchAudits = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -88,7 +75,13 @@ export default function AuditUniversePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, selectedYear, searchTerm]);
+
+  useEffect(() => {
+    if (token) {
+      fetchAudits();
+    }
+  }, [token, fetchAudits]);
 
   const handleCreateAudit = async (auditData: Omit<Audit, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {

@@ -35,7 +35,7 @@ export default function AuditFindings() {
     commitment_date: '',
     person_in_charge: '',
     status: 'not started' as AuditFinding['status'],
-    progress_pemenuhan: 'Not started'
+    progress_pemenuhan: ''
   });
 
   // Status mapping for drag and drop (frontend droppableId to backend status)
@@ -274,7 +274,7 @@ export default function AuditFindings() {
       commitment_date: '',
       person_in_charge: '',
       status: 'not started',
-      progress_pemenuhan: 'Not started'
+      progress_pemenuhan: ''
     });
   };
 
