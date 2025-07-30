@@ -84,7 +84,7 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function ManagementTasks() {
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,6 +171,9 @@ export default function ManagementTasks() {
 
   // Fetch data for management tasks
   useEffect(() => {
+    // Skip fetch if auth is still loading
+    if (authLoading) return;
+    
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -205,7 +208,7 @@ export default function ManagementTasks() {
     };
     
     fetchData();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, authLoading, token]);
   // Function to save new management task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
@@ -216,7 +219,7 @@ export default function ManagementTasks() {
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          nama_tugas: task.namaTugas,
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
@@ -251,7 +254,7 @@ export default function ManagementTasks() {
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          nama_tugas: task.namaTugas,
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
@@ -502,7 +505,7 @@ export default function ManagementTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -535,7 +538,7 @@ export default function ManagementTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'done').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -604,7 +607,6 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
-          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
     tags: task.tags || []
   });
 
@@ -819,7 +821,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
         {/* Confirmation Modal for Save */}
         <ConfirmationModal
           isOpen={isConfirmationOpen}
-          onClose={() => setIsConfirmationOpen(false)}
+          onCancel={() => setIsConfirmationOpen(false)}
           onConfirm={handleConfirmedSave}
           title="Confirm Save"
           message="Are you sure you want to save these changes?"
@@ -828,7 +830,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
         {/* Confirmation Modal for Delete */}
         <ConfirmationModal
           isOpen={isDeleteConfirmationOpen}
-          onClose={() => setIsDeleteConfirmationOpen(false)}
+          onCancel={() => setIsDeleteConfirmationOpen(false)}
           onConfirm={handleConfirmedDelete}
           title="Confirm Delete"
           message="Are you sure you want to delete this task? This action cannot be undone."
@@ -987,8 +989,9 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
           {/* Confirmation Modal for TaskCreateDialog */}
           <ConfirmationModal
             isOpen={isConfirmationOpen}
-            onConfirm={confirmSave}
             onCancel={() => setIsConfirmationOpen(false)}
+            onConfirm={confirmSave}
+            title="Confirm Create"
             message="Are you sure you want to create this task?"
           />
         </div>
