@@ -97,30 +97,82 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
     const actualFile = file.file || newFiles.find(nf => nf.id === file.id)?.file;
     
     if (actualFile) {
-      // For new uploaded files
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      // For new uploaded files - always open in new tab
       const url = URL.createObjectURL(actualFile);
-      
-      const browserSupported = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'txt', 'html', 'css', 'js'];
-      
-      if (browserSupported.includes(fileExtension || '')) {
-        window.open(url, '_blank');
-      } else {
-        // Download for unsupported files
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.click();
+      window.open(url, '_blank');
+      setTimeout(() => {
         URL.revokeObjectURL(url);
-      }
+      }, 1000);
     } else {
-      // For existing files (mock data), just show info
-      toast(`Opening ${file.name}... (Mock file - no actual content)`);
+      // For existing files, open in new tab
+      const baseUrl = process.env.NEXT_PUBLIC_ITG_SERVICE_URL || 'http://localhost:5010';
+      const token = localStorage.getItem('token');
+      const downloadUrl = `${baseUrl}/api/audit/audits/${audit.id}/files/${file.id}/download`;
+      
+      fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => response.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      })
+      .catch(error => {
+        console.error('Open error:', error);
+        toast.error('Failed to open file');
+      });
     }
   };
 
   const handleDownloadFile = (file: AuditFile) => {
-    openFileInNewTab(file);
+    // Check if this is a newly uploaded file (has file property) or from newFiles array
+    const actualFile = file.file || newFiles.find(nf => nf.id === file.id)?.file;
+    
+    if (actualFile) {
+      // For new uploaded files - download directly
+      const url = URL.createObjectURL(actualFile);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } else {
+      // For existing files, use API download endpoint
+      const baseUrl = process.env.NEXT_PUBLIC_ITG_SERVICE_URL || 'http://localhost:5010';
+      const token = localStorage.getItem('token');
+      const downloadUrl = `${baseUrl}/api/audit/audits/${audit.id}/files/${file.id}/download`;
+      
+      fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.blob();
+        }
+        throw new Error('Download failed');
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      })
+      .catch(error => {
+        console.error('Download error:', error);
+        toast.error('Failed to download file');
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -556,7 +608,6 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                         className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                       >
                         <FaDownload className="text-sm" />
-                        Open
                       </button>
                     </div>
                   ))}
