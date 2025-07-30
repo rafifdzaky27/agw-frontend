@@ -242,16 +242,22 @@ export default function ManagementTasks() {
     } catch (error) {
       console.error("Failed to save data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to update existing management task
   const handleSave = useCallback(async (task: Task) => {
     try {
+      // Check if token exists
+      if (!token) {
+        alert("Authentication required. Please login again.");
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/it-management-tasks/${task.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           nama_tugas: task.namaTugas,
@@ -261,6 +267,11 @@ export default function ManagementTasks() {
           status: task.status
         }),
       });
+      
+      if (response.status === 401) {
+        alert("Session expired. Please login again.");
+        return;
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -277,13 +288,17 @@ export default function ManagementTasks() {
     } catch (error) {
       console.error("Failed to update data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to delete management task
   const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/it-management-tasks/${id}`, { 
-        method: "DELETE" 
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        }
       });
       
       if (!response.ok) {
@@ -295,7 +310,7 @@ export default function ManagementTasks() {
     } catch (error) {
       console.error("Failed to delete data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to show management task details
   const handleShow = (id: string) => {
@@ -600,11 +615,18 @@ interface TaskDialogProps {
 }
 
 function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: TaskDialogProps) {
+  // Convert date to YYYY-MM-DD format for HTML date input
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  };
+
   const [formState, setFormState] = useState({
     id: task.id || "",
     namaTugas: task.namaTugas || "",
     catatan: task.catatan || "",
-    tanggal: task.tanggal || "",
+    tanggal: formatDateForInput(task.tanggal) || "",
     pic: task.pic || "",
     status: task.status || "not yet",
     tags: task.tags || []

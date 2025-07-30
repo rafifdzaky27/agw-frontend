@@ -84,7 +84,7 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function ArchitectureTasks() {
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,6 +205,9 @@ export default function ArchitectureTasks() {
 
   // Fetch data for architecture tasks
   useEffect(() => {
+    // Skip fetch if auth is still loading
+    if (authLoading) return;
+    
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -240,7 +243,7 @@ export default function ArchitectureTasks() {
     };
     
     fetchData();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, authLoading, token]);
 
   // Function to save new architecture task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
@@ -275,16 +278,22 @@ export default function ArchitectureTasks() {
     } catch (error) {
       console.error("Failed to save data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to update existing architecture task
   const handleSave = useCallback(async (task: Task) => {
     try {
+      // Check if token exists
+      if (!token) {
+        alert("Authentication required. Please login again.");
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${task.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           nama_tugas: (task as any).namaTugas || task.nama_tugas,
@@ -294,6 +303,11 @@ export default function ArchitectureTasks() {
           status: task.status
         }),
       });
+      
+      if (response.status === 401) {
+        alert("Session expired. Please login again.");
+        return;
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -310,13 +324,17 @@ export default function ArchitectureTasks() {
     } catch (error) {
       console.error("Failed to update data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to delete architecture task
   const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${id}`, { 
-        method: "DELETE" 
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        }
       });
       
       if (!response.ok) {
@@ -328,7 +346,7 @@ export default function ArchitectureTasks() {
     } catch (error) {
       console.error("Failed to delete data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to show architecture task details
   const handleShow = (id: string) => {
@@ -537,7 +555,7 @@ export default function ArchitectureTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -570,7 +588,7 @@ export default function ArchitectureTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'done').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -633,14 +651,20 @@ interface TaskDialogProps {
 }
 
 function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: TaskDialogProps) {
+  // Convert date to YYYY-MM-DD format for HTML date input
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  };
+
   const [formState, setFormState] = useState({
     id: task.id || "",
     namaTugas: task.namaTugas || "",
     catatan: task.catatan || "",
-    tanggal: task.tanggal || "",
+    tanggal: formatDateForInput(task.tanggal) || "",
     pic: task.pic || "",
     status: task.status || "not yet",
-          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
     tags: task.tags || []
   });
 

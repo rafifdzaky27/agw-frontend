@@ -250,16 +250,22 @@ export default function GovernanceTasks() {
     } catch (error) {
       console.error("Failed to save data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to update existing governance task
   const handleSave = useCallback(async (task: Task) => {
     try {
+      // Check if token exists
+      if (!token) {
+        alert("Authentication required. Please login again.");
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${task.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           nama_tugas: (task as any).namaTugas || (task as any).nama_tugas,
@@ -270,6 +276,11 @@ export default function GovernanceTasks() {
           tag: Array.isArray((task as any).tags) ? (task as any).tags.join(", ") : (task as any).tag || ""
         }),
       });
+      
+      if (response.status === 401) {
+        alert("Session expired. Please login again.");
+        return;
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -289,13 +300,17 @@ export default function GovernanceTasks() {
     } catch (error) {
       console.error("Failed to update data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to delete governance task
   const handleDelete = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/governance-tasks/${id}`, { 
-        method: "DELETE" 
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { "Authorization": `Bearer ${token}` })
+        }
       });
       
       if (!response.ok) {
@@ -307,7 +322,7 @@ export default function GovernanceTasks() {
     } catch (error) {
       console.error("Failed to delete data", error);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to show governance task details
   const handleShow = useCallback((id: string) => {
@@ -547,7 +562,7 @@ export default function GovernanceTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'done').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -607,11 +622,18 @@ interface TaskDialogProps {
 }
 
 function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: TaskDialogProps) {
+  // Convert date to YYYY-MM-DD format for HTML date input
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+  };
+
   const [formState, setFormState] = useState({
     id: task.id || "",
     namaTugas: task.namaTugas || "",
     catatan: task.catatan || "",
-    tanggal: task.tanggal || "",
+    tanggal: formatDateForInput(task.tanggal) || "",
     pic: task.pic || "",
     status: task.status || "not yet",
     tags: task.tags || [],
