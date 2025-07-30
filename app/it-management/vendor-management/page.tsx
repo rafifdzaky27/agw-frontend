@@ -123,15 +123,19 @@ export default function VendorManagementPage() {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      setTimeout(() => {
-        setVendors(mockVendors);
-        setLoading(false);
-      }, 1000);
+      const { vendorApiService } = await import('@/utils/vendorApi');
+      const result = await vendorApiService.getAllVendors(token || '');
+      
+      if (result.success) {
+        setVendors(result.data || []);
+      } else {
+        throw new Error(result.error || 'Failed to fetch vendors');
+      }
     } catch (err) {
-      setError("Failed to fetch vendors");
-      setLoading(false);
+      setError(err instanceof Error ? err.message : "Failed to fetch vendors");
       toast.error("Failed to load vendors");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -219,45 +223,61 @@ export default function VendorManagementPage() {
     setShowModal(true);
   };
 
-  const handleSaveVendor = (vendorData: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (isEditMode && selectedVendor) {
-      const updatedVendor: Vendor = {
-        ...selectedVendor,
-        ...vendorData,
-        updatedAt: new Date().toISOString()
-      };
+  const handleSaveVendor = async (vendorData: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { vendorApiService } = await import('@/utils/vendorApi');
       
-      setVendors(prev => prev.map(v => v.id === selectedVendor.id ? updatedVendor : v));
-      toast.success(`Vendor "${vendorData.namaVendor}" berhasil diperbarui`);
-    } else {
-      const newVendor: Vendor = {
-        id: Date.now().toString(),
-        ...vendorData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      if (isEditMode && selectedVendor) {
+        const result = await vendorApiService.updateVendor(selectedVendor.id, vendorData, token || '');
+        if (result.success) {
+          await fetchVendors();
+          toast.success(`Vendor "${vendorData.namaVendor}" berhasil diperbarui`);
+        } else {
+          throw new Error(result.error || 'Failed to update vendor');
+        }
+      } else {
+        const result = await vendorApiService.createVendor(vendorData, token || '');
+        if (result.success) {
+          await fetchVendors();
+          toast.success(`Vendor "${vendorData.namaVendor}" berhasil ditambahkan`);
+        } else {
+          throw new Error(result.error || 'Failed to create vendor');
+        }
+      }
       
-      setVendors(prev => [newVendor, ...prev]);
-      toast.success(`Vendor "${vendorData.namaVendor}" berhasil ditambahkan`);
+      setShowModal(false);
+      setSelectedVendor(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Operation failed');
     }
-    
-    setShowModal(false);
-    setSelectedVendor(null);
   };
 
-  const confirmDelete = () => {
-    const deletedVendors = vendors.filter(v => selectedVendors.includes(v.id));
-    setVendors(prev => prev.filter(v => !selectedVendors.includes(v.id)));
-    
-    if (deletedVendors.length === 1) {
-      toast.success(`Vendor "${deletedVendors[0].namaVendor}" berhasil dihapus`);
-    } else {
-      toast.success(`${deletedVendors.length} vendor berhasil dihapus`);
+  const confirmDelete = async () => {
+    try {
+      const { vendorApiService } = await import('@/utils/vendorApi');
+      const deletedVendors = vendors.filter(v => selectedVendors.includes(v.id));
+      
+      for (const vendorId of selectedVendors) {
+        const result = await vendorApiService.deleteVendor(vendorId, token || '');
+        if (!result.success) {
+          throw new Error(result.error || `Failed to delete vendor ${vendorId}`);
+        }
+      }
+      
+      await fetchVendors();
+      
+      if (deletedVendors.length === 1) {
+        toast.success(`Vendor "${deletedVendors[0].namaVendor}" berhasil dihapus`);
+      } else {
+        toast.success(`${deletedVendors.length} vendor berhasil dihapus`);
+      }
+      
+      setSelectedVendors([]);
+      setShowDeleteConfirm(false);
+      setIsSelectionMode(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Delete operation failed');
     }
-    
-    setSelectedVendors([]);
-    setShowDeleteConfirm(false);
-    setIsSelectionMode(false);
   };
   const handleExportSelected = async () => {
     if (selectedVendors.length === 0) {
@@ -529,7 +549,7 @@ export default function VendorManagementPage() {
                               <input
                                 type="checkbox"
                                 checked={selectedVendors.includes(vendor.id)}
-                                onChange={(e) => handleCheckboxChange(vendor, e)}
+                                onChange={(e) => handleCheckboxChange(vendor, e as any)}
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
                             </td>
@@ -678,13 +698,9 @@ export default function VendorManagementPage() {
         {showDeleteConfirm && (
           <ConfirmationModal
             isOpen={showDeleteConfirm}
-            onClose={() => setShowDeleteConfirm(false)}
             onConfirm={confirmDelete}
-            title="Delete Vendors"
+            onCancel={() => setShowDeleteConfirm(false)}
             message={`Are you sure you want to delete ${selectedVendors.length} vendor${selectedVendors.length > 1 ? 's' : ''}? This action cannot be undone.`}
-            confirmText="Delete"
-            cancelText="Cancel"
-            type="danger"
           />
         )}
       </div>

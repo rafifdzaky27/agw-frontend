@@ -66,7 +66,7 @@ export default function PortfolioManagementPage() {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20); // Show 20 items per page
+  const [itemsPerPage] = useState(5); // Show 20 items per page
 
   const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
 

@@ -890,7 +890,7 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
 
   return (
     <Link
-      href={`/change-management/${request.id}`}
+      href={`/it-management/change-management/${request.id}`}
       className="block bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 rounded-lg p-5 shadow-md hover:shadow-xl transition-shadow transition-transform duration-300 ease-in-out border-l-4 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
       style={{ borderColor: statusColor }}
       >

@@ -87,10 +87,10 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
 }
 
 export default function GovernanceTasks() {
-  const { user, token } = useAuth();
+  const {user, token, loading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
@@ -172,6 +172,9 @@ export default function GovernanceTasks() {
 
   // Fetch data for governance tasks
   useEffect(() => {
+    // Skip fetch if auth is still loading
+    if (loading) return;
+    
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -206,7 +209,7 @@ export default function GovernanceTasks() {
     };
     
     fetchData();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, loading, token]);
 
   // Function to save new governance task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
