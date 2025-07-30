@@ -120,23 +120,27 @@ export default function GovernanceTasks() {
   // Function to export tasks to Excel
   const handleExportToExcel = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/governance-tasks/export/excel`);
+      // Use existing tasks data for export
+      const exportData = tasks.map((task, index) => ({
+        'No': index + 1,
+        'Nama Tugas': task.namaTugas,
+        'Catatan': task.catatan,
+        'Tanggal': task.tanggal,
+        'PIC': task.pic,
+        'Status': task.status,
+        'Tags': Array.isArray(task.tags) ? task.tags.join(', ') : task.tags || ''
+      }));
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      const { data, filename } = await response.json();
-      
-      // Create Excel file using a simple CSV approach (you can use libraries like xlsx for more advanced features)
-      const csvContent = convertToCSV(data);
+      // Create CSV content
+      const csvContent = convertToCSV(exportData);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         link.setAttribute('href', url);
-        link.setAttribute('download', filename.replace('.xlsx', '.csv'));
+        link.setAttribute('download', `governance-tasks-${timestamp}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -146,7 +150,7 @@ export default function GovernanceTasks() {
       console.error("Failed to export tasks", error);
       alert("Failed to export tasks. Please try again.");
     }
-  }, [API_BASE_URL]);
+  }, [tasks]);
 
   // Helper function to convert JSON to CSV
   const convertToCSV = (data: any[]) => {

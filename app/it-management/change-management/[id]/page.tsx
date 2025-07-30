@@ -100,7 +100,7 @@ export default function ChangeRequestDetails() {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/${requestId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/${requestId}`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -144,7 +144,7 @@ export default function ChangeRequestDetails() {
                     fileFields.map(async (field) => {
                         const backendFilename = initialFormData[field];
                         if (backendFilename) {
-                            const downloadURL = `${process.env.NEXT_PUBLIC_BACKEND_IP}/files/${field}/${backendFilename}`;
+                            const downloadURL = `${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/files/${field}/${backendFilename}`;
                             const file = await downloadFile(downloadURL, backendFilename);
 
                             if (file) {
@@ -166,7 +166,7 @@ export default function ChangeRequestDetails() {
             if (!token) return;
 
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/history/${requestId}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/history/${requestId}`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -216,19 +216,19 @@ export default function ChangeRequestDetails() {
     
             try {
                 const [subjectResponse, textResponse, limitResponse] = await Promise.all([
-                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_subject`, {
+                    fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/config?key=request_email_alert_subject`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }),
-                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_text`, {
+                    fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/config?key=request_email_alert_text`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }),
-                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/config?key=request_email_alert_limit`, {
+                    fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/config?key=request_email_alert_limit`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -236,8 +236,15 @@ export default function ChangeRequestDetails() {
                     }),
                 ]);
     
-                if (!subjectResponse.ok || !textResponse.ok || !limitResponse.ok) {
-                    throw new Error("Failed to load alert configuration");
+                // Don't throw error if config endpoints are not available, just log warnings
+                if (!subjectResponse.ok) {
+                    console.warn("Subject config endpoint not available:", subjectResponse.status);
+                }
+                if (!textResponse.ok) {
+                    console.warn("Text config endpoint not available:", textResponse.status);
+                }
+                if (!limitResponse.ok) {
+                    console.warn("Limit config endpoint not available:", limitResponse.status);
                 }
     
                 const subjectData = await subjectResponse.json();
@@ -248,22 +255,24 @@ export default function ChangeRequestDetails() {
                 let loadedText = "";
                 let loadedLimit = 3; // Default limit
     
-                if (subjectData.success && subjectData.data && subjectData.data.length > 0) {
+                if (subjectResponse.ok && subjectData.success && subjectData.data && subjectData.data.length > 0) {
                     loadedSubject = subjectData.data[0].value;
                 } else {
                     console.warn("request_email_alert_subject not found, using default");
-                    loadedSubject = "Placeholder Subject"; // Default subject if not found
+                    loadedSubject = "Change Request Alert - {{formData.name}}"; // Default subject if not found
                 }
     
-                if (textData.success && textData.data && textData.data.length > 0) {
+                if (textResponse.ok && textData.success && textData.data && textData.data.length > 0) {
                     loadedText = textData.data[0].value;
                 } else {
                     console.warn("request_email_alert_text not found, using default");
-                    loadedText = "Placeholder Text"; // Default text if not found
+                    loadedText = "Dear {{formData.requesterName}},\n\nThis is an alert regarding your change request: {{formData.name}}.\n\nPlease review and take necessary action.\n\nBest regards,\n{{currentUser}}"; // Default text if not found
                 }
 
-                if (limitData.success && limitData.data && limitData.data.length > 0) {
+                if (limitResponse.ok && limitData.success && limitData.data && limitData.data.length > 0) {
                     loadedLimit = parseInt(limitData.data[0].value);
+                } else {
+                    loadedLimit = 3; // Default limit
                 }
     
                 // Replace variables after loading
@@ -349,7 +358,7 @@ export default function ChangeRequestDetails() {
         }
         const backendFilename = formData[field];
         if (backendFilename) {
-            return `${process.env.NEXT_PUBLIC_BACKEND_IP}/files/${field}/${backendFilename}`;
+            return `${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/files/${field}/${backendFilename}`;
         }
         return null;
     };
@@ -376,7 +385,7 @@ export default function ChangeRequestDetails() {
     };
 
     const incrementAlertCount = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/alert/${requestId}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/alert/${requestId}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -400,7 +409,7 @@ export default function ChangeRequestDetails() {
         const subject = alertSubject || "Change Request Alert Subject";
         const text = alertText || "Change Request Alert Text";
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/users/${requesterId}/email`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users/${requesterId}/email`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -427,7 +436,7 @@ export default function ChangeRequestDetails() {
             const formDataToSend = new FormData();
             formDataToSend.append("cab_meeting_date", formData.cab_meeting_date);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/approve/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/approve/${requestId}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -467,7 +476,7 @@ export default function ChangeRequestDetails() {
 
         const loadingToast = toast.loading("Approving VDH request...");
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/approve_vdh/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/approve_vdh/${requestId}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -533,7 +542,7 @@ export default function ChangeRequestDetails() {
 
         try {
             const isEmergency = formData.urgency === "emergency";
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/finalize/${requestId}?isEmergency=${isEmergency}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/finalize/${requestId}?isEmergency=${isEmergency}`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -603,7 +612,7 @@ export default function ChangeRequestDetails() {
         }
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/complete/${requestId}?isSucceed=${isSucceed}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/complete/${requestId}?isSucceed=${isSucceed}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -659,7 +668,7 @@ export default function ChangeRequestDetails() {
         const loadingToast = toast.loading("Updating migration request...");
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/requests/pending/${requestId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests/pending/${requestId}`, {
                 method: "POST", // Use POST since we're updating data
                 headers: {
                     "Content-Type": "application/json",

@@ -28,9 +28,10 @@ interface VendorModalProps {
   onClose: () => void;
   onSave: (vendorData: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>) => void;
   isEditMode: boolean;
+  onBackToDetail?: () => void;
 }
 
-export default function VendorModal({ vendor, onClose, onSave, isEditMode }: VendorModalProps) {
+export default function VendorModal({ vendor, onClose, onSave, isEditMode, onBackToDetail }: VendorModalProps) {
   const [formData, setFormData] = useState({
     namaVendor: "",
     alamat: "",
@@ -57,9 +58,19 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         noTlp: vendor.noTlp,
         portofolioProject: vendor.portofolioProject,
       });
-      setPics(vendor.pics.length > 0 ? vendor.pics : [createEmptyPIC(true)]);
+      // For edit mode, if vendor has PIC, use it, otherwise create PIC Utama
+      if (vendor.pics.length > 0) {
+        // Keep existing PICs but ensure first one is PIC Utama
+        const existingPics = [...vendor.pics];
+        if (!existingPics.some(pic => pic.role === "PIC Utama")) {
+          existingPics[0].role = "PIC Utama";
+        }
+        setPics(existingPics);
+      } else {
+        setPics([createEmptyPIC(true)]);
+      }
     } else {
-      // Reset form for new vendor
+      // Reset form for new vendor - only create 1 PIC Utama
       setFormData({
         namaVendor: "",
         alamat: "",
@@ -114,11 +125,13 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
     const picToRemove = pics.find(pic => pic.id === picId);
     const remainingPics = pics.filter(pic => pic.id !== picId);
     
-    // If removing PIC Utama and there are other PICs, make the first remaining PIC as PIC Utama
-    if (picToRemove?.role === "PIC Utama" && remainingPics.length > 0) {
+    // If removing PIC Utama, check if there are other PICs to promote
+    if (picToRemove?.role === "PIC Utama") {
       const hasOtherPICUtama = remainingPics.some(pic => pic.role === "PIC Utama");
-      if (!hasOtherPICUtama) {
+      if (!hasOtherPICUtama && remainingPics.length > 0) {
+        // Auto-promote first remaining PIC to PIC Utama
         remainingPics[0].role = "PIC Utama";
+        toast.success(`${remainingPics[0].nama || 'First PIC'} has been promoted to PIC Utama`);
       }
     }
     
@@ -146,6 +159,13 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
 
     if (validPics.length === 0) {
       toast.error("At least one complete PIC is required");
+      return false;
+    }
+
+    // Check if there's a PIC Utama
+    const hasPICUtama = validPics.some(pic => pic.role === "PIC Utama");
+    if (!hasPICUtama) {
+      toast.error("PIC Utama is required. Please assign one PIC as PIC Utama.");
       return false;
     }
 
@@ -182,13 +202,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         return;
       }
 
-      // Ensure there's always a PIC Utama
-      const hasPICUtama = validPics.some(pic => pic.role === "PIC Utama");
-      if (!hasPICUtama && validPics.length > 0) {
-        // Set first PIC as PIC Utama
-        validPics[0].role = "PIC Utama";
-      }
-
+      // All valid PICs will be saved
       const vendorData = {
         ...formData,
         pics: validPics
@@ -230,7 +244,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Vendor Information */}
             <div className="space-y-4">
@@ -240,7 +254,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Nama Vendor */}
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nama Vendor *
                   </label>
@@ -307,9 +321,16 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
             {/* PIC Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  Person in Charge (PIC)
-                </h3>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Person in Charge (PIC) *
+                  </h3>
+                  {!pics.some(pic => pic.role === "PIC Utama") && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                      ⚠️ PIC Utama is required
+                    </p>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={addPIC}
@@ -321,8 +342,14 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
               </div>
 
               <div className="space-y-4">
-                {pics.map((pic, index) => (
-                  <div key={pic.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
+                {pics.map((pic, index) => {
+                  const isComplete = pic.nama.trim() && pic.email.trim() && pic.noHP.trim() && pic.role.trim();
+                  return (
+                  <div key={pic.id} className={`border rounded-lg p-4 ${
+                    isComplete 
+                      ? 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700' 
+                      : 'border-red-200 dark:border-red-600 bg-red-50 dark:bg-red-900/20'
+                  }`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900 dark:text-white">
@@ -331,6 +358,11 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
                         {pic.role === "PIC Utama" && (
                           <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
                             PIC Utama
+                          </span>
+                        )}
+                        {!isComplete && (
+                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-full">
+                            Incomplete
                           </span>
                         )}
                       </div>
@@ -410,7 +442,8 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </form>
@@ -420,7 +453,7 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode }: Ven
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex-shrink-0">
           <button
             type="button"
-            onClick={onClose}
+            onClick={isEditMode && onBackToDetail ? onBackToDetail : onClose}
             disabled={isSubmitting}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors duration-200 disabled:opacity-50"
           >

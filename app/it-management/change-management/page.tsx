@@ -120,8 +120,12 @@ export default function ChangeManagement() {
                   }),
               ]);
 
-              if (!subjectResponse.ok || !textResponse.ok) {
-                  throw new Error("Failed to load alert configuration");
+              // Don't throw error if config endpoints are not available, just log warnings
+              if (!subjectResponse.ok) {
+                  console.warn("Subject config endpoint not available:", subjectResponse.status);
+              }
+              if (!textResponse.ok) {
+                  console.warn("Text config endpoint not available:", textResponse.status);
               }
 
               const subjectData = await subjectResponse.json();
@@ -130,18 +134,18 @@ export default function ChangeManagement() {
               let loadedSubject = "";
               let loadedText = "";
 
-              if (subjectData.success && subjectData.data && subjectData.data.length > 0) {
+              if (subjectResponse.ok && subjectData.success && subjectData.data && subjectData.data.length > 0) {
                   loadedSubject = subjectData.data[0].value;
               } else {
                   console.warn("blast_email_alert_subject not found, using default");
-                  loadedSubject = "Placeholder Subject"; // Default subject if not found
+                  loadedSubject = "Change Request Alert - {{currentDate}}"; // Default subject if not found
               }
 
-              if (textData.success && textData.data && textData.data.length > 0) {
+              if (textResponse.ok && textData.success && textData.data && textData.data.length > 0) {
                   loadedText = textData.data[0].value;
               } else {
                   console.warn("blast_email_alert_text not found, using default");
-                  loadedText = "Placeholder Text"; // Default text if not found
+                  loadedText = "Dear Team,\n\nThis is a blast alert regarding change requests.\n\nPlease review and take necessary action.\n\nBest regards,\n{{currentUser}}"; // Default text if not found
               }
 
               // Replace variables after loading
@@ -169,7 +173,7 @@ export default function ChangeManagement() {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/requests`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -264,7 +268,7 @@ export default function ChangeManagement() {
             if (!token) return;
 
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/users`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users`, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -370,7 +374,7 @@ export default function ChangeManagement() {
                 body.text = text;
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/users/email`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users/email`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

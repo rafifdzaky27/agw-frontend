@@ -77,25 +77,16 @@ export default function VendorDetailModal({ vendor, onClose, onEdit }: VendorDet
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-            >
-              <FaEdit className="text-sm" />
-              Edit
-            </button>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <FaTimes className="text-xl" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <FaTimes className="text-xl" />
+          </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <div className="space-y-8">
             {/* Basic Information */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">

@@ -149,7 +149,7 @@ export default function VendorManagementPage() {
     return vendors.filter(vendor =>
       vendor.namaVendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vendor.alamat.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.pics.some(pic => pic.nama.toLowerCase().includes(searchTerm.toLowerCase()))
+      (vendor.pics || []).some(pic => pic.nama.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [vendors, searchTerm]);
 
@@ -161,8 +161,11 @@ export default function VendorManagementPage() {
 
   // Get primary PIC
   const getPrimaryPIC = (pics: PIC[]) => {
+    if (!pics || !Array.isArray(pics) || pics.length === 0) {
+      return "-";
+    }
     const primaryPIC = pics.find(pic => pic.role === "PIC Utama");
-    return primaryPIC ? primaryPIC.nama : pics.length > 0 ? pics[0].nama : "-";
+    return primaryPIC ? primaryPIC.nama : pics[0].nama;
   };
 
   // Handle pagination
@@ -213,6 +216,12 @@ export default function VendorManagementPage() {
     setShowDetailModal(false);
     setIsEditMode(true);
     setShowModal(true);
+  };
+
+  const handleBackToDetail = () => {
+    setShowModal(false);
+    setIsEditMode(false);
+    setShowDetailModal(true);
   };
 
   const handleCheckboxChange = (vendor: Vendor, e: React.MouseEvent) => {
@@ -578,7 +587,7 @@ export default function VendorManagementPage() {
                               {getPrimaryPIC(vendor.pics)}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {vendor.pics.length} PIC{vendor.pics.length > 1 ? 's' : ''}
+                              {(vendor.pics || []).length} PIC{(vendor.pics || []).length > 1 ? 's' : ''}
                             </div>
                           </td>
                         </tr>
@@ -682,6 +691,7 @@ export default function VendorManagementPage() {
               setShowModal(false);
               setSelectedVendor(null);
             }}
+            onBackToDetail={handleBackToDetail}
           />
         )}
 

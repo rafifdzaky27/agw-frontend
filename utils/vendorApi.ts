@@ -24,7 +24,7 @@ interface PIC {
 }
 
 class VendorApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_BACKEND_IP;
+  private baseUrl = process.env.NEXT_PUBLIC_ITM_SERVICE_URL;
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
@@ -82,24 +82,8 @@ class VendorApiService {
 
       const data = await response.json();
       
-      // Transform backend data to frontend format
-      const transformedData = data.map((vendor: any) => ({
-        id: vendor.id.toString(),
-        namaVendor: vendor.name,
-        alamat: vendor.address || '',
-        noTlp: vendor.phone || '',
-        portofolioProject: vendor.projects || '',
-        pics: vendor.pic ? [{
-          id: '1',
-          nama: vendor.pic.name,
-          email: vendor.pic.email,
-          noHP: vendor.pic.mobile_number || '',
-          role: vendor.pic.role === 'pic_main' ? 'PIC Utama' : 
-                vendor.pic.role === 'business_partner' ? 'Business Partner' : 'Engineer'
-        }] : [],
-        createdAt: vendor.created_at,
-        updatedAt: vendor.updated_at
-      }));
+      // Data is already in the correct format from backend
+      const transformedData = data.data || data;
       
       return {
         success: true,
@@ -114,19 +98,13 @@ class VendorApiService {
   }
 
   async createVendor(vendorData: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>, token: string): Promise<ApiResponse<Vendor>> {
-    // Transform frontend data to backend format
+    // Send data in frontend format - backend will handle it
     const transformedData = {
-      name: vendorData.namaVendor,
-      address: vendorData.alamat,
-      phone: vendorData.noTlp,
-      projects: vendorData.portofolioProject,
-      pic: vendorData.pics[0] ? {
-        name: vendorData.pics[0].nama,
-        email: vendorData.pics[0].email,
-        mobile_number: vendorData.pics[0].noHP,
-        role: vendorData.pics[0].role === 'PIC Utama' ? 'pic_main' : 
-              vendorData.pics[0].role === 'Business Partner' ? 'business_partner' : 'engineer'
-      } : null
+      namaVendor: vendorData.namaVendor,
+      alamat: vendorData.alamat,
+      noTlp: vendorData.noTlp,
+      portofolioProject: vendorData.portofolioProject,
+      pics: vendorData.pics
     };
 
     const response = await fetch(`${this.baseUrl}/api/vendors`, {
@@ -142,19 +120,13 @@ class VendorApiService {
   }
 
   async updateVendor(id: string, vendorData: Omit<Vendor, 'id' | 'createdAt' | 'updatedAt'>, token: string): Promise<ApiResponse<Vendor>> {
-    // Transform frontend data to backend format
+    // Send data in frontend format - backend will handle it
     const transformedData = {
-      name: vendorData.namaVendor,
-      address: vendorData.alamat,
-      phone: vendorData.noTlp,
-      projects: vendorData.portofolioProject,
-      pic: vendorData.pics[0] ? {
-        name: vendorData.pics[0].nama,
-        email: vendorData.pics[0].email,
-        mobile_number: vendorData.pics[0].noHP,
-        role: vendorData.pics[0].role === 'PIC Utama' ? 'pic_main' : 
-              vendorData.pics[0].role === 'Business Partner' ? 'business_partner' : 'engineer'
-      } : null
+      namaVendor: vendorData.namaVendor,
+      alamat: vendorData.alamat,
+      noTlp: vendorData.noTlp,
+      portofolioProject: vendorData.portofolioProject,
+      pics: vendorData.pics
     };
 
     const response = await fetch(`${this.baseUrl}/api/vendors/${id}`, {
