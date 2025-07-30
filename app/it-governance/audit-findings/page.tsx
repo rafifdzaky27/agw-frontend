@@ -17,6 +17,7 @@ export default function AuditFindings() {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentFinding, setCurrentFinding] = useState<AuditFinding | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -193,6 +194,59 @@ export default function AuditFindings() {
     setCurrentFinding(finding || null);
     setShowDialog(true);
   }, [auditFindings]);
+
+  // Show edit dialog
+  const handleEdit = useCallback((finding: AuditFinding) => {
+    setFormData({
+      name: finding.name,
+      category: finding.category,
+      root_cause: finding.root_cause,
+      recommendation: finding.recommendation,
+      commitment: finding.commitment,
+      commitment_date: finding.commitment_date,
+      person_in_charge: finding.person_in_charge,
+      status: finding.status,
+      progress_pemenuhan: finding.progress_pemenuhan
+    });
+    setCurrentFinding(finding);
+    setShowDialog(false);
+    setShowEditDialog(true);
+  }, []);
+
+  // Update existing finding from edit modal
+  const handleUpdate = useCallback(async () => {
+    if (!token || !currentFinding) return;
+
+    try {
+      const findingData = {
+        name: formData.name,
+        category: formData.category,
+        root_cause: formData.root_cause,
+        recommendation: formData.recommendation,
+        commitment: formData.commitment,
+        commitment_date: formData.commitment_date,
+        person_in_charge: formData.person_in_charge,
+        status: formData.status,
+        progress_pemenuhan: formData.progress_pemenuhan
+      };
+
+      const response = await auditFindingsApiService.updateFinding(currentFinding.id, findingData, token);
+      
+      if (response.success && response.data) {
+        setAuditFindings(prev => prev.map(f => f.id === currentFinding.id ? response.data! : f));
+        setFilteredFindings(prev => prev.map(f => f.id === currentFinding.id ? response.data! : f));
+        setShowEditDialog(false);
+        setCurrentFinding(null);
+        resetForm();
+        toast.success("Audit finding updated successfully!");
+      } else {
+        toast.error(response.error || 'Failed to update audit finding');
+      }
+    } catch (error) {
+      console.error('Error updating finding:', error);
+      toast.error('Failed to update audit finding');
+    }
+  }, [formData, token, currentFinding]);
 
   // Filter findings based on search term
   const handleSearchChange = (value: string) => {
@@ -610,176 +664,390 @@ export default function AuditFindings() {
       {/* Create Finding Modal */}
       {showCreateDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add New Finding</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Finding</h2>
                 <button
                   onClick={() => {
                     setShowCreateDialog(false);
                     resetForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                 >
-                  <FaTimes className="w-6 h-6" />
+                  <FaTimes className="w-5 h-5" />
                 </button>
               </div>
+            </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Finding Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Finding Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter finding name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Category <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter category"
+                      />
+                    </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Category *
-                    </label>
-                    <input
-                      type="text"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
+                {/* Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Finding Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Root Cause <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="root_cause"
+                        value={formData.root_cause}
+                        onChange={handleInputChange}
+                        required
+                        rows={4}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                        placeholder="Describe the root cause"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Recommendation <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="recommendation"
+                        value={formData.recommendation}
+                        onChange={handleInputChange}
+                        required
+                        rows={4}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                        placeholder="Enter recommendation"
+                      />
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Root Cause *
-                  </label>
-                  <textarea
-                    name="root_cause"
-                    value={formData.root_cause}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Recommendation *
-                  </label>
-                  <textarea
-                    name="recommendation"
-                    value={formData.recommendation}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Commitment *
-                  </label>
-                  <textarea
-                    name="commitment"
-                    value={formData.commitment}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Commitment Date *
+                      Commitment <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
-                      name="commitment_date"
-                      value={formData.commitment_date}
+                    <textarea
+                      name="commitment"
+                      value={formData.commitment}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Person in Charge *
-                    </label>
-                    <input
-                      type="text"
-                      name="person_in_charge"
-                      value={formData.person_in_charge}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                      placeholder="Enter commitment details"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    >
-                      <option value="not started">Not Started</option>
-                      <option value="in progress">In Progress</option>
-                      <option value="done">Done</option>
-                    </select>
+                {/* Assignment & Status */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Assignment & Status</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Commitment Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="commitment_date"
+                        value={formData.commitment_date}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Person in Charge <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="person_in_charge"
+                        value={formData.person_in_charge}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter person in charge"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      >
+                        <option value="not started">Not Started</option>
+                        <option value="in progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Progress
+                      Progress Notes
                     </label>
                     <input
                       type="text"
                       name="progress_pemenuhan"
                       value={formData.progress_pemenuhan}
                       onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
                       placeholder="e.g., 50%, In progress, Almost done, etc."
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateDialog(false);
+                  resetForm();
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreate}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+              >
+                <FaSave className="w-4 h-4" />
+                Create Finding
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Finding Modal */}
+      {showEditDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Finding</h2>
+                <button
+                  onClick={() => {
+                    setShowEditDialog(false);
+                    setCurrentFinding(null);
+                    resetForm();
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Finding Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter finding name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Category <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter category"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Finding Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Root Cause <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="root_cause"
+                        value={formData.root_cause}
+                        onChange={handleInputChange}
+                        required
+                        rows={4}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                        placeholder="Describe the root cause"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Recommendation <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        name="recommendation"
+                        value={formData.recommendation}
+                        onChange={handleInputChange}
+                        required
+                        rows={4}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                        placeholder="Enter recommendation"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Commitment <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="commitment"
+                      value={formData.commitment}
+                      onChange={handleInputChange}
+                      required
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
+                      placeholder="Enter commitment details"
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateDialog(false);
-                      resetForm();
-                    }}
-                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <FaSave className="w-4 h-4" />
-                    Create Finding
-                  </button>
+                {/* Assignment & Status */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Assignment & Status</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Commitment Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="commitment_date"
+                        value={formData.commitment_date}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Person in Charge <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="person_in_charge"
+                        value={formData.person_in_charge}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        placeholder="Enter person in charge"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      >
+                        <option value="not started">Not Started</option>
+                        <option value="in progress">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Progress Notes
+                    </label>
+                    <input
+                      type="text"
+                      name="progress_pemenuhan"
+                      value={formData.progress_pemenuhan}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      placeholder="e.g., 50%, In progress, Almost done, etc."
+                    />
+                  </div>
                 </div>
               </form>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditDialog(false);
+                  setCurrentFinding(null);
+                  resetForm();
+                }}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+              >
+                <FaSave className="w-4 h-4" />
+                Update Finding
+              </button>
             </div>
           </div>
         </div>
@@ -792,6 +1060,7 @@ export default function AuditFindings() {
           onClose={() => setShowDialog(false)}
           onSave={handleSave}
           onDelete={handleDelete}
+          onEdit={handleEdit}
           formatDate={formatDate}
           getBadgeClass={getBadgeClass}
           getStatusText={getStatusText}
@@ -899,6 +1168,7 @@ interface FindingDetailModalProps {
   onClose: () => void;
   onSave: (finding: AuditFinding) => void;
   onDelete: (id: string) => void;
+  onEdit: (finding: AuditFinding) => void;
   formatDate: (dateString: string) => string;
   getBadgeClass: (status: AuditFinding['status']) => string;
   getStatusText: (status: AuditFinding['status']) => string;
@@ -907,12 +1177,13 @@ interface FindingDetailModalProps {
   getPriorityText: (priority: 'high' | 'medium' | 'low') => string;
 }
 
-// Finding Detail Modal Component with Edit functionality
+// Finding Detail Modal Component - Read-only view
 function FindingDetailModal({ 
   finding, 
   onClose, 
   onSave, 
   onDelete, 
+  onEdit,
   formatDate, 
   getBadgeClass, 
   getStatusText,
@@ -920,66 +1191,19 @@ function FindingDetailModal({
   getPriorityBadgeClass,
   getPriorityText
 }: FindingDetailModalProps) {
-  const [formState, setFormState] = useState<AuditFinding>({
-    id: finding?.id || "",
-    name: finding?.name || "",
-    category: finding?.category || "",
-    root_cause: finding?.root_cause || "",
-    recommendation: finding?.recommendation || "",
-    commitment: finding?.commitment || "",
-    commitment_date: finding?.commitment_date || "",
-    person_in_charge: finding?.person_in_charge || "",
-    status: finding?.status || "not started",
-    progress_pemenuhan: finding?.progress_pemenuhan || "",
-    created_at: finding?.created_at || "",
-    updated_at: finding?.updated_at || ""
-  });
-
-  const [isEdit, setIsEdit] = useState(false);
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
-  // Block body scroll when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+  if (!finding) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
-  };
+  const priority = calculatePriority(finding.commitment_date);
 
-  // Function to open confirmation modal
-  const handleSaveClick = () => {
-    setIsConfirmationOpen(true);
-  };
-
-  // Function to confirm save after modal confirmation
-  const confirmSave = () => {
-    onSave(formState);
-    setIsConfirmationOpen(false);
-    setIsEdit(false);
-  };
-
-  const cancelSave = () => {
-    setIsConfirmationOpen(false);
-  };
-
-  // Function to open delete confirmation modal
   const handleDeleteClick = () => {
     setIsDeleteConfirmationOpen(true);
   };
 
-  // Function to confirm delete after modal confirmation
   const confirmModalDelete = () => {
-    if (finding) {
-      onDelete(finding.id);
-      // Close the detail modal immediately after calling delete
-      onClose();
-    }
+    onDelete(finding.id);
+    onClose();
     setIsDeleteConfirmationOpen(false);
   };
 
@@ -987,256 +1211,136 @@ function FindingDetailModal({
     setIsDeleteConfirmationOpen(false);
   };
 
-  const priority = calculatePriority(formState.commitment_date);
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            {!isEdit ? (
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">{formState.category}</h2>
-            ) : (
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Audit Finding</h2>
-            )}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Finding Details</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
-              <FaTimes className="w-6 h-6" />
+              <FaTimes className="w-5 h-5" />
             </button>
           </div>
+        </div>
 
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           <div className="space-y-6">
-            {/* Header Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="col-span-2">
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Finding Name</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white">{formState.name}</div>
-                ) : (
-                  <input
-                    name="name"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    value={formState.name}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-
-              {isEdit && (
-                <div>
-                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Category</div>
-                  <input
-                    name="category"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    value={formState.category}
-                    onChange={handleChange}
-                  />
-                </div>
-              )}
-
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Priority</div>
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Basic Information</h3>
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPriorityBadgeClass(priority)}`}>
-                  {getPriorityText(priority)}
+                  {getPriorityText(priority)} Priority
                 </span>
               </div>
-
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Commitment Date</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white">{formatDate(formState.commitment_date)}</div>
-                ) : (
-                  <input
-                    type="date"
-                    name="commitment_date"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    value={formState.commitment_date}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Baris Baru untuk Status dan Person in Charge */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Status</div>
-                {!isEdit ? (
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getBadgeClass(formState.status)}`}>
-                    {getStatusText(formState.status)}
-                  </span>
-                ) : (
-                  <select
-                    name="status"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    value={formState.status}
-                    onChange={handleChange}
-                  >
-                    <option value="not started">Not Started</option>
-                    <option value="in progress">In Progress</option>
-                    <option value="done">Done</option>
-                  </select>
-                )}
-              </div>
-
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Person in Charge</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white">{formState.person_in_charge}</div>
-                ) : (
-                  <input
-                    name="person_in_charge"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    value={formState.person_in_charge}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-
-              {/* Kolom ketiga kosong untuk alignment */}
-              <div></div>
-            </div>
-
-            {/* Details Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Root Cause</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.root_cause}</div>
-                ) : (
-                  <textarea
-                    name="root_cause"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    rows={4}
-                    value={formState.root_cause}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Recommendation</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.recommendation}</div>
-                ) : (
-                  <textarea
-                    name="recommendation"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    rows={4}
-                    value={formState.recommendation}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Commitment</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white whitespace-pre-wrap">{formState.commitment}</div>
-                ) : (
-                  <textarea
-                    name="commitment"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    rows={4}
-                    value={formState.commitment}
-                    onChange={handleChange}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Progress Section - Baris baru di bawah Details Section */}
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Progress</div>
-                {!isEdit ? (
-                  <div className="text-gray-900 dark:text-white">{formState.progress_pemenuhan}</div>
-                ) : (
-                  <textarea
-                    name="progress_pemenuhan"
-                    className="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
-                    rows={3}
-                    value={formState.progress_pemenuhan}
-                    onChange={handleChange}
-                    placeholder="Describe fulfillment progress..."
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Timestamps */}
-            {!isEdit && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Created At</div>
-                  <div className="text-gray-600 dark:text-gray-400">{formState.created_at ? formatDate(formState.created_at) : 'Unknown'}</div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Finding Name</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.name}</div>
                 </div>
-                
                 <div>
-                  <div className="font-bold text-gray-700 dark:text-gray-300 mb-2">Last Updated</div>
-                  <div className="text-gray-600 dark:text-gray-400">{formState.updated_at ? formatDate(formState.updated_at) : 'Unknown'}</div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.category}</div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-600 mt-6">
-            {isEdit ? (
-              <>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                  onClick={handleSaveClick}
-                >
-                  <FaSave className="w-4 h-4" />
-                  Save Changes
-                </button>
-                <button
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors"
-                  onClick={() => setIsEdit(false)}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-                  onClick={() => setIsEdit(true)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                  onClick={handleDeleteClick}
-                >
-                  <FaTrash className="w-4 h-4" />
-                  Delete
-                </button>
-              </>
-            )}
-          </div>
+            {/* Finding Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Finding Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Root Cause</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap min-h-[100px]">{finding.root_cause}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendation</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap min-h-[100px]">{finding.recommendation}</div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Commitment</label>
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">{finding.commitment}</div>
+              </div>
+            </div>
 
-          {/* Confirmation Modals */}
-          <ConfirmationModal
-            isOpen={isConfirmationOpen}
-            onConfirm={confirmSave}
-            onCancel={cancelSave}
-            title="Save Changes"
-            message="Are you sure you want to save changes to this audit finding?"
-          />
-           
-          <ConfirmationModal
-            isOpen={isDeleteConfirmationOpen}
-            onConfirm={confirmModalDelete}
-            onCancel={cancelDelete}
-            title="Delete Finding"
-            message="Are you sure you want to delete this audit finding? This action cannot be undone."
-          />
+            {/* Assignment & Status */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Assignment & Status</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Commitment Date</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{formatDate(finding.commitment_date)}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person in Charge</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.person_in_charge}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getBadgeClass(finding.status)}`}>
+                      {getStatusText(finding.status)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Progress Notes</label>
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.progress_pemenuhan || 'No progress notes'}</div>
+              </div>
+            </div>
+
+            {/* Audit Trail */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Audit Trail</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{finding.created_at ? formatDate(finding.created_at) : 'Unknown'}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Updated</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{finding.updated_at ? formatDate(finding.updated_at) : 'Unknown'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
+          <button
+            onClick={handleDeleteClick}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <FaTrash className="w-4 h-4" />
+            Delete
+          </button>
+          <button
+            onClick={() => {
+              onEdit(finding);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm"
+          >
+            Edit
+          </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteConfirmationOpen}
+        onConfirm={confirmModalDelete}
+        onCancel={cancelDelete}
+        title="Delete Finding"
+        message="Are you sure you want to delete this audit finding? This action cannot be undone."
+      />
     </div>
   );
 }
