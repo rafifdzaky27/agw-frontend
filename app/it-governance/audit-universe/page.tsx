@@ -523,31 +523,27 @@ export default function AuditUniversePage() {
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
             {audit.name}
           </h3>
-          <FaEdit className="text-gray-400 hover:text-blue-500 text-sm flex-shrink-0 ml-2" />
+          {audit.files.length > 0 && (
+            <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex-shrink-0 ml-2">
+              {audit.files.length}
+            </span>
+          )}
         </div>
         
         <div className="flex-1 flex flex-col justify-between">
           <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt className="text-blue-500 text-xs flex-shrink-0" />
-              <span className="truncate">{formatDate(audit.date)}</span>
-            </div>
-            
-            <div className="flex items-start gap-2">
-              <FaFileAlt className="text-green-500 text-xs mt-0.5 flex-shrink-0" />
-              <span className={`${scopeClampClass} text-xs`}>{audit.scope}</span>
+            <div className="line-clamp-5 text-xs whitespace-pre-line">
+              {audit.scope}
             </div>
           </div>
           
           <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {formatDate(audit.date)}
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {audit.auditor}
             </span>
-            {audit.files.length > 0 && (
-              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded ml-2 flex-shrink-0">
-                {audit.files.length}
-              </span>
-            )}
           </div>
         </div>
       </div>

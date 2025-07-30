@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch, FaPlus, FaFileExcel} from "react-icons/fa";
+import { FaSearch, FaPlus, FaFileExcel, FaClipboardList} from "react-icons/fa";
 
 // Define Task interface with multiple tags support
 interface Task {
@@ -403,24 +403,45 @@ export default function GovernanceTasks() {
   };
 
   // Task Card Component
-  const TaskCard = ({ task, provided, snapshot }: { task: Task, provided: any, snapshot: any }) => (
+  const TaskCard = ({ task, provided, snapshot, isDone = false }: { task: Task, provided: any, snapshot: any, isDone?: boolean }) => (
     <div
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className={`bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-md cursor-pointer ${snapshot.isDragging ? 'shadow-2xl' : 'hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-lg'}`}
-      style={{ ...provided.draggableProps.style, borderLeft: `4px solid ${getBorderColor(task.status)}` }}
+      className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border ${
+        snapshot.isDragging ? 'shadow-2xl border-blue-400' : 'border-gray-200 dark:border-gray-700'
+      } h-32 flex flex-col relative`}
+      style={{ 
+        ...provided.draggableProps.style
+      }}
       onClick={() => handleShow(task.id)}
     >
-      <div className="font-semibold mb-2">{task.namaTugas}</div>
-      <div className="text-sm text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{task.catatan}</div>
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
+          {task.namaTugas}
+        </h3>
+        {isDone && (
+          <span className="px-2 py-1 text-xs font-semibold rounded-full ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 flex-shrink-0">
+            ✓ Complete
+          </span>
+        )}
+      </div>
       
-      {/* Tags Display */}
-    
-      
-      <div className="flex justify-between items-center">
-        <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(task.tanggal)}</div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">{task.pic}</div>
+      <div className="flex-1 flex flex-col justify-between">
+        <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
+          <div className="line-clamp-2 text-xs">
+            {task.catatan}
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {formatDate(task.tanggal)}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 truncate ml-2">
+            {task.pic}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -430,24 +451,25 @@ export default function GovernanceTasks() {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Governance Tasks
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Manage governance tasks with drag-and-drop board
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {tasks.length}
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Governance Tasks
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Manage governance tasks with drag-and-drop board
+                </p>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Total Tasks
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {filteredTasks.length}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Tasks
+                </div>
               </div>
             </div>
-          </div>
           {/* Search Bar */}
           <div className="flex gap-4 mb-6">
                         <div className="relative flex-1">
@@ -484,22 +506,24 @@ export default function GovernanceTasks() {
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Not Started Column */}
-                <Droppable droppableId="not yet">
-                  {(provided, snapshot) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Not Started</h2>
-                        <span className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
-                        </span>
-                      </div>
-                      <div className="space-y-3 min-h-[32rem]">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-gray-600 dark:text-gray-300">
+                      Not Started
+                    </h2>
+                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm px-2 py-1 rounded-full">
+                      {filteredTasks.filter(task => task.status === 'not yet').length}
+                    </span>
+                  </div>
+                  <Droppable droppableId="not yet">
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-3 min-h-[400px] p-2 rounded-lg"
+                      >
                         {filteredTasks
                           .filter(task => task.status === 'not yet')
                           .map((task, index) => (
@@ -511,28 +535,33 @@ export default function GovernanceTasks() {
                           ))}
                         {provided.placeholder}
                         {filteredTasks.filter(task => task.status === 'not yet').length === 0 && (
-                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <FaClipboardList className="mx-auto text-3xl mb-2 opacity-50" />
+                            <p>No tasks yet</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )}
-                </Droppable>
+                    )}
+                  </Droppable>
+                </div>
                 
                 {/* In Progress Column */}
-                <Droppable droppableId="on progress">
-                  {(provided, snapshot) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
-                        <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'on progress').length}
-                        </span>
-                      </div>
-                      <div className="space-y-3 min-h-[32rem]">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-yellow-600 dark:text-yellow-400">
+                      In Progress
+                    </h2>
+                    <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-sm px-2 py-1 rounded-full">
+                      {filteredTasks.filter(task => task.status === 'on progress').length}
+                    </span>
+                  </div>
+                  <Droppable droppableId="on progress">
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-3 min-h-[400px] p-2 rounded-lg"
+                      >
                         {filteredTasks
                           .filter(task => task.status === 'on progress')
                           .map((task, index) => (
@@ -544,48 +573,57 @@ export default function GovernanceTasks() {
                           ))}
                         {provided.placeholder}
                         {filteredTasks.filter(task => task.status === 'on progress').length === 0 && (
-                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <FaClipboardList className="mx-auto text-3xl mb-2 opacity-50" />
+                            <p>No tasks yet</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )}
-                </Droppable>
+                    )}
+                  </Droppable>
+                </div>
                 
                 {/* Done Column */}
-                <Droppable droppableId="done">
-                  {(provided, snapshot) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className={`bg-white dark:bg-gray-800 rounded-lg p-4 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-100 dark:bg-blue-900/50' : ''}`}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
-                        <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'done').length}
-                        </span>
-                      </div>
-                      <div className="space-y-3 min-h-[32rem]">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-semibold text-green-600 dark:text-green-400">
+                      Done
+                    </h2>
+                    <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-sm px-2 py-1 rounded-full">
+                      {filteredTasks.filter(task => task.status === 'done').length}
+                    </span>
+                  </div>
+                  <Droppable droppableId="done">
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-3 min-h-[400px] p-2 rounded-lg"
+                      >
                         {filteredTasks
                           .filter(task => task.status === 'done')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
-                                <TaskCard task={task} provided={provided} snapshot={snapshot} />
+                                <TaskCard task={task} provided={provided} snapshot={snapshot} isDone={true} />
                               )}
                             </Draggable>
                           ))}
                         {provided.placeholder}
                         {filteredTasks.filter(task => task.status === 'done').length === 0 && (
-                          <div className="text-center py-4 text-gray-500">No tasks</div>
+                          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                            <FaClipboardList className="mx-auto text-3xl mb-2 opacity-50" />
+                            <p>No tasks yet</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )}
-                </Droppable>
+                    )}
+                  </Droppable>
+                </div>
               </div>
             </DragDropContext>
           )}
+          </div>
           
           {showDialog && currentTask && (
             <TaskDialog
