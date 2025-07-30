@@ -513,11 +513,11 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
-                  <p className="text-gray-900 dark:text-white">{formatDateTime(audit.createdAt)}</p>
+                  <p className="text-gray-900 dark:text-white">{(audit.createdAt || audit.created_at) ? formatDateTime((audit.createdAt || audit.created_at)!) : 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</label>
-                  <p className="text-gray-900 dark:text-white">{formatDateTime(audit.updatedAt)}</p>
+                  <p className="text-gray-900 dark:text-white">{(audit.updatedAt || audit.updated_at) ? formatDateTime((audit.updatedAt || audit.updated_at)!) : 'N/A'}</p>
                 </div>
               </div>
             </div>

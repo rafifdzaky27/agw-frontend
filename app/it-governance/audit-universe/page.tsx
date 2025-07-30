@@ -61,7 +61,6 @@ export default function AuditUniversePage() {
       
       if (response.success && response.data) {
         setAudits(response.data);
-        console.log('✅ Successfully fetched audits:', response.data.length);
       } else {
         // Handle specific error cases
         const errorMessage = response.error || 'Failed to fetch audits';
@@ -278,8 +277,8 @@ export default function AuditUniversePage() {
           "File Count": fileCount,
           "File Names": fileNames,
           "Total File Size": formatFileSize(totalFileSize),
-          "Created At": new Date(audit.createdAt).toLocaleDateString('id-ID'),
-          "Updated At": new Date(audit.updatedAt).toLocaleDateString('id-ID')
+          "Created At": audit.created_at ? new Date(audit.created_at).toLocaleDateString('id-ID') : 'N/A',
+          "Updated At": audit.updated_at ? new Date(audit.updated_at).toLocaleDateString('id-ID') : 'N/A'
         });
       });
 
@@ -398,8 +397,8 @@ export default function AuditUniversePage() {
           "File Count": fileCount,
           "File Names": fileNames,
           "Total File Size": formatFileSize(totalFileSize),
-          "Created At": new Date(audit.createdAt).toLocaleDateString('id-ID'),
-          "Updated At": new Date(audit.updatedAt).toLocaleDateString('id-ID')
+          "Created At": audit.created_at ? new Date(audit.created_at).toLocaleDateString('id-ID') : 'N/A',
+          "Updated At": audit.updated_at ? new Date(audit.updated_at).toLocaleDateString('id-ID') : 'N/A'
         });
       });
 

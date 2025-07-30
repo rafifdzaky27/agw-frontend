@@ -36,8 +36,8 @@ const DROPDOWN_SECTIONS = [
     icon: FaShieldAlt,
     items: [
       { name: "Governance Workload", href: "/it-governance/governance-workload" },
-      { name: "Audit Findings", href: "/it-governance/audit-findings" },
       { name: "Audit Universe", href: "/it-governance/audit-universe" },
+      { name: "Audit Findings", href: "/it-governance/audit-findings" },
       { name: "Policy Management", href: "/it-governance/policy-management" },
       { name: "Report Management", href: "/it-governance/report-management" },
     ]

@@ -18,8 +18,10 @@ export interface Audit {
   date: string; // Format: YYYY-MM
   scope: string;
   files: AuditFile[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string; // Backend snake_case
+  updated_at?: string; // Backend snake_case
 }
 
 export interface CreateAuditRequest {
@@ -57,11 +59,14 @@ class AuditApiService {
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     try {
-      const data = await response.json();
+      const responseData = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        throw new Error(responseData.error || `HTTP error! status: ${response.status}`);
       }
+      
+      // Handle backend response format { success: true, data: ... }
+      const data = responseData.success ? responseData.data : responseData;
       
       return {
         success: true,
