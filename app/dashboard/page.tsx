@@ -119,15 +119,17 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
-  const { user, token } = useAuth(); // Fetch user and token from AuthContext
+  const { user, token, loading: authLoading } = useAuth(); // Fetch user and token from AuthContext
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
   const router = useRouter();
   
-  // Get API URL from environment variable - moved inside useEffect to avoid hydration issues
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
+  // Get API URLs from environment variables
+  const ITM_SERVICE_URL = process.env.NEXT_PUBLIC_ITM_SERVICE_URL || "http://localhost:5006";
+  const ITG_SERVICE_URL = process.env.NEXT_PUBLIC_ITG_SERVICE_URL || "http://localhost:5010";
+  const WORKLOAD_SERVICE_URL = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
 
   // Helper function to format dates
   const formatDate = (dateString: string) => {
@@ -183,9 +185,6 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    // Define API_BASE_URL inside useEffect to avoid hydration issues
-    const API_BASE_URL = `${BACKEND_IP}/api`;
-    
     const fetchDashboardData = async () => {
       setLoading(true);
       setError(null);
@@ -197,7 +196,7 @@ export default function Dashboard() {
         let governanceTasksData: GovernanceTask[] = [];
         
         try {
-          const changeRequestsResponse = await fetch(`${API_BASE_URL}/requests?sortBy=updated_at&order=desc`, {
+          const changeRequestsResponse = await fetch(`${ITM_SERVICE_URL}/api/cab/requests?sortBy=updated_at&order=desc`, {
             headers: { 
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -219,7 +218,7 @@ export default function Dashboard() {
         }
         
         try {
-          const auditFindingsResponse = await fetch(`${API_BASE_URL}/findings?sortBy=updated_at&order=desc`, {
+          const auditFindingsResponse = await fetch(`${ITG_SERVICE_URL}/api/audit/findings?sortBy=updated_at&order=desc`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -238,7 +237,7 @@ export default function Dashboard() {
         }
         
         try {
-          const governanceTasksResponse = await fetch(`${API_BASE_URL}/governance-tasks?sortBy=updated_at&order=desc`, {
+          const governanceTasksResponse = await fetch(`${WORKLOAD_SERVICE_URL}/api/governance-tasks?sortBy=updated_at&order=desc`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -481,13 +480,16 @@ export default function Dashboard() {
       }
     };
 
+    // Skip fetch if auth is still loading
+    if (authLoading) return;
+    
     if (token) { // Only fetch data if token is available
       fetchDashboardData();
     } else {
       // Handle case where token is not yet available or user is not logged in
       setLoading(false);
     }
-  }, [token, BACKEND_IP, router]);
+  }, [token, ITM_SERVICE_URL, ITG_SERVICE_URL, WORKLOAD_SERVICE_URL, router, authLoading]);
 
   return (
     <ProtectedRoute>
