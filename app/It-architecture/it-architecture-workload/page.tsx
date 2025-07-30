@@ -1,7 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback, ChangeEvent } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { 
+  DragDropContext, 
+  Droppable, 
+  Draggable, 
+  DropResult,
+  DroppableProvided,
+  DroppableStateSnapshot,
+  DraggableProvided,
+  DraggableStateSnapshot
+} from '@hello-pangea/dnd';
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
@@ -16,13 +25,44 @@ interface Task {
   tanggal: string;
   pic: string;
   status: 'not yet' | 'on progress' | 'done';
-  tag?: string; // Keep for backward compatibility
-  tags: string[]; // New multiple tags field
-  createdAt?: string;
-  updatedAt?: string;
+  tags: string[];
 }
 
-// TagInput component props
+// API Response types
+interface ApiTask {
+  id: number | string;
+  nama_tugas?: string;
+  namaTugas?: string;
+  catatan: string;
+  tanggal: string;
+  pic: string;
+  status: 'not yet' | 'on progress' | 'done';
+  tag?: string;
+  tags?: string[];
+}
+
+interface ApiErrorResponse {
+  error?: string;
+  message?: string;
+}
+
+interface HealthCheckResponse {
+  status: string;
+  timestamp: string;
+}
+
+// CSV Export data type
+interface ExportData {
+  'No': number;
+  'Nama Tugas': string;
+  'Catatan': string;
+  'Tanggal': string;
+  'PIC': string;
+  'Status': string;
+  'Tags': string;
+}
+
+// Tag Input Component Props
 interface TagInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
@@ -30,28 +70,73 @@ interface TagInputProps {
   disabled?: boolean;
 }
 
+// Task Dialog Props
+interface TaskDialogProps {
+  task: Task;
+  onClose: () => void;
+  onSave: (task: Task) => void;
+  onDelete: (id: string) => void;
+  formatDate: (date: string) => string;
+  getBadgeClass: (status: Task['status']) => string;
+  getStatusText: (status: Task['status']) => string;
+}
+
+// Task Create Dialog Props
+interface TaskCreateDialogProps {
+  onClose: () => void;
+  onSave: (task: Omit<Task, 'id'>) => void;
+}
+
+// Task Card Props - Using proper DnD types
+interface TaskCardProps {
+  task: Task;
+  provided: DraggableProvided;
+  snapshot: DraggableStateSnapshot;
+}
+
+// Error type guard functions
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: unknown }).message === 'string';
+}
+
+function getErrorMessage(error: unknown): string {
+  if (isErrorWithMessage(error)) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'An unknown error occurred';
+}
+
+// Tag Input Component
 function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = false }: TagInputProps) {
   const [inputValue, setInputValue] = useState("");
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      const newTag = inputValue.trim();
-      if (newTag && !tags.includes(newTag)) {
-        onChange([...tags, newTag]);
-        setInputValue("");
-      }
+      addTag();
     } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
-      onChange(tags.slice(0, -1));
+      removeTag(tags.length - 1);
     }
   };
 
-  const removeTag = (indexToRemove: number) => {
-    onChange(tags.filter((_, index) => index !== indexToRemove));
+  const addTag = (): void => {
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue && !tags.includes(trimmedValue)) {
+      onChange([...tags, trimmedValue]);
+      setInputValue("");
+    }
+  };
+
+  const removeTag = (index: number): void => {
+    const newTags = tags.filter((_, i) => i !== index);
+    onChange(newTags);
   };
 
   return (
-    <div className="flex flex-wrap gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 min-h-[42px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+    <div className="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded min-h-[42px] items-center">
       {tags.map((tag, index) => (
         <span
           key={index}
@@ -75,16 +160,16 @@ function TagInput({ tags, onChange, placeholder = "Add tags...", disabled = fals
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={addTag}
           placeholder={tags.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
       )}
     </div>
   );
 }
-
 export default function ArchitectureTasks() {
-  const { user, token } = useAuth();
+  const { token, loading: authLoading } = useAuth(); // Removed unused 'user' variable
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,109 +177,50 @@ export default function ArchitectureTasks() {
   const [showDialog, setShowDialog] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   // Get API URL from environment variable
   const BACKEND_IP = process.env.NEXT_PUBLIC_WORKLOAD_SERVICE_URL || "http://localhost:5005";
   const API_BASE_URL = `${BACKEND_IP}/api`;
 
-  // Helper function to get auth headers
-  const getAuthHeaders = useCallback(() => {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    return headers;
-  }, [token]);
-
-  // Helper function to handle API responses
-  const handleApiResponse = async (response: Response, operation: string) => {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
-      if (response.status === 401) {
-        console.error(`Authentication failed for ${operation}:`, errorData);
-        throw new Error(`Authentication failed. Please check your login status and permissions.`);
-      } else if (response.status === 403) {
-        console.error(`Access denied for ${operation}:`, errorData);
-        throw new Error(`Access denied. You don't have permission to ${operation}. Required roles: ${errorData.requiredRoles?.join(', ') || 'it-architecture, master'}`);
-      } else if (response.status === 404) {
-        throw new Error(`Service not found. Please ensure the workload service is running.`);
-      } else {
-        throw new Error(errorData.error || errorData.message || `Failed to ${operation}`);
-      }
-    }
-    
-    return response.json();
-  };
-
-  // CSV conversion function
-  const convertToCSV = (data: any[]) => {
-    if (data.length === 0) return '';
-    
-    const headers = Object.keys(data[0]);
-    const csvHeaders = headers.join(',');
-    
-    const csvRows = data.map(row =>
-      headers.map(header => {
-        const value = row[header];
-        // Handle values that contain commas, quotes, or newlines
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(',')
-    );
-    
-    return [csvHeaders, ...csvRows].join('\n');
-  };
-
-  // Export to Excel function
-  const handleExportToExcel = useCallback(async () => {
+  // Test backend connection
+  const testBackendConnection = useCallback(async (): Promise<void> => {
     try {
-      // Transform data for Excel export
-      const excelData = tasks.map(task => ({
-        'Task ID': task.id,
-        'Task Name': task.namaTugas,
-        'Notes': task.catatan,
-        'Deadline': task.tanggal,
-        'Person in Charge': task.pic,
-        'Status': task.status,
-        'Tags': Array.isArray(task.tags) ? task.tags.join(', ') : '',
-        'Created At': task.createdAt,
-        'Updated At': task.updatedAt
-      }));
+      console.log("🔍 Testing backend connection...");
+      console.log("🔍 Backend URL:", BACKEND_IP);
+      console.log("🔍 API Base URL:", API_BASE_URL);
       
-      const csvContent = convertToCSV(excelData);
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const response = await fetch(`${BACKEND_IP}/health`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
       
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `it-architecture-tasks-${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      console.log("🔍 Health check response status:", response.status);
+      
+      if (response.ok) {
+        const healthData: HealthCheckResponse = await response.json();
+        console.log("✅ Backend is healthy:", healthData);
+      } else {
+        console.error("❌ Backend health check failed:", response.status);
       }
     } catch (error) {
-      console.error("Failed to export to Excel", error);
-      alert("Failed to export to Excel. Please try again.");
+      console.error("❌ Backend connection test failed:", getErrorMessage(error));
     }
-  }, [tasks]);
+  }, [BACKEND_IP, API_BASE_URL]);
 
-  // Filter tasks based on search term (including tags)
+  // Test backend connection on component mount
+  useEffect(() => {
+    testBackendConnection();
+  }, [testBackendConnection]);
+
+  // Filter tasks based on search term
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredTasks(tasks);
     } else {
       const filtered = tasks.filter(task => 
         task.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        task.tag?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.namaTugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.catatan.toLowerCase().includes(searchTerm.toLowerCase()) ||
         task.pic.toLowerCase().includes(searchTerm.toLowerCase())
@@ -203,15 +229,94 @@ export default function ArchitectureTasks() {
     }
   }, [tasks, searchTerm]);
 
+  // Helper function to convert JSON to CSV
+  const convertToCSV = (data: ExportData[]): string => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]) as (keyof ExportData)[];
+    const csvHeaders = headers.join(',');
+    
+    const csvRows = data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      }).join(',')
+    );
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
+  // Function to export tasks to Excel
+  const handleExportToExcel = useCallback(async (): Promise<void> => {
+    try {
+      // Use existing tasks data for export
+      const exportData: ExportData[] = tasks.map((task, index) => ({
+        'No': index + 1,
+        'Nama Tugas': task.namaTugas,
+        'Catatan': task.catatan,
+        'Tanggal': task.tanggal,
+        'PIC': task.pic,
+        'Status': task.status,
+        'Tags': Array.isArray(task.tags) ? task.tags.join(', ') : ''
+      }));
+      
+      // Create CSV content
+      const csvContent = convertToCSV(exportData);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `it-architecture-tasks-${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error("Failed to export tasks", getErrorMessage(error));
+      alert("Failed to export tasks. Please try again.");
+    }
+  }, [tasks]);
+
+  // Process API task data to frontend Task format
+  const processApiTask = useCallback((apiTask: ApiTask): Task => {
+    let finalTags: string[] = [];
+    
+    if (apiTask.tags && Array.isArray(apiTask.tags)) {
+      finalTags = apiTask.tags;
+    } else if (apiTask.tag && typeof apiTask.tag === 'string' && apiTask.tag.trim() !== '') {
+      finalTags = apiTask.tag.split(', ').map(t => t.trim()).filter(Boolean);
+    }
+    
+    return {
+      id: String(apiTask.id),
+      namaTugas: apiTask.nama_tugas || apiTask.namaTugas || '',
+      catatan: apiTask.catatan || '',
+      tanggal: apiTask.tanggal || '',
+      pic: apiTask.pic || '',
+      status: apiTask.status || 'not yet',
+      tags: finalTags
+    };
+  }, []);
   // Fetch data for architecture tasks
   useEffect(() => {
-    const fetchData = async () => {
+    // Skip fetch if auth is still loading
+    if (authLoading || !token) return;
+    
+    const fetchData = async (): Promise<void> => {
       try {
         setLoading(true);
         const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`, {
           headers: {
             "Content-Type": "application/json",
-            ...(token && { "Authorization": `Bearer ${token}` })
+            "Authorization": `Bearer ${token}`
           }
         });
         
@@ -219,203 +324,374 @@ export default function ArchitectureTasks() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
-        const data = await response.json();
+        const data: ApiTask[] = await response.json();
+        console.log("✅ Raw API response:", data);
         
-        // Ensure tags field exists for all tasks
-        const processedData = data.map((task: any) => ({
-          ...task,
-          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
-          tags: task.tags || []
-        }));
+        // Process and convert API data to frontend format
+        const processedData = data.map(processApiTask);
+        console.log("✅ Processed data:", processedData);
         
         // Sort by deadline
-        const sortedData = processedData.sort((a: Task, b: Task) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
+        const sortedData = processedData.sort((a: Task, b: Task) => 
+          new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime()
+        );
+        
         setTasks(sortedData);
         setLoading(false);
       } catch (error) {
-        console.error("Failed to load IT Architecture data", error);
-        console.error("API URL:", `${API_BASE_URL}/it-architecture-tasks`);
+        console.error("Failed to load data", getErrorMessage(error));
         setLoading(false);
+        alert(`Failed to load tasks: ${getErrorMessage(error)}`);
       }
     };
     
     fetchData();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, authLoading, token, processApiTask]);
 
   // Function to save new architecture task
-  const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
+  const handlePost = useCallback(async (task: Omit<Task, 'id'>): Promise<void> => {
+    console.log("🔄 Starting task creation...");
+    console.log("📊 Task data:", task);
+    
+    if (!token) {
+      console.error("❌ No authentication token available");
+      alert("Authentication required. Please login again.");
+      return;
+    }
+
+    if (!task.namaTugas || !task.tanggal) {
+      console.error("❌ Missing required fields");
+      alert("Task name and deadline are required.");
+      return;
+    }
+
+    if (authLoading) {
+      console.log("⏳ Still loading, skipping request");
+      return;
+    }
+
     try {
+      // Ensure date is in correct format (YYYY-MM-DD)
+      let formattedDate = task.tanggal;
+      if (task.tanggal && !task.tanggal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const date = new Date(task.tanggal);
+        if (isNaN(date.getTime())) {
+          throw new Error("Invalid date format");
+        }
+        formattedDate = date.toISOString().split('T')[0];
+      }
+
+      const payload = {
+        nama_tugas: task.namaTugas.trim(),
+        catatan: (task.catatan || "").trim(),
+        tanggal: formattedDate,
+        pic: (task.pic || "").trim(),
+        status: task.status || "not yet",
+        tag: Array.isArray(task.tags) ? task.tags.join(", ") : ""
+      };
+
+      console.log("📤 IT Architecture - Final payload being sent:", JSON.stringify(payload, null, 2));
+
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
+          "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
-          catatan: task.catatan,
-          tanggal: task.tanggal,
-          pic: task.pic,
-          status: task.status
-        }),
+        body: JSON.stringify(payload),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      console.log("📥 Response status:", response.status);
+      
+      if (response.status === 401) {
+        alert("Authentication failed. Please login again.");
+        return;
       }
       
-      const newTask = await response.json();
-      // Transform snake_case to camelCase
-      const processedTask = {
-        ...newTask,
-        namaTugas: newTask.nama_tugas || newTask.namaTugas
-      };
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const errorText = await response.text();
+          console.error("❌ Raw server error response:", errorText);
+          
+          try {
+            const errorDetails: ApiErrorResponse = JSON.parse(errorText);
+            if (errorDetails.error) {
+              errorMessage = errorDetails.error;
+            } else if (errorDetails.message) {
+              errorMessage = errorDetails.message;
+            }
+          } catch {
+            // If not JSON, use the text as is
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch {
+          // If can't read response, use default message
+          errorMessage = 'Unable to read error response';
+        }
+        
+        console.error("❌ Final error message:", errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      const responseText = await response.text();
+      console.log("✅ IT Architecture - Raw response:", responseText);
+      
+      let newTask: ApiTask;
+      try {
+        newTask = JSON.parse(responseText);
+        console.log("✅ IT Architecture - Parsed task:", newTask);
+      } catch {
+        throw new Error("Invalid response format from server");
+      }
+      
+      // Process the new task
+      const processedTask = processApiTask(newTask);
+      console.log("✅ Processed task:", processedTask);
+      
       setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
+      
     } catch (error) {
-      console.error("Failed to save data", error);
+      console.error("❌ Complete error object:", error);
+      alert(`Failed to create task: ${getErrorMessage(error)}`);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token, authLoading, processApiTask]);
 
   // Function to update existing architecture task
-  const handleSave = useCallback(async (task: Task) => {
+  const handleSave = useCallback(async (task: Task): Promise<void> => {
+    console.log('🔄 Starting task update...');
+    console.log('📊 Task data:', task);
+    
+    if (!token) {
+      console.error('❌ No authentication token available');
+      alert('Authentication required. Please login again.');
+      return;
+    }
+
+    if (!task.id) {
+      console.error('❌ Missing task ID');
+      alert('Task ID is required for update.');
+      return;
+    }
+
+    if (!task.namaTugas || !task.tanggal) {
+      console.error('❌ Missing required fields');
+      alert('Task name and deadline are required.');
+      return;
+    }
+
+    if (authLoading) {
+      console.log('⏳ Still loading, skipping request');
+      return;
+    }
+
     try {
+      // Ensure date is in correct format (YYYY-MM-DD)
+      let formattedDate = task.tanggal;
+      if (task.tanggal && !task.tanggal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const date = new Date(task.tanggal);
+        formattedDate = date.toISOString().split('T')[0];
+      }
+
+      const payload = {
+        nama_tugas: task.namaTugas.trim(),
+        catatan: (task.catatan || "").trim(),
+        tanggal: formattedDate,
+        pic: (task.pic || "").trim(),
+        status: task.status || "not yet",
+        tag: Array.isArray(task.tags) ? task.tags.join(", ") : ""
+      };
+
+      console.log('📤 IT Architecture UPDATE - Payload being sent:', payload);
+
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${task.id}`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
-          ...(token && { "Authorization": `Bearer ${token}` })
+          "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
-          catatan: task.catatan,
-          tanggal: task.tanggal,
-          pic: task.pic,
-          status: task.status
-        }),
+        body: JSON.stringify(payload),
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      console.log('📥 Response status:', response.status);
+      
+      if (response.status === 401) {
+        alert('Authentication failed. Please login again.');
+        return;
       }
       
-      const updatedTask = await response.json();
-      // Transform snake_case to camelCase
-      const processedTask = {
-        ...updatedTask,
-        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas
-      };
-      setTasks((prev: Task[]) => prev.map(t => t.id === task.id ? processedTask : t));
+      if (!response.ok) {
+        let errorMessage = `HTTP error! Status: ${response.status}`;
+        
+        try {
+          const errorText = await response.text();
+          console.error('❌ Server error response:', errorText);
+          
+          try {
+            const errorJson: ApiErrorResponse = JSON.parse(errorText);
+            if (errorJson.error) {
+              errorMessage = errorJson.error;
+            } else if (errorJson.message) {
+              errorMessage = errorJson.message;
+            }
+          } catch {
+            // If not JSON, use the text as is
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          }
+        } catch {
+          // If can't read response, use default message
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      const updatedTask: ApiTask = await response.json();
+      console.log('✅ Task updated successfully:', updatedTask);
+      
+      const processedTask = processApiTask(updatedTask);
+      
+      setTasks((prev: Task[]) =>
+        prev.map((item) => (String(item.id) === String(task.id) ? processedTask : item))
+      );
       setShowDialog(false);
+      
     } catch (error) {
-      console.error("Failed to update data", error);
+      console.error("❌ Failed to update task:", getErrorMessage(error));
+      alert(`Failed to save task: ${getErrorMessage(error)}`);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token, authLoading, processApiTask]);
 
   // Function to delete architecture task
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback(async (id: string): Promise<void> => {
+    console.log("🔄 Starting task deletion...");
+    console.log("📊 Task ID:", id);
+    
+    if (!token) {
+      console.error("❌ No authentication token available");
+      alert("Authentication required. Please login again.");
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks/${id}`, { 
-        method: "DELETE" 
+        method: "DELETE",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
       });
       
+      console.log("📥 Delete response status:", response.status);
+      
+      if (response.status === 401) {
+        alert("Authentication failed. Please login again.");
+        return;
+      }
+      
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Server error:", errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
-      setTasks((prev: Task[]) => prev.filter(task => task.id !== id));
+      console.log("✅ Task deleted successfully");
+      
+      setTasks((prev: Task[]) => prev.filter((item) => item.id !== id));
       setShowDialog(false);
+      
+      alert("Task deleted successfully!");
+      
     } catch (error) {
-      console.error("Failed to delete data", error);
+      console.error("❌ Failed to delete task:", getErrorMessage(error));
+      alert(`Failed to delete task: ${getErrorMessage(error)}`);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, token]);
 
   // Function to show architecture task details
-  const handleShow = (id: string) => {
-    const task = tasks.find(task => task.id === id);
-    if (task) {
-      setCurrentTask(task);
-      setShowDialog(true);
-    }
-  };
+  const handleShow = useCallback((id: string): void => {
+    const task = tasks.find((item) => item.id === id);
+    setCurrentTask(task || null);
+    setShowDialog(true);
+  }, [tasks]);
 
-  // Drag and drop functionality
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const onDragEnd = useCallback((result: DropResult): void => {
+    const { source, destination, draggableId } = result;
 
+    // Cancelled if card is dropped outside column
     if (!destination) {
       return;
     }
 
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
-      return;
+    const task = filteredTasks.find(t => t.id === draggableId);
+
+    // If card is moved to new column, update its status
+    if (task && destination.droppableId !== source.droppableId) {
+      const newStatus = destination.droppableId as Task['status'];
+      const updatedTask = { ...task, status: newStatus };
+
+      // Update UI optimistically
+      setTasks(prev =>
+        prev.map(t => (t.id === draggableId ? updatedTask : t))
+      );
+      
+      // Save changes to backend
+      handleSave(updatedTask);
     }
-
-    const task = tasks.find(task => task.id === draggableId);
-    if (!task) return;
-
-    let newStatus: 'not yet' | 'on progress' | 'done';
-    switch (destination.droppableId) {
-      case 'not yet':
-        newStatus = 'not yet';
-        break;
-      case 'on progress':
-        newStatus = 'on progress';
-        break;
-      case 'done':
-        newStatus = 'done';
-        break;
-      default:
-        return;
-    }
-
-    const updatedTask = { ...task, status: newStatus };
-    handleSave(updatedTask);
-  };
-
-  // Helper functions
-  const formatDate = (dateString: string) => {
+  }, [filteredTasks, handleSave]);
+  // Format date for display
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
     });
   };
 
-  const getBorderColor = (status: string) => {
-    switch (status) {
-      case 'not yet': return '#6b7280';
-      case 'on progress': return '#f59e0b';
-      case 'done': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const getBadgeClass = (status: string) => {
-    switch (status) {
-      case 'not yet':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'on progress':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+  // Get badge color based on status
+  const getBadgeClass = (status: Task['status']): string => {
+    switch(status) {
       case 'done':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+        return 'bg-green-900 text-green-200';
+      case 'on progress':
+        return 'bg-yellow-900 text-yellow-200';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+        return 'bg-gray-700 text-gray-300';
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'not yet': return 'Not Started';
-      case 'on progress': return 'In Progress';
-      case 'done': return 'Completed';
-      default: return status;
+  // Get border color based on status
+  const getBorderColor = (status: Task['status']): string => {
+    switch(status) {
+      case 'done':
+        return '#10b981'; // green-500
+      case 'on progress':
+        return '#f59e0b'; // amber-500
+      default:
+        return '#6b7280'; // gray-500
     }
   };
 
-  // Task Card Component
-  const TaskCard = ({ task, provided, snapshot }: { task: Task, provided: any, snapshot: any }) => (
+  // Get status display text
+  const getStatusText = (status: Task['status']): string => {
+    switch(status) {
+      case 'done':
+        return 'Done';
+      case 'on progress':
+        return 'In Progress';
+      default:
+        return 'Not Started';
+    }
+  };
+
+  // Task Card Component - Using proper DnD types
+  const TaskCard = ({ task, provided, snapshot }: TaskCardProps) => (
     <div
       ref={provided.innerRef}
       {...provided.draggableProps}
@@ -433,18 +709,19 @@ export default function ArchitectureTasks() {
       </div>
     </div>
   );
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white flex">
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
-         <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Architecture Tasks
+                IT Architecture Tasks
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Manage architecture tasks with drag-and-drop board
+                Manage IT architecture tasks with drag-and-drop board
               </p>
             </div>
             <div className="text-right">
@@ -456,7 +733,8 @@ export default function ArchitectureTasks() {
               </div>
             </div>
           </div>
-          {/* Search Bar and Export */}
+          
+          {/* Search Bar */}
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -464,38 +742,36 @@ export default function ArchitectureTasks() {
                 type="text"
                 placeholder="Search tasks by name, notes, person in charge, or tags..."
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
             <button
               onClick={handleExportToExcel}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
             >
-              <FaFileExcel />
+              <FaFileExcel className="text-sm" />
               Export Excel
             </button>
             <button
               onClick={() => setShowCreateDialog(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
             >
-              <FaPlus />
+              <FaPlus className="text-sm" />
               Add Task
             </button>
           </div>
-
+          
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+            <div className="flex justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Loading architecture tasks...</p>
             </div>
           ) : (
             <DragDropContext onDragEnd={onDragEnd}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Not Started Column */}
                 <Droppable droppableId="not yet">
-                  {(provided, snapshot) => (
+                  {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
@@ -512,7 +788,7 @@ export default function ArchitectureTasks() {
                           .filter(task => task.status === 'not yet')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
-                              {(provided, snapshot) => (
+                              {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                                 <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
@@ -528,7 +804,7 @@ export default function ArchitectureTasks() {
                 
                 {/* In Progress Column */}
                 <Droppable droppableId="on progress">
-                  {(provided, snapshot) => (
+                  {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
@@ -537,7 +813,7 @@ export default function ArchitectureTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-yellow-600 dark:text-yellow-300">In Progress</h2>
                         <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'on progress').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -545,7 +821,7 @@ export default function ArchitectureTasks() {
                           .filter(task => task.status === 'on progress')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
-                              {(provided, snapshot) => (
+                              {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                                 <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
@@ -561,7 +837,7 @@ export default function ArchitectureTasks() {
                 
                 {/* Done Column */}
                 <Droppable droppableId="done">
-                  {(provided, snapshot) => (
+                  {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
@@ -570,7 +846,7 @@ export default function ArchitectureTasks() {
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-semibold text-green-600 dark:text-green-300">Done</h2>
                         <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 text-sm px-2 py-1 rounded-full">
-                          {filteredTasks.filter(task => task.status === 'not yet').length}
+                          {filteredTasks.filter(task => task.status === 'done').length}
                         </span>
                       </div>
                       <div className="space-y-3 min-h-[32rem]">
@@ -578,7 +854,7 @@ export default function ArchitectureTasks() {
                           .filter(task => task.status === 'done')
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
-                              {(provided, snapshot) => (
+                              {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                                 <TaskCard task={task} provided={provided} snapshot={snapshot} />
                               )}
                             </Draggable>
@@ -594,8 +870,7 @@ export default function ArchitectureTasks() {
               </div>
             </DragDropContext>
           )}
-
-          {/* Task Dialog */}
+          
           {showDialog && currentTask && (
             <TaskDialog
               task={currentTask}
@@ -608,7 +883,6 @@ export default function ArchitectureTasks() {
             />
           )}
 
-          {/* Create Task Dialog */}
           {showCreateDialog && (
             <TaskCreateDialog
               onClose={() => setShowCreateDialog(false)}
@@ -620,45 +894,35 @@ export default function ArchitectureTasks() {
     </ProtectedRoute>
   );
 }
-
 // Task Dialog Component
-interface TaskDialogProps {
-  task: Task;
-  onClose: () => void;
-  onSave: (task: Task) => void;
-  onDelete: (id: string) => void;
-  formatDate: (date: string) => string;
-  getBadgeClass: (status: string) => string;
-  getStatusText: (status: string) => string;
-}
-
 function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass, getStatusText }: TaskDialogProps) {
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<Task>({
     id: task.id || "",
     namaTugas: task.namaTugas || "",
     catatan: task.catatan || "",
     tanggal: task.tanggal || "",
     pic: task.pic || "",
     status: task.status || "not yet",
-          namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
-    tags: task.tags || []
+    tags: task.tags || [],
   });
 
   const [isEdit, setIsEdit] = useState(false);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
-    setFormState(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTagsChange = (newTags: string[]) => {
-    setFormState(prev => ({
-      ...prev,
-      tags: newTags
-    }));
+  const handleTagsChange = (tags: string[]): void => {
+    setFormState((prev) => ({ ...prev, tags }));
   };
 
   // State for confirmation modal
@@ -666,32 +930,44 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
   // Function to open confirmation modal
-  const confirmSave = () => {
+  const handleSaveClick = (): void => {
     setIsConfirmationOpen(true);
   };
 
-  // Function to handle confirmed save
-  const handleConfirmedSave = () => {
-    onSave(formState as Task);
+  // Function to confirm save after modal confirmation
+  const confirmSave = (): void => {
+    onSave(formState);
+    setIsConfirmationOpen(false);
+  };
+
+  const cancelSave = (): void => {
     setIsConfirmationOpen(false);
   };
 
   // Function to open delete confirmation modal
-  const confirmDelete = () => {
+  const handleDeleteClick = (): void => {
     setIsDeleteConfirmationOpen(true);
   };
 
-  // Function to handle confirmed delete
-  const handleConfirmedDelete = () => {
+  // Function to confirm delete after modal confirmation
+  const confirmDelete = (): void => {
     onDelete(task.id);
+    setIsDeleteConfirmationOpen(false);
+  };
+
+  const cancelDelete = (): void => {
     setIsDeleteConfirmationOpen(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 lg:w-2/3 max-h-[90vh] overflow-y-auto text-gray-900 dark:text-white">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold">IT Architecture Task Details</h3>
+        <div className="flex justify-between items-center mb-4">
+          {!isEdit ? (
+            <h3 className="text-xl font-bold">{formState.namaTugas}</h3>
+          ) : (
+            <h3 className="text-xl font-bold">Edit Task</h3>
+          )}
           <button
             className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
@@ -699,7 +975,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             ✕
           </button>
         </div>
-
+        
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">Task Name</label>
@@ -774,7 +1050,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               >
                 <option value="not yet">Not Started</option>
                 <option value="on progress">In Progress</option>
-                <option value="done">Completed</option>
+                <option value="done">Done</option>
               </select>
             ) : (
               <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getBadgeClass(task.status)}`}>
@@ -809,7 +1085,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             )}
           </div>
         </div>
-
+        
         <div className="flex justify-end gap-3 mt-6">
           {isEdit ? (
             <>
@@ -820,7 +1096,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
                 Cancel
               </button>
               <button
-                onClick={confirmSave}
+                onClick={handleSaveClick}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Save Changes
@@ -829,7 +1105,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           ) : (
             <>
               <button
-                onClick={confirmDelete}
+                onClick={handleDeleteClick}
                 className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Delete
@@ -842,52 +1118,55 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
               </button>
             </>
           )}
+
+          {/* Confirmation Modal for Save */}
+          <ConfirmationModal
+            isOpen={isConfirmationOpen}
+            onConfirm={confirmSave}
+            onCancel={cancelSave}
+            title="Confirm Save"
+            message="Are you sure you want to save changes to this task?"
+          />
+
+          {/* Confirmation Modal for Delete */}
+          <ConfirmationModal
+            isOpen={isDeleteConfirmationOpen}
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+            title="Confirm Delete"
+            message="Are you sure you want to delete this task? This action cannot be undone."
+          />
         </div>
-
-        {/* Confirmation Modal for Save */}
-        <ConfirmationModal
-          isOpen={isConfirmationOpen}
-          onClose={() => setIsConfirmationOpen(false)}
-          onConfirm={handleConfirmedSave}
-          title="Confirm Save"
-          message="Are you sure you want to save these changes?"
-        />
-
-        {/* Confirmation Modal for Delete */}
-        <ConfirmationModal
-          isOpen={isDeleteConfirmationOpen}
-          onClose={() => setIsDeleteConfirmationOpen(false)}
-          onConfirm={handleConfirmedDelete}
-          title="Confirm Delete"
-          message="Are you sure you want to delete this task? This action cannot be undone."
-        />
       </div>
     </div>
   );
 }
 
 // Task Create Dialog Component
-interface TaskCreateDialogProps {
-  onClose: () => void;
-  onSave: (task: Omit<Task, 'id'>) => void;
-}
-
 function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<Omit<Task, 'id'>>({
     namaTugas: "",
     catatan: "",
     tanggal: "",
     status: "not yet" as const,
     pic: "",
-    tags: [] as string[]
+    tags: []
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  // Block body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTagsChange = (tags: string[]) => {
+  const handleTagsChange = (tags: string[]): void => {
     setFormState((prev) => ({ ...prev, tags }));
   };
 
@@ -895,12 +1174,12 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
 
   // Function to open confirmation modal
-  const handleSaveClick = () => {
+  const handleSaveClick = (): void => {
     setIsConfirmationOpen(true);
   };
 
   // Function to confirm save after modal confirmation
-  const confirmSave = () => {
+  const confirmSave = (): void => {
     onSave(formState);
     setIsConfirmationOpen(false);
   };
@@ -965,7 +1244,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
             placeholder="Add tags (press Enter or comma to add)"
           />
           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Examples: urgent, review, compliance, security, documentation
+            Examples: design, infrastructure, security, cloud, integration
           </div>
         </div>
         
@@ -1010,6 +1289,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
             isOpen={isConfirmationOpen}
             onConfirm={confirmSave}
             onCancel={() => setIsConfirmationOpen(false)}
+            title="Confirm Create"
             message="Are you sure you want to create this task?"
           />
         </div>
