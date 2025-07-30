@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaFileExcel, FaPlus,FaTrash, FaTimes, FaSave } from "react-icons/fa";
+import { FaFileExcel, FaPlus,FaTrash, FaTimes, FaSave, FaSearch } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { auditFindingsApiService, AuditFinding } from "@/utils/auditFindingsApi";
 
@@ -402,38 +402,33 @@ export default function AuditFindings() {
                 </p>
               </div>
 
-              {/* Controls */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="flex-1 max-w-md w-full sm:w-auto">
+              {/* Search Bar */}
+              <div className="flex gap-4 mb-6">
+                <div className="relative flex-1">
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search findings..."
+                    placeholder="Search findings by category, name, or person in charge..."
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   />
                 </div>
-                
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleExportToExcel}
-                    disabled={isExporting || auditFindings.length === 0}
-                    className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm lg:text-base flex-1 sm:flex-none justify-center"
-                  >
-                    <FaFileExcel className="w-4 h-4" />
-                    <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export Excel'}</span>
-                    <span className="sm:hidden">Export</span>
-                  </button>
-                  
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 lg:px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm lg:text-base flex-1 sm:flex-none justify-center"
-                    onClick={() => setShowCreateDialog(true)}
-                  >
-                    <FaPlus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add Finding</span>
-                    <span className="sm:hidden">Add</span>
-                  </button>
-                </div>
+                <button
+                  onClick={handleExportToExcel}
+                  disabled={isExporting || auditFindings.length === 0}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <FaFileExcel className="text-sm" />
+                  {isExporting ? 'Exporting...' : 'Export Excel'}
+                </button>
+                <button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  <FaPlus className="text-sm" />
+                  Add Finding
+                </button>
               </div>
 
               {/* Error Display */}
