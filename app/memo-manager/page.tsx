@@ -263,32 +263,25 @@ export default function MemoManagerPage() {
       <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
         <Sidebar />
         
-        <div className="flex-1 flex flex-col overflow-hidden ml-64">
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
-            <div className="container mx-auto px-6 py-8 pl-2">
-              <div className="mb-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <FaFileAlt className="text-3xl text-blue-600 dark:text-blue-400" />
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Memo Manager
-                      </h1>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Kelola memo dan surat internal perusahaan
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {memos.length}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Total Documents
-                    </div>
-                  </div>
-                </div>
+        <div className="flex-1 md:ml-60 p-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Memo Manager
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Kelola memo dan surat internal perusahaan
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {memos.length}
               </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Total Documents
+              </div>
+            </div>
+          </div>
 
               {error && (
                 <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -550,8 +543,6 @@ export default function MemoManagerPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </main>
         </div>
 
         {/* Modal */}

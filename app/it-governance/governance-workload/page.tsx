@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaSearch, FaPlus, FaFileExcel, FaClipboardList, FaTimes, FaEdit, FaSave } from "react-icons/fa";
+import { FaSearch, FaPlus, FaFileExcel, FaClipboardList, FaTimes, FaEdit, FaSave, FaTrash } from "react-icons/fa";
 
 // Define Task interface with multiple tags support
 interface Task {
@@ -739,17 +739,58 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {isEdit ? 'Edit Task' : 'Task Details'}
             </h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-1">
+              {isEdit ? (
+                <>
+                  <button
+                    onClick={() => setIsEdit(false)}
+                    className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    title="Cancel"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleSaveClick}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Save changes"
+                  >
+                    <FaSave className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsEdit(true)}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Edit task"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Delete task"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                </>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] scrollbar-hide">
           <div className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
@@ -867,41 +908,7 @@ function TaskDialog({ task, onClose, onSave, onDelete, formatDate, getBadgeClass
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
-          {isEdit ? (
-            <>
-              <button
-                onClick={() => setIsEdit(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveClick}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm"
-              >
-                Save Changes
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleDeleteClick}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors shadow-sm"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setIsEdit(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-              >
-                <FaEdit className="w-4 h-4" />
-                Edit
-              </button>
-            </>
-          )}
-        </div>
+
 
         {/* Confirmation Modal for Save */}
         <ConfirmationModal
@@ -979,17 +986,27 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Add New Task
             </h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleSaveClick}
+                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Create task"
+              >
+                <FaSave className="w-4 h-4" />
+              </button>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] scrollbar-hide">
           <div className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
@@ -1087,22 +1104,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-          >
-            <FaSave className="w-4 h-4" />
-            Create Task
-          </button>
-        </div>
+
 
         {/* Confirmation Modal for TaskCreateDialog */}
         <ConfirmationModal

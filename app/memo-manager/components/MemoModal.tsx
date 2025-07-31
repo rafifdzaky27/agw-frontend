@@ -91,17 +91,33 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             Buat Memo/Surat Baru
           </h2>
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-          >
-            <FaTimes size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50"
+              title="Save memo"
+            >
+              {isSubmitting ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              ) : (
+                <FaSave className="w-4 h-4" />
+              )}
+            </button>
+            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Document Type */}
             <div>
@@ -225,35 +241,7 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
           </form>
         </div>
 
-        {/* Footer - Always visible */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex-shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors duration-200 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Saving...
-              </>
-            ) : (
-              <>
-                <FaSave size={14} />
-                Save
-              </>
-            )}
-          </button>
-        </div>
+
       </div>
     </div>
   );

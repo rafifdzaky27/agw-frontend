@@ -292,17 +292,56 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {isEditing ? 'Edit Audit' : 'Audit Details'}
             </h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    title="Cancel"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50"
+                    title="Save changes"
+                  >
+                    {isSubmitting ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    ) : (
+                      <FaSave className="w-4 h-4" />
+                    )}
+                  </button>
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Edit audit"
+                  >
+                    <FaEdit className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                </>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] scrollbar-hide">
           {isEditing ? (
             /* Edit Form */
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -580,11 +619,11 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{(audit.createdAt || audit.created_at) ? formatDateTime((audit.createdAt || audit.created_at)!) : 'Unknown'}</div>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{audit.created_at ? formatDateTime(audit.created_at) : 'Unknown'}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Last Updated</label>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{(audit.updatedAt || audit.updated_at) ? formatDateTime((audit.updatedAt || audit.updated_at)!) : 'Unknown'}</div>
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-400">{audit.updated_at ? formatDateTime(audit.updated_at) : 'Unknown'}</div>
                   </div>
                 </div>
               </div>
@@ -592,46 +631,7 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FaSave className="w-4 h-4" />
-                    Save Changes
-                  </>
-                )}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <FaEdit className="w-4 h-4" />
-              Edit
-            </button>
-          )}
-        </div>
+
       </div>
     </div>
   );

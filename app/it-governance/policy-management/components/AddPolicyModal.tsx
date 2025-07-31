@@ -110,17 +110,27 @@ export default function AddPolicyModal({ isOpen, onClose, onSubmit, onSave }: Ad
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add New Policy</h2>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              <FaTimes className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleSaveClick}
+                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Save policy"
+              >
+                <FaSave className="w-4 h-4" />
+              </button>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] scrollbar-hide">
           <div className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
@@ -243,22 +253,7 @@ export default function AddPolicyModal({ isOpen, onClose, onSubmit, onSave }: Ad
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveClick}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
-          >
-            <FaSave className="w-4 h-4" />
-            Save Policy
-          </button>
-        </div>
+
         
         <ConfirmationModal
           isOpen={isConfirmationOpen}
