@@ -62,20 +62,11 @@ export default function AuditUniversePage() {
       }
       
       // Then fetch audits
-      const auditResponse = await auditApiService.getAllAudits(token, {
-        year: selectedYear !== 'all' ? selectedYear : undefined,
-        search: searchTerm || undefined
-      });
+      const auditResponse = await auditApiService.getAllAudits(token);
       
       if (auditResponse.success && auditResponse.data) {
-        // Match findings to audits
-        const auditsWithFindings = auditResponse.data.map(audit => ({
-          ...audit,
-          findings: findingsData.filter(finding => finding.audit_id === audit.id) || []
-        }));
-        
-        console.log('🔍 DEBUG - Audits with matched findings:', auditsWithFindings);
-        setAudits(auditsWithFindings);
+        console.log('🔍 DEBUG - Fetched audits:', auditResponse.data);
+        setAudits(auditResponse.data);
       } else {
         // Handle specific error cases
         const errorMessage = auditResponse.error || 'Failed to fetch audits';
@@ -111,7 +102,7 @@ export default function AuditUniversePage() {
     }
   }, [token, fetchAudits]);
 
-  const handleCreateAudit = async (auditData: Omit<Audit, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleCreateAudit = async (auditData: Omit<Audit, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       // Validate required fields before sending
       if (!auditData.name?.trim()) {
@@ -144,7 +135,7 @@ export default function AuditUniversePage() {
       // Extract actual File objects from the files array
       const actualFiles: File[] = [];
       if (auditData.files && auditData.files.length > 0) {
-        auditData.files.forEach(fileData => {
+        auditData.files.forEach((fileData: any) => {
           if (fileData.file instanceof File) {
             actualFiles.push(fileData.file);
           }
@@ -207,8 +198,7 @@ export default function AuditUniversePage() {
         category: auditData.category,
         auditor: auditData.auditor ?? '',
         date: auditData.date ?? '',
-        scope: auditData.scope ?? '',
-        files: auditData.files?.map(f => f.file).filter(Boolean) as File[]
+        scope: auditData.scope ?? ''
       }, token ?? '');
       
       if (response.success) {
@@ -229,29 +219,30 @@ export default function AuditUniversePage() {
     console.log('🚀 handleAuditClick called with audit:', audit);
     console.log('🚀 Audit ID:', audit.id);
     console.log('🚀 Selection mode:', isSelectionMode);
-    console.log('🚀 Audit already has findings:', audit.findings?.length || 0);
+    console.log('🚀 Audit clicked:', audit.name);
     
     if (isSelectionMode) {
       handleMultipleSelect(audit.id);
     } else {
-      // Use the audit data that already has findings matched from fetchAudits
-      console.log('🔍 DEBUG - Using audit with pre-loaded findings:', audit.findings);
+      // Set selected audit for detail modal
+      console.log('🔍 DEBUG - Setting selected audit:', audit.name);
       setSelectedAudit(audit);
       setShowDetailModal(true);
     }
   };
 
   // Selection mode functions
-  const handleMultipleSelect = (auditId: string) => {
+  const handleMultipleSelect = (auditId: number) => {
+    const auditIdStr = auditId.toString();
     setSelectedAudits(prev => 
-      prev.includes(auditId) 
-        ? prev.filter(id => id !== auditId)
-        : [...prev, auditId]
+      prev.includes(auditIdStr) 
+        ? prev.filter(id => id !== auditIdStr)
+        : [...prev, auditIdStr]
     );
   };
 
   const handleSelectAll = () => {
-    const allCurrentAudits = audits.map(audit => audit.id);
+    const allCurrentAudits = audits.map(audit => audit.id.toString());
     if (selectedAudits.length === allCurrentAudits.length) {
       setSelectedAudits([]);
     } else {
@@ -275,16 +266,16 @@ export default function AuditUniversePage() {
       setIsExporting(true);
       
       // Get selected audits data
-      const selectedAuditsData = audits.filter(audit => selectedAudits.includes(audit.id));
+      const selectedAuditsData = audits.filter(audit => selectedAudits.includes(audit.id.toString()));
       
       // Create Excel data
       const excelData: Record<string, string | number>[] = [];
       
       selectedAuditsData.forEach((audit, index) => {
         // Count files
-        const fileCount = audit.files.length;
-        const fileNames = audit.files.map(file => file.name).join('; ');
-        const totalFileSize = audit.files.reduce((sum, file) => sum + file.size, 0);
+        const fileCount = audit.files?.length || 0;
+        const fileNames = audit.files?.map((file: any) => file.filename || file.name).join('; ') || '';
+        const totalFileSize = audit.files?.reduce((sum: number, file: any) => sum + (file.file_size || file.size || 0), 0) || 0;
         
         // Format file size
         const formatFileSize = (bytes: number) => {
@@ -369,7 +360,7 @@ export default function AuditUniversePage() {
         
         for (const auditId of selectedAudits) {
           try {
-            const response = await auditApiService.deleteAudit(auditId, token ?? '');
+            const response = await auditApiService.deleteAudit(parseInt(auditId), token ?? '');
             if (response.success) {
               successCount++;
             } else {
@@ -427,9 +418,9 @@ export default function AuditUniversePage() {
       
       filteredAudits.forEach((audit, index) => {
         // Count files
-        const fileCount = audit.files.length;
-        const fileNames = audit.files.map(file => file.name).join('; ');
-        const totalFileSize = audit.files.reduce((sum, file) => sum + file.size, 0);
+        const fileCount = audit.files?.length || 0;
+        const fileNames = audit.files?.map((file: any) => file.filename || file.name).join('; ') || '';
+        const totalFileSize = audit.files?.reduce((sum: number, file: any) => sum + (file.file_size || file.size || 0), 0) || 0;
         
         // Format file size
         const formatFileSize = (bytes: number) => {
@@ -549,7 +540,7 @@ export default function AuditUniversePage() {
     return (
       <div 
         className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border ${
-          isSelectionMode && selectedAudits.includes(audit.id) 
+          isSelectionMode && selectedAudits.includes(audit.id.toString()) 
             ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' 
             : 'border-gray-200 dark:border-gray-700'
         } h-44 flex flex-col relative`}
@@ -566,7 +557,7 @@ export default function AuditUniversePage() {
           >
             <input
               type="checkbox"
-              checked={selectedAudits.includes(audit.id)}
+              checked={selectedAudits.includes(audit.id.toString())}
               onChange={() => {}}
               className="w-3.5 h-3.5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-1 dark:bg-gray-700 dark:border-gray-600"
             />
@@ -576,9 +567,9 @@ export default function AuditUniversePage() {
           <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
             {audit.name}
           </h3>
-          {audit.files.length > 0 && (
+          {(audit.files?.length || 0) > 0 && (
             <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex-shrink-0 ml-2">
-              {audit.files.length}
+              {audit.files?.length || 0}
             </span>
           )}
         </div>

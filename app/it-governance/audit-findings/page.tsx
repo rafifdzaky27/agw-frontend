@@ -65,7 +65,32 @@ export default function AuditFindings() {
   const handleExportToExcel = useCallback(async () => {
     try {
       setIsExporting(true);
-      await auditFindingsApiService.exportToExcel(auditFindings);
+      // Create a simple Excel export using the data we have
+      const exportData = auditFindings.map(finding => ({
+        'Finding Name': finding.name,
+        'Audit': finding.audit_name || 'Unknown',
+        'Root Cause': finding.root_cause,
+        'Recommendation': finding.recommendation,
+        'Commitment': finding.commitment,
+        'Commitment Date': finding.commitment_date,
+        'Person in Charge': finding.person_in_charge,
+        'Status': finding.status,
+        'Progress': finding.progress_pemenuhan || 'No progress'
+      }));
+      
+      // Simple CSV export for now
+      const csvContent = "data:text/csv;charset=utf-8," 
+        + Object.keys(exportData[0] || {}).join(",") + "\n"
+        + exportData.map(row => Object.values(row).map(val => `"${val}"`).join(",")).join("\n");
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `audit_findings_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
       toast.success("Audit findings exported successfully!");
     } catch (error) {
       console.error("Export failed:", error);
@@ -173,7 +198,7 @@ export default function AuditFindings() {
     try {
       const findingData = {
         name: finding.name,
-        audit_id: finding.audit_id,
+        audit_id: finding.audit_id.toString(),
         root_cause: finding.root_cause,
         recommendation: finding.recommendation,
         commitment: finding.commitment,
@@ -183,7 +208,7 @@ export default function AuditFindings() {
         progress_pemenuhan: finding.progress_pemenuhan
       };
 
-      const response = await auditFindingsApiService.updateFinding(finding.id, findingData, token);
+      const response = await auditFindingsApiService.updateFinding(finding.id.toString(), findingData, token);
       
       if (response.success && response.data) {
         // Fetch all findings again to get complete data with audit info
@@ -209,12 +234,12 @@ export default function AuditFindings() {
       const response = await auditFindingsApiService.deleteFinding(id, token);
       
       if (response.success) {
-        setAuditFindings(prev => prev.filter(f => f.id !== id));
-        setFilteredFindings(prev => prev.filter(f => f.id !== id));
+        setAuditFindings(prev => prev.filter(f => f.id.toString() !== id));
+        setFilteredFindings(prev => prev.filter(f => f.id.toString() !== id));
         toast.success("Audit finding deleted successfully!");
         
         // Close detail modal if the deleted item is currently being viewed
-        if (currentFinding && currentFinding.id === id) {
+        if (currentFinding && currentFinding.id.toString() === id) {
           setShowDialog(false);
           setCurrentFinding(null);
         }
@@ -241,7 +266,7 @@ export default function AuditFindings() {
   const handleEdit = useCallback((finding: AuditFinding) => {
     setFormData({
       name: finding.name,
-      audit_id: finding.audit_id,
+      audit_id: finding.audit_id.toString(),
       root_cause: finding.root_cause,
       recommendation: finding.recommendation,
       commitment: finding.commitment,
@@ -283,7 +308,7 @@ export default function AuditFindings() {
         files: actualFiles.length > 0 ? actualFiles : undefined
       };
 
-      const response = await auditFindingsApiService.updateFinding(currentFinding.id, findingData, token);
+      const response = await auditFindingsApiService.updateFinding(currentFinding.id.toString(), findingData, token);
       
       if (response.success && response.data) {
         // Refresh all findings to get updated data
@@ -639,7 +664,7 @@ export default function AuditFindings() {
                                       finding={finding}
                                       provided={provided}
                                       snapshot={snapshot}
-                                      onClick={() => handleShow(finding.id)}
+                                      onClick={() => handleShow(finding.id.toString())}
                                       formatDate={formatDate}
                                       calculatePriority={calculatePriority}
                                       getPriorityBadgeClass={getPriorityBadgeClass}
@@ -687,7 +712,7 @@ export default function AuditFindings() {
                                       finding={finding}
                                       provided={provided}
                                       snapshot={snapshot}
-                                      onClick={() => handleShow(finding.id)}
+                                      onClick={() => handleShow(finding.id.toString())}
                                       formatDate={formatDate}
                                       calculatePriority={calculatePriority}
                                       getPriorityBadgeClass={getPriorityBadgeClass}
@@ -735,7 +760,7 @@ export default function AuditFindings() {
                                       finding={finding}
                                       provided={provided}
                                       snapshot={snapshot}
-                                      onClick={() => handleShow(finding.id)}
+                                      onClick={() => handleShow(finding.id.toString())}
                                       formatDate={formatDate}
                                       calculatePriority={calculatePriority}
                                       getPriorityBadgeClass={getPriorityBadgeClass}
@@ -1177,7 +1202,7 @@ export default function AuditFindings() {
                     }}
                     onFileDownload={(fileId, fileName) => {
                       if (currentFinding) {
-                        handleFileDownload(currentFinding.id, fileId, fileName);
+                        handleFileDownload(currentFinding.id.toString(), fileId, fileName);
                       }
                     }}
                     onFileDelete={handleFileDelete}
@@ -1349,7 +1374,7 @@ function FindingDetailModal({
   };
 
   const confirmModalDelete = () => {
-    onDelete(finding.id);
+    onDelete(finding.id.toString());
     onClose();
     setIsDeleteConfirmationOpen(false);
   };
@@ -1487,14 +1512,14 @@ function FindingDetailModal({
                       
                       <div className="flex items-center space-x-2 flex-shrink-0">
                         <button
-                          onClick={() => onFileDownload(finding.id, file.id, file.name)}
+                          onClick={() => onFileDownload(finding.id.toString(), file.id.toString(), file.name)}
                           className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                           title="Download file"
                         >
                           <FaDownload className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onFileDelete(file.id)}
+                          onClick={() => onFileDelete(file.id.toString())}
                           className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           title="Delete file"
                         >

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FaTimes, FaUpload, FaFile, FaTrash, FaCalendarAlt } from "react-icons/fa";
+import { FaTimes, FaUpload, FaFile, FaTrash, FaCalendarAlt, FaSave } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { Audit, AuditFile } from "@/utils/auditApi";
 
 interface NewAuditModalProps {
   onClose: () => void;
-  onSave: (auditData: Omit<Audit, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (auditData: Omit<Audit, 'id' | 'created_at' | 'updated_at'>) => void;
 }
 
 export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
@@ -110,7 +110,9 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
         auditor: formData.auditor.trim(),
         date: formData.date,
         scope: formData.scope.trim(),
-        files: files // Keep the full file objects with File instances
+        files: files,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       await onSave(auditData);
@@ -302,16 +304,16 @@ export default function NewAuditModal({ onClose, onSave }: NewAuditModalProps) {
                             <FaFile className="text-blue-500 text-sm flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {file.name}
+                                {file.name || file.original_name || file.filename || 'Unknown file'}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatFileSize(file.size)}
+                                {formatFileSize(file.size || file.file_size || 0)}
                               </p>
                             </div>
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleRemoveFile(file.id)}
+                            onClick={() => handleRemoveFile(String(file.id))}
                             className="text-red-500 hover:text-red-700 p-1"
                           >
                             <FaTrash className="text-sm" />

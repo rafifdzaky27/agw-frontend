@@ -12,16 +12,22 @@ export interface Audit {
   created_at: string;
   updated_at: string;
   files: AuditFile[];
+  findings?: any[];
 }
 
 export interface AuditFile {
-  id: number;
-  filename: string;
-  original_name: string;
-  file_size: number;
-  file_type: string;
-  created_at: string;
-  audit_id: number;
+  id: string | number;
+  filename?: string;
+  original_name?: string;
+  name?: string;
+  file_size?: number;
+  size?: number;
+  file_type?: string;
+  type?: string;
+  created_at?: string;
+  uploadedAt?: string;
+  audit_id?: number;
+  file?: File;
 }
 
 export interface CreateAuditRequest {

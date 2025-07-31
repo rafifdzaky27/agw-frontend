@@ -96,11 +96,11 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
     }
   };
 
-  const handleRemoveExistingFile = (fileId: string) => {
+  const handleRemoveExistingFile = (fileId: string | number) => {
     setFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
-  const handleRemoveNewFile = (fileId: string) => {
+  const handleRemoveNewFile = (fileId: string | number) => {
     setNewFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
@@ -148,7 +148,7 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
       const url = URL.createObjectURL(actualFile);
       const a = document.createElement('a');
       a.href = url;
-      a.download = file.name;
+      a.download = file.name || file.original_name || file.filename || 'download';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -174,7 +174,7 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = file.name;
+        a.download = file.name || file.original_name || file.filename || 'download';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -467,10 +467,10 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                               <FaFile className="text-blue-500 text-sm flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {file.name}
+                                  {file.name || file.original_name || file.filename || 'Unknown file'}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
+                                  {formatFileSize(file.size || file.file_size || 0)} • Uploaded {formatDateTime(file.uploadedAt || file.created_at || new Date().toISOString())}
                                 </p>
                               </div>
                             </div>
@@ -531,10 +531,10 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                               <FaFile className="text-green-500 text-sm flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {file.name}
+                                  {file.name || file.original_name || file.filename || 'Unknown file'}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  {formatFileSize(file.size)} • New file
+                                  {formatFileSize(file.size || file.file_size || 0)} • New file
                                 </p>
                               </div>
                             </div>
@@ -603,10 +603,10 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                           <FaFile className="text-blue-500 text-lg flex-shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
-                              {file.name}
+                              {file.name || file.original_name || file.filename || 'Unknown file'}
                             </p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatFileSize(file.size)} • Uploaded {formatDateTime(file.uploadedAt)}
+                              {formatFileSize(file.size || file.file_size || 0)} • Uploaded {formatDateTime(file.uploadedAt || file.created_at || new Date().toISOString())}
                             </p>
                           </div>
                         </div>
@@ -665,10 +665,7 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                         <div className="flex items-center gap-2">
                           {file.id && (
                             <button
-                              onClick={() => {
-                                // TODO: Implement file download
-                                console.log('Download file:', file);
-                              }}
+                              onClick={() => handleDownloadFile(file)}
                               className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"
                             >
                               Download

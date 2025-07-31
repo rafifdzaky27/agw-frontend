@@ -1,7 +1,18 @@
 "use client";
 
 import React from 'react';
-import { AuditFinding } from '@/utils/auditApi_updated';
+// Define AuditFinding interface locally since it's not in auditApi
+interface AuditFinding {
+  id: number;
+  name: string;
+  status: string;
+  root_cause: string;
+  recommendation: string;
+  commitment: string;
+  person_in_charge: string;
+  commitment_date: string;
+  progress_pemenuhan: string;
+}
 import { FaClipboardList, FaUser, FaClock, FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
 
 interface AuditFindingsListProps {
