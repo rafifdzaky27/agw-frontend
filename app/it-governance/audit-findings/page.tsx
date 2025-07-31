@@ -6,9 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
-import { FaFileExcel, FaPlus,FaTrash, FaTimes, FaSave, FaSearch, FaClipboardList } from "react-icons/fa";
+import FileUpload, { FileData } from "@/components/FileUpload";
+import { FaFileExcel, FaPlus,FaTrash, FaTimes, FaSave, FaSearch, FaClipboardList, FaFile, FaDownload } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { auditFindingsApiService, AuditFinding } from "@/utils/auditFindingsApi";
+import { auditFindingsApiService, AuditFinding, AuditFindingFile } from "@/utils/auditFindingsApi_v2";
+import { auditApiService } from "@/utils/auditApi"; // Add this import for fetching audits
 
 export default function AuditFindings() {
   const { user, token, loading: authLoading } = useAuth();
@@ -25,10 +27,14 @@ export default function AuditFindings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [findingToDelete, setFindingToDelete] = useState<string | null>(null);
 
+  // State for audit dropdown
+  const [audits, setAudits] = useState<any[]>([]);
+  const [loadingAudits, setLoadingAudits] = useState(false);
+
   // Form state for create/edit
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    audit_id: '', // Changed from category to audit_id
     root_cause: '',
     recommendation: '',
     commitment: '',
@@ -37,6 +43,9 @@ export default function AuditFindings() {
     status: 'not started' as AuditFinding['status'],
     progress_pemenuhan: ''
   });
+
+  // File state
+  const [formFiles, setFormFiles] = useState<FileData[]>([]);
 
   // Status mapping for drag and drop (frontend droppableId to backend status)
   const mapStatusToBackend = (droppableId: string): AuditFinding['status'] => {
@@ -90,28 +99,61 @@ export default function AuditFindings() {
     }
   }, [token]);
 
+  // Fetch all audits for dropdown
+  const fetchAudits = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      setLoadingAudits(true);
+      const response = await auditApiService.getAllAudits(token);
+      
+      if (response.success && response.data) {
+        setAudits(response.data);
+      } else {
+        console.error('Failed to fetch audits:', response.error);
+        toast.error('Failed to load audits for dropdown');
+      }
+    } catch (error) {
+      console.error('Error fetching audits:', error);
+      toast.error('Failed to load audits');
+    } finally {
+      setLoadingAudits(false);
+    }
+  }, [token]);
+
   // Create new finding
   const handleCreate = useCallback(async () => {
     if (!token) return;
 
     try {
+      // Extract actual File objects from the files array
+      const actualFiles: File[] = [];
+      if (formFiles && formFiles.length > 0) {
+        formFiles.forEach(fileData => {
+          if (fileData.file instanceof File) {
+            actualFiles.push(fileData.file);
+          }
+        });
+      }
+
       const findingData = {
         name: formData.name,
-        category: formData.category,
+        audit_id: formData.audit_id,
         root_cause: formData.root_cause,
         recommendation: formData.recommendation,
         commitment: formData.commitment,
         commitment_date: formData.commitment_date,
         person_in_charge: formData.person_in_charge,
         status: formData.status,
-        progress_pemenuhan: formData.progress_pemenuhan
+        progress_pemenuhan: formData.progress_pemenuhan,
+        files: actualFiles.length > 0 ? actualFiles : undefined
       };
 
       const response = await auditFindingsApiService.createFinding(findingData, token);
       
       if (response.success && response.data) {
-        setAuditFindings(prev => [...prev, response.data!]);
-        setFilteredFindings(prev => [...prev, response.data!]);
+        // Instead of just adding response.data, fetch all findings again to get complete data with audit info
+        await fetchAuditFindings();
         setShowCreateDialog(false);
         resetForm();
         toast.success("Audit finding created successfully!");
@@ -122,7 +164,7 @@ export default function AuditFindings() {
       console.error('Error creating finding:', error);
       toast.error('Failed to create audit finding');
     }
-  }, [formData, token]);
+  }, [formData, formFiles, token, fetchAuditFindings]);
 
   // Update existing finding
   const handleSave = useCallback(async (finding: AuditFinding) => {
@@ -131,7 +173,7 @@ export default function AuditFindings() {
     try {
       const findingData = {
         name: finding.name,
-        category: finding.category,
+        audit_id: finding.audit_id,
         root_cause: finding.root_cause,
         recommendation: finding.recommendation,
         commitment: finding.commitment,
@@ -144,18 +186,18 @@ export default function AuditFindings() {
       const response = await auditFindingsApiService.updateFinding(finding.id, findingData, token);
       
       if (response.success && response.data) {
-        setAuditFindings(prev => prev.map(f => f.id === finding.id ? response.data! : f));
-        setFilteredFindings(prev => prev.map(f => f.id === finding.id ? response.data! : f));
+        // Fetch all findings again to get complete data with audit info
+        await fetchAuditFindings();
         toast.success("Audit finding updated successfully!");
       } else {
         toast.error(response.error || 'Failed to update audit finding');
-        // Revert optimistic update if it failed
-        fetchAuditFindings();
+        // Revert by fetching fresh data
+        await fetchAuditFindings();
       }
     } catch (error) {
       console.error('Error updating finding:', error);
       toast.error('Failed to update audit finding');
-      fetchAuditFindings();
+      await fetchAuditFindings();
     }
   }, [token, fetchAuditFindings]);
 
@@ -199,7 +241,7 @@ export default function AuditFindings() {
   const handleEdit = useCallback((finding: AuditFinding) => {
     setFormData({
       name: finding.name,
-      category: finding.category,
+      audit_id: finding.audit_id,
       root_cause: finding.root_cause,
       recommendation: finding.recommendation,
       commitment: finding.commitment,
@@ -218,23 +260,34 @@ export default function AuditFindings() {
     if (!token || !currentFinding) return;
 
     try {
+      // Extract actual File objects from the files array
+      const actualFiles: File[] = [];
+      if (formFiles && formFiles.length > 0) {
+        formFiles.forEach(fileData => {
+          if (fileData.file instanceof File) {
+            actualFiles.push(fileData.file);
+          }
+        });
+      }
+
       const findingData = {
         name: formData.name,
-        category: formData.category,
+        audit_id: formData.audit_id,
         root_cause: formData.root_cause,
         recommendation: formData.recommendation,
         commitment: formData.commitment,
         commitment_date: formData.commitment_date,
         person_in_charge: formData.person_in_charge,
         status: formData.status,
-        progress_pemenuhan: formData.progress_pemenuhan
+        progress_pemenuhan: formData.progress_pemenuhan,
+        files: actualFiles.length > 0 ? actualFiles : undefined
       };
 
       const response = await auditFindingsApiService.updateFinding(currentFinding.id, findingData, token);
       
       if (response.success && response.data) {
-        setAuditFindings(prev => prev.map(f => f.id === currentFinding.id ? response.data! : f));
-        setFilteredFindings(prev => prev.map(f => f.id === currentFinding.id ? response.data! : f));
+        // Refresh all findings to get updated data
+        await fetchAuditFindings();
         setShowEditDialog(false);
         setCurrentFinding(null);
         resetForm();
@@ -246,7 +299,7 @@ export default function AuditFindings() {
       console.error('Error updating finding:', error);
       toast.error('Failed to update audit finding');
     }
-  }, [formData, token, currentFinding]);
+  }, [formData, formFiles, token, currentFinding, fetchAuditFindings]);
 
   // Filter findings based on search term
   const handleSearchChange = (value: string) => {
@@ -255,7 +308,7 @@ export default function AuditFindings() {
       setFilteredFindings(auditFindings);
     } else {
       const filtered = auditFindings.filter(finding => 
-        finding.category.toLowerCase().includes(value.toLowerCase()) ||
+        (finding.audit_name && finding.audit_name.toLowerCase().includes(value.toLowerCase())) ||
         finding.name.toLowerCase().includes(value.toLowerCase()) ||
         finding.person_in_charge.toLowerCase().includes(value.toLowerCase())
       );
@@ -263,11 +316,59 @@ export default function AuditFindings() {
     }
   };
 
+  // File download handler
+  const handleFileDownload = useCallback(async (findingId: string, fileId: string, fileName: string) => {
+    if (!token) return;
+
+    try {
+      const blob = await auditFindingsApiService.downloadFindingFile(findingId, fileId, token);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('File downloaded successfully');
+      } else {
+        toast.error('File download is not supported yet. Please contact administrator.');
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('File download is not supported yet. Please contact administrator.');
+    }
+  }, [token]);
+
+  // File delete handler
+  const handleFileDelete = useCallback(async (fileId: string) => {
+    if (!token) return;
+
+    try {
+      const response = await auditFindingsApiService.deleteFindingFile(fileId, token);
+      if (response.success) {
+        // Refresh findings to update file list
+        await fetchAuditFindings();
+        toast.success('File deleted successfully');
+      } else {
+        if (response.error?.includes('not supported')) {
+          toast.error('File deletion is not supported yet. Please contact administrator.');
+        } else {
+          toast.error(response.error || 'Failed to delete file');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('File deletion is not supported yet. Please contact administrator.');
+    }
+  }, [token, fetchAuditFindings]);
+
   // Reset form
   const resetForm = () => {
     setFormData({
       name: '',
-      category: '',
+      audit_id: '', // Changed from category to audit_id
       root_cause: '',
       recommendation: '',
       commitment: '',
@@ -276,6 +377,7 @@ export default function AuditFindings() {
       status: 'not started',
       progress_pemenuhan: ''
     });
+    setFormFiles([]);
   };
 
   // Handle form input changes
@@ -415,8 +517,9 @@ export default function AuditFindings() {
   useEffect(() => {
     if (!authLoading && token) {
       fetchAuditFindings();
+      fetchAudits(); // Also fetch audits for dropdown
     }
-  }, [authLoading, token, fetchAuditFindings]);
+  }, [authLoading, token, fetchAuditFindings, fetchAudits]);
 
   // Handle delete confirmation
   const confirmDelete = (id: string) => {
@@ -471,7 +574,7 @@ export default function AuditFindings() {
                   <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search findings by category, name, or person in charge..."
+                    placeholder="Search findings by audit, name, or person in charge..."
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -704,17 +807,23 @@ export default function AuditFindings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Category <span className="text-red-500">*</span>
+                        Audit <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
-                        placeholder="Enter category"
-                      />
+                      <select
+                          name="audit_id"
+                          value={formData.audit_id}
+                          onChange={handleInputChange}
+                          required
+                          disabled={loadingAudits}
+                          className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        >
+                          <option value="">-- Pilih Audit --</option>
+                          {audits.map((audit) => (
+                            <option key={audit.id} value={audit.id}>
+                              {audit.name}
+                            </option>
+                          ))}
+                        </select>
                     </div>
                   </div>
                 </div>
@@ -828,6 +937,18 @@ export default function AuditFindings() {
                       placeholder="e.g., 50%, In progress, Almost done, etc."
                     />
                   </div>
+                </div>
+
+                {/* File Upload Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Attachments</h3>
+                  <FileUpload
+                    files={formFiles}
+                    onFilesChange={setFormFiles}
+                    maxFiles={5}
+                    maxFileSize={10}
+                    showExistingFiles={false}
+                  />
                 </div>
               </form>
             </div>
@@ -900,17 +1021,23 @@ export default function AuditFindings() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Category <span className="text-red-500">*</span>
+                        Audit <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        name="category"
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
-                        placeholder="Enter category"
-                      />
+                      <select
+                          name="audit_id"
+                          value={formData.audit_id}
+                          onChange={handleInputChange}
+                          required
+                          disabled={loadingAudits}
+                          className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                        >
+                          <option value="">-- Pilih Audit --</option>
+                          {audits.map((audit) => (
+                            <option key={audit.id} value={audit.id}>
+                              {audit.name}
+                            </option>
+                          ))}
+                        </select>
                     </div>
                   </div>
                 </div>
@@ -1025,6 +1152,39 @@ export default function AuditFindings() {
                     />
                   </div>
                 </div>
+
+                {/* File Upload Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Attachments</h3>
+                  <FileUpload
+                    files={[
+                      // Show existing files
+                      ...(currentFinding?.files?.map(file => ({
+                        id: file.id,
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        uploadedAt: file.uploadedAt
+                      })) || []),
+                      // Show new files to be uploaded
+                      ...formFiles
+                    ]}
+                    onFilesChange={(files) => {
+                      // Filter out existing files and keep only new ones
+                      const newFiles = files.filter(file => !file.id);
+                      setFormFiles(newFiles);
+                    }}
+                    onFileDownload={(fileId, fileName) => {
+                      if (currentFinding) {
+                        handleFileDownload(currentFinding.id, fileId, fileName);
+                      }
+                    }}
+                    onFileDelete={handleFileDelete}
+                    maxFiles={5}
+                    maxFileSize={10}
+                    showExistingFiles={true}
+                  />
+                </div>
               </form>
             </div>
 
@@ -1067,6 +1227,8 @@ export default function AuditFindings() {
           calculatePriority={calculatePriority}
           getPriorityBadgeClass={getPriorityBadgeClass}
           getPriorityText={getPriorityText}
+          onFileDownload={handleFileDownload}
+          onFileDelete={handleFileDelete}
         />
       )}
 
@@ -1127,7 +1289,7 @@ function FindingCard({
     >
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 flex-1">
-          {finding.category}
+          {finding.audit_name || 'Unknown Audit'}
         </h3>
         {isDone ? (
           <span className="px-2 py-1 text-xs font-semibold rounded-full ml-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 flex-shrink-0">
@@ -1175,6 +1337,8 @@ interface FindingDetailModalProps {
   calculatePriority: (commitmentDate: string) => 'high' | 'medium' | 'low';
   getPriorityBadgeClass: (priority: 'high' | 'medium' | 'low') => string;
   getPriorityText: (priority: 'high' | 'medium' | 'low') => string;
+  onFileDownload: (findingId: string, fileId: string, fileName: string) => void;
+  onFileDelete: (fileId: string) => void;
 }
 
 // Finding Detail Modal Component - Read-only view
@@ -1189,7 +1353,9 @@ function FindingDetailModal({
   getStatusText,
   calculatePriority,
   getPriorityBadgeClass,
-  getPriorityText
+  getPriorityText,
+  onFileDownload,
+  onFileDelete
 }: FindingDetailModalProps) {
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
@@ -1244,8 +1410,8 @@ function FindingDetailModal({
                   <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.name}</div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.category}</div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Audit</label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.audit_name || 'Unknown Audit'}</div>
                 </div>
               </div>
             </div>
@@ -1294,6 +1460,56 @@ function FindingDetailModal({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Progress Notes</label>
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.progress_pemenuhan || 'No progress notes'}</div>
               </div>
+            </div>
+
+            {/* File Attachments */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">File Attachments</h3>
+              {finding.files && finding.files.length > 0 ? (
+                <div className="space-y-2">
+                  {finding.files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <FaFile className="text-gray-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown size'}
+                            {file.uploadedAt && ` • Uploaded ${new Date(file.uploadedAt).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 flex-shrink-0">
+                        <button
+                          onClick={() => onFileDownload(finding.id, file.id, file.name)}
+                          className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Download file"
+                        >
+                          <FaDownload className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onFileDelete(file.id)}
+                          className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Delete file"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <FaFile className="mx-auto text-3xl mb-2 opacity-50" />
+                  <p>No files attached</p>
+                </div>
+              )}
             </div>
 
             {/* Audit Trail */}
