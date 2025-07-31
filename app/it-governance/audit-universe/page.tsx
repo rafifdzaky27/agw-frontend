@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { FaPlus, FaCalendarAlt, FaFileAlt, FaEdit, FaSearch, FaCheck, FaTimes, FaTrash, FaFileExcel } from "react-icons/fa";
+import { FaPlus, FaFileAlt, FaSearch, FaCheck, FaTimes, FaTrash, FaFileExcel } from "react-icons/fa";
 import * as XLSX from 'xlsx';
 import NewAuditModal from "./components/NewAuditModal";
 import AuditDetailModal from "./components/AuditDetailModal";
@@ -14,6 +14,7 @@ import { auditApiService, Audit } from "@/utils/auditApi";
 export default function AuditUniversePage() {
   const { user, token } = useAuth();
   const [audits, setAudits] = useState<Audit[]>([]);
+  const [findings, setFindings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewAuditModal, setShowNewAuditModal] = useState(false);
@@ -41,16 +42,43 @@ export default function AuditUniversePage() {
         throw new Error('Authentication token is missing. Please log in again.');
       }
       
-      const response = await auditApiService.getAllAudits(token, {
+      // First fetch findings
+      let findingsData = [];
+      try {
+        const findingsResponse = await fetch('http://localhost:5010/api/audit/findings', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (findingsResponse.ok) {
+          findingsData = await findingsResponse.json();
+          console.log('🔍 DEBUG - Fetched findings:', findingsData);
+          setFindings(findingsData);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch findings:', err);
+      }
+      
+      // Then fetch audits
+      const auditResponse = await auditApiService.getAllAudits(token, {
         year: selectedYear !== 'all' ? selectedYear : undefined,
         search: searchTerm || undefined
       });
       
-      if (response.success && response.data) {
-        setAudits(response.data);
+      if (auditResponse.success && auditResponse.data) {
+        // Match findings to audits
+        const auditsWithFindings = auditResponse.data.map(audit => ({
+          ...audit,
+          findings: findingsData.filter(finding => finding.audit_id === audit.id) || []
+        }));
+        
+        console.log('🔍 DEBUG - Audits with matched findings:', auditsWithFindings);
+        setAudits(auditsWithFindings);
       } else {
         // Handle specific error cases
-        const errorMessage = response.error || 'Failed to fetch audits';
+        const errorMessage = auditResponse.error || 'Failed to fetch audits';
         if (errorMessage.includes('token') || errorMessage.includes('auth')) {
           throw new Error('Authentication failed. Please log in again.');
         }
@@ -197,10 +225,17 @@ export default function AuditUniversePage() {
     }
   };
 
-  const handleAuditClick = (audit: Audit) => {
+  const handleAuditClick = async (audit: Audit) => {
+    console.log('🚀 handleAuditClick called with audit:', audit);
+    console.log('🚀 Audit ID:', audit.id);
+    console.log('🚀 Selection mode:', isSelectionMode);
+    console.log('🚀 Audit already has findings:', audit.findings?.length || 0);
+    
     if (isSelectionMode) {
       handleMultipleSelect(audit.id);
     } else {
+      // Use the audit data that already has findings matched from fetchAudits
+      console.log('🔍 DEBUG - Using audit with pre-loaded findings:', audit.findings);
       setSelectedAudit(audit);
       setShowDetailModal(true);
     }
@@ -327,16 +362,41 @@ export default function AuditUniversePage() {
     
     if (confirmDelete) {
       try {
-        const response = await auditApiService.deleteMultipleAudits(selectedAudits, token ?? '');
+        // Delete audits one by one since bulk delete endpoint doesn't exist
+        let successCount = 0;
+        let failedCount = 0;
+        const errors: string[] = [];
         
-        if (response.success) {
-          toast.success(`Successfully deleted ${selectedAudits.length} audit(s)`);
-          setSelectedAudits([]);
-          setIsSelectionMode(false);
-          await fetchAudits(); // Refresh the list
-        } else {
-          throw new Error(response.error || 'Failed to delete audits');
+        for (const auditId of selectedAudits) {
+          try {
+            const response = await auditApiService.deleteAudit(auditId, token ?? '');
+            if (response.success) {
+              successCount++;
+            } else {
+              failedCount++;
+              errors.push(`Failed to delete audit ${auditId}: ${response.error}`);
+            }
+          } catch (error) {
+            failedCount++;
+            errors.push(`Failed to delete audit ${auditId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
+        
+        // Show results
+        if (successCount > 0) {
+          toast.success(`Successfully deleted ${successCount} audit(s)`);
+        }
+        
+        if (failedCount > 0) {
+          console.error('Delete errors:', errors);
+          toast.error(`Failed to delete ${failedCount} audit(s). Check console for details.`);
+        }
+        
+        // Reset selection and refresh list
+        setSelectedAudits([]);
+        setIsSelectionMode(false);
+        await fetchAudits(); // Refresh the list
+        
       } catch (error) {
         console.error('Delete error:', error);
         toast.error(error instanceof Error ? error.message : "Failed to delete audits. Please try again.");
