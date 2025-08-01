@@ -637,52 +637,6 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                 />
               </div>
 
-              {/* Audit Files */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
-                  Audit Files
-                </h3>
-                {audit.files && audit.files.length > 0 ? (
-                  <div className="space-y-2">
-                    {audit.files.map((file, index) => (
-                      <div 
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                            <FaFileAlt className="text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {file.original_name || file.filename || `File ${index + 1}`}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {file.file_size ? `${Math.round(file.file_size / 1024)} KB` : 'Unknown size'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {file.id && (
-                            <button
-                              onClick={() => handleDownloadFile(file)}
-                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"
-                            >
-                              Download
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <FaFileAlt className="mx-auto text-4xl mb-2 opacity-50" />
-                    <p>No files attached to this audit</p>
-                  </div>
-                )}
-              </div>
-
               {/* Audit Trail */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Audit Trail</h3>

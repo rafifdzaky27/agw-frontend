@@ -113,73 +113,58 @@ export class AuditApi {
   }
 
   /**
-   * Create a new audit - SIMPLEST APPROACH WITH REAL FILE STORAGE
+   * Create a new audit with file uploads using FormData
    */
   async createAudit(auditData: CreateAuditRequest, token?: string): Promise<ApiResponse<Audit>> {
     try {
-      console.log('🔍 SIMPLE - createAudit called with data:', auditData);
+      console.log('🔍 FIXED - createAudit called with data:', auditData);
       
-      // Step 1: Create audit with JSON
-      const auditPayload = {
-        name: auditData.name,
-        category: auditData.category,
-        auditor: auditData.auditor,
-        date: auditData.date,
-        scope: auditData.scope,
-      };
+      // Create FormData for multipart/form-data request
+      const formData = new FormData();
+      
+      // Add audit fields
+      formData.append('name', auditData.name);
+      formData.append('category', auditData.category);
+      formData.append('auditor', auditData.auditor);
+      formData.append('date', auditData.date);
+      formData.append('scope', auditData.scope);
+      
+      // Add files if provided
+      if (auditData.files && auditData.files.length > 0) {
+        console.log('🔍 FIXED - Adding files to FormData:', auditData.files.length);
+        auditData.files.forEach((file, index) => {
+          formData.append('files', file);
+          console.log(`🔍 FIXED - Added file ${index + 1}:`, file.name, file.size, 'bytes');
+        });
+      }
 
-      console.log('🔍 SIMPLE - Creating audit with JSON payload:', auditPayload);
+      // Get auth token
+      const authToken = token || localStorage.getItem('token');
+      
+      // Create headers WITHOUT Content-Type (let browser set it for FormData)
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      console.log('🔍 FIXED - Sending FormData request to:', `${API_BASE_URL}/api/audit/audits`);
 
       const response = await fetch(`${API_BASE_URL}/api/audit/audits`, {
         method: 'POST',
-        headers: this.getAuthHeaders(token),
-        body: JSON.stringify(auditPayload),
+        headers: headers, // No Content-Type header for FormData
+        body: formData,
       });
 
-      console.log('🔍 SIMPLE - Response status:', response.status);
+      console.log('🔍 FIXED - Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🔍 SIMPLE - Error response:', errorText);
+        console.error('🔍 FIXED - Error response:', errorText);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
-      console.log('🔍 SIMPLE - Success result:', result);
-      
-      // Step 2: If files were provided, attach them using simple metadata approach
-      if (auditData.files && auditData.files.length > 0) {
-        console.log('🔍 SIMPLE - Attaching files to audit:', result.id);
-        
-        const fileMetadata = auditData.files.map((file, index) => ({
-          filename: `file-${Date.now()}-${index}.${file.name.split('.').pop()}`,
-          original_name: file.name,
-          file_size: file.size,
-          file_type: file.type
-        }));
-        
-        console.log('🔍 SIMPLE - File metadata:', fileMetadata);
-        
-        try {
-          const attachResponse = await fetch(`${API_BASE_URL}/api/audit/audits/attach-files/${result.id}`, {
-            method: 'POST',
-            headers: this.getAuthHeaders(token),
-            body: JSON.stringify({ files: fileMetadata }),
-          });
-          
-          if (attachResponse.ok) {
-            const updatedAudit = await attachResponse.json();
-            console.log('🔍 SIMPLE - Files attached successfully:', updatedAudit);
-            return { success: true, data: updatedAudit };
-          } else {
-            console.warn('🔍 SIMPLE - File attachment failed, but audit was created');
-            return { success: true, data: result };
-          }
-        } catch (fileError) {
-          console.warn('🔍 SIMPLE - File attachment error:', fileError);
-          return { success: true, data: result };
-        }
-      }
+      console.log('🔍 FIXED - Success result:', result);
       
       return { success: true, data: result };
     } catch (error) {

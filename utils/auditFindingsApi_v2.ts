@@ -1,4 +1,4 @@
-// API service for audit findings management (following policy management pattern)
+// API service for audit findings management with proper file upload support
 const API_BASE_URL = process.env.NEXT_PUBLIC_AUDIT_SERVICE_URL || 'http://localhost:5010';
 
 // Types
@@ -98,12 +98,10 @@ class AuditFindingsApiService {
     // Handle different response formats
     if (data.success !== undefined) {
       return data;
-    } else {
-      return {
-        success: true,
-        data: data
-      };
     }
+    
+    // If no success field, assume success
+    return { success: true, data };
   }
 
   /**
@@ -116,17 +114,7 @@ class AuditFindingsApiService {
         headers: this.getAuthHeaders(token),
       });
 
-      const result = await this.handleResponse<AuditFinding[]>(response);
-      
-      // Ensure all findings have files array
-      if (result.success && result.data) {
-        result.data = result.data.map(finding => ({
-          ...finding,
-          files: finding.files || []
-        }));
-      }
-      
-      return result;
+      return await this.handleResponse<AuditFinding[]>(response);
     } catch (error) {
       console.error('Error fetching audit findings:', error);
       return {
@@ -157,59 +145,64 @@ class AuditFindingsApiService {
   }
 
   /**
-   * Create a new audit finding (following policy management pattern)
+   * Create a new audit finding with file uploads using FormData
    */
   async createFinding(findingData: CreateAuditFindingRequest, token?: string): Promise<ApiResponse<AuditFinding>> {
     try {
-      // Step 1: Create finding without files (like policy management)
-      const jsonData = {
-        name: findingData.name,
-        audit_id: findingData.audit_id,
-        root_cause: findingData.root_cause,
-        recommendation: findingData.recommendation,
-        commitment: findingData.commitment,
-        commitment_date: findingData.commitment_date,
-        person_in_charge: findingData.person_in_charge,
-        status: findingData.status || 'not started',
-        progress_pemenuhan: findingData.progress_pemenuhan || ''
-      };
+      console.log('🔍 FIXED FINDINGS - createFinding called with data:', findingData);
+      
+      // Create FormData for multipart/form-data request
+      const formData = new FormData();
+      
+      // Add finding fields
+      formData.append('name', findingData.name);
+      formData.append('audit_id', findingData.audit_id);
+      formData.append('root_cause', findingData.root_cause);
+      formData.append('recommendation', findingData.recommendation);
+      formData.append('commitment', findingData.commitment);
+      formData.append('commitment_date', findingData.commitment_date);
+      formData.append('person_in_charge', findingData.person_in_charge);
+      formData.append('status', findingData.status || 'not started');
+      formData.append('progress_pemenuhan', findingData.progress_pemenuhan || '');
+      
+      // Add files if provided
+      if (findingData.files && findingData.files.length > 0) {
+        console.log('🔍 FIXED FINDINGS - Adding files to FormData:', findingData.files.length);
+        findingData.files.forEach((file, index) => {
+          formData.append('files', file);
+          console.log(`🔍 FIXED FINDINGS - Added file ${index + 1}:`, file.name, file.size, 'bytes');
+        });
+      }
+
+      // Get auth token
+      const authToken = token || localStorage.getItem('token');
+      
+      // Create headers WITHOUT Content-Type (let browser set it for FormData)
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      console.log('🔍 FIXED FINDINGS - Sending FormData request to:', `${API_BASE_URL}/api/audit/findings`);
 
       const response = await fetch(`${API_BASE_URL}/api/audit/findings`, {
         method: 'POST',
-        headers: this.getAuthHeaders(token),
-        body: JSON.stringify(jsonData),
+        headers: headers, // No Content-Type header for FormData
+        body: formData,
       });
 
-      const result = await this.handleResponse<AuditFinding>(response);
+      console.log('🔍 FIXED FINDINGS - Response status:', response.status);
       
-      // Step 2: If finding created successfully and files provided, upload files
-      if (result.success && result.data && findingData.files && findingData.files.length > 0) {
-        try {
-          const uploadResult = await this.uploadFindingFiles(result.data.id.toString(), findingData.files, token);
-          if (uploadResult.success && uploadResult.data) {
-            // Add uploaded files to the finding data
-            result.data.files = uploadResult.data;
-            console.log(`Finding created and ${uploadResult.data.length} file(s) processed successfully`);
-          }
-        } catch (fileError) {
-          console.warn('Finding created but file upload failed:', fileError);
-          // Still show the files in UI even if upload failed
-          if (findingData.files) {
-            result.data.files = findingData.files.map(file => ({
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              uploadedAt: new Date().toISOString()
-            }));
-          }
-        }
-      } else if (result.success && result.data) {
-        // Ensure files array exists
-        result.data.files = [];
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔍 FIXED FINDINGS - Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
-      return result;
+      const result = await response.json();
+      console.log('🔍 FIXED FINDINGS - Success result:', result);
+      
+      return { success: true, data: result };
     } catch (error) {
       console.error('Error creating audit finding:', error);
       return {
@@ -220,62 +213,64 @@ class AuditFindingsApiService {
   }
 
   /**
-   * Update an existing audit finding (following policy management pattern)
+   * Update an existing audit finding with file uploads using FormData
    */
   async updateFinding(id: string, findingData: UpdateAuditFindingRequest, token?: string): Promise<ApiResponse<AuditFinding>> {
     try {
-      // Step 1: Update finding without files
-      const jsonData = {
-        name: findingData.name,
-        audit_id: findingData.audit_id,
-        root_cause: findingData.root_cause,
-        recommendation: findingData.recommendation,
-        commitment: findingData.commitment,
-        commitment_date: findingData.commitment_date,
-        person_in_charge: findingData.person_in_charge,
-        status: findingData.status,
-        progress_pemenuhan: findingData.progress_pemenuhan
-      };
+      console.log('🔍 FIXED FINDINGS - updateFinding called with data:', findingData);
+      
+      // Create FormData for multipart/form-data request
+      const formData = new FormData();
+      
+      // Add finding fields
+      formData.append('name', findingData.name);
+      formData.append('audit_id', findingData.audit_id);
+      formData.append('root_cause', findingData.root_cause);
+      formData.append('recommendation', findingData.recommendation);
+      formData.append('commitment', findingData.commitment);
+      formData.append('commitment_date', findingData.commitment_date);
+      formData.append('person_in_charge', findingData.person_in_charge);
+      formData.append('status', findingData.status);
+      formData.append('progress_pemenuhan', findingData.progress_pemenuhan);
+      
+      // Add files if provided
+      if (findingData.files && findingData.files.length > 0) {
+        console.log('🔍 FIXED FINDINGS - Adding files to FormData:', findingData.files.length);
+        findingData.files.forEach((file, index) => {
+          formData.append('files', file);
+          console.log(`🔍 FIXED FINDINGS - Added file ${index + 1}:`, file.name, file.size, 'bytes');
+        });
+      }
+
+      // Get auth token
+      const authToken = token || localStorage.getItem('token');
+      
+      // Create headers WITHOUT Content-Type (let browser set it for FormData)
+      const headers: HeadersInit = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      console.log('🔍 FIXED FINDINGS - Sending FormData request to:', `${API_BASE_URL}/api/audit/findings/${id}`);
 
       const response = await fetch(`${API_BASE_URL}/api/audit/findings/${id}`, {
         method: 'PUT',
-        headers: this.getAuthHeaders(token),
-        body: JSON.stringify(jsonData),
+        headers: headers, // No Content-Type header for FormData
+        body: formData,
       });
 
-      const result = await this.handleResponse<AuditFinding>(response);
+      console.log('🔍 FIXED FINDINGS - Response status:', response.status);
       
-      // Step 2: If finding updated successfully and new files provided, upload files
-      if (result.success && findingData.files && findingData.files.length > 0) {
-        try {
-          const uploadResult = await this.uploadFindingFiles(id, findingData.files, token);
-          if (uploadResult.success && uploadResult.data && result.data) {
-            // Add new files to existing files
-            const existingFiles = result.data.files || [];
-            result.data.files = [...existingFiles, ...uploadResult.data];
-            console.log(`Finding updated and ${uploadResult.data.length} file(s) processed successfully`);
-          }
-        } catch (fileError) {
-          console.warn('Finding updated but file upload failed:', fileError);
-          // Still show the files in UI even if upload failed
-          if (findingData.files && result.data) {
-            const existingFiles = result.data.files || [];
-            const newFiles = findingData.files.map(file => ({
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              uploadedAt: new Date().toISOString()
-            }));
-            result.data.files = [...existingFiles, ...newFiles];
-          }
-        }
-      } else if (result.success && result.data && !result.data.files) {
-        // Ensure files array exists
-        result.data.files = [];
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔍 FIXED FINDINGS - Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
-      return result;
+      const result = await response.json();
+      console.log('🔍 FIXED FINDINGS - Success result:', result);
+      
+      return { success: true, data: result };
     } catch (error) {
       console.error('Error updating audit finding:', error);
       return {
@@ -286,76 +281,36 @@ class AuditFindingsApiService {
   }
 
   /**
-   * Upload files to an existing audit finding (with fallback)
+   * Upload files to an existing finding
    */
   async uploadFindingFiles(findingId: string, files: File[], token?: string): Promise<ApiResponse<AuditFindingFile[]>> {
     try {
       const uploadedFiles: AuditFindingFile[] = [];
       
-      // Try to upload files one by one
       for (const file of files) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
+        const formData = new FormData();
+        formData.append('files', file);
 
-          const response = await fetch(`${API_BASE_URL}/api/audit/findings/${findingId}/upload`, {
-            method: 'POST',
-            headers: this.getFileUploadHeaders(token),
-            body: formData,
-          });
+        const response = await fetch(`${API_BASE_URL}/api/audit/findings/${findingId}/files`, {
+          method: 'POST',
+          headers: this.getFileUploadHeaders(token),
+          body: formData,
+        });
 
-          if (response.ok) {
-            const fileResult = await response.json();
-            uploadedFiles.push({
-              id: fileResult.data?.id || Date.now().toString(),
-              name: fileResult.data?.name || file.name,
-              size: fileResult.data?.size || file.size,
-              type: fileResult.data?.type || file.type,
-              uploadedAt: fileResult.data?.uploadedAt || new Date().toISOString()
-            });
-          } else {
-            // If upload endpoint doesn't exist, create mock file info
-            console.warn(`Upload endpoint not available, creating mock file info for: ${file.name}`);
-            uploadedFiles.push({
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              name: file.name,
-              size: file.size,
-              type: file.type,
-              uploadedAt: new Date().toISOString()
-            });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.files) {
+            uploadedFiles.push(...result.files);
           }
-        } catch (fileError) {
-          console.warn(`Failed to upload file: ${file.name}`, fileError);
-          // Create mock file info as fallback
-          uploadedFiles.push({
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString()
-          });
         }
       }
-
-      return {
-        success: true,
-        data: uploadedFiles
-      };
+      
+      return { success: true, data: uploadedFiles };
     } catch (error) {
       console.error('Error uploading files:', error);
-      
-      // Return mock file info as complete fallback
-      const mockFiles: AuditFindingFile[] = files.map(file => ({
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadedAt: new Date().toISOString()
-      }));
-      
       return {
-        success: true,
-        data: mockFiles
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to upload files'
       };
     }
   }
@@ -370,7 +325,11 @@ class AuditFindingsApiService {
         headers: this.getAuthHeaders(token),
       });
 
-      return await this.handleResponse<void>(response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return { success: true };
     } catch (error) {
       console.error('Error deleting audit finding:', error);
       return {
@@ -431,13 +390,12 @@ class AuditFindingsApiService {
       });
 
       if (!response.ok) {
-        console.warn('File download not supported by backend yet');
-        return null;
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       return await response.blob();
     } catch (error) {
-      console.error('Error downloading file:', error);
+      console.error('Error downloading finding file:', error);
       return null;
     }
   }
@@ -452,12 +410,16 @@ class AuditFindingsApiService {
         headers: this.getAuthHeaders(token),
       });
 
-      return await this.handleResponse<void>(response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return { success: true };
     } catch (error) {
-      console.error('Error deleting file:', error);
+      console.error('Error deleting finding file:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete file'
+        error: error instanceof Error ? error.message : 'Failed to delete finding file'
       };
     }
   }
