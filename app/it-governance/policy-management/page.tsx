@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/Sidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { policyApiService, PolicyApiResponse, CreatePolicyRequest, UpdatePolicyRequest, ApiResponse } from "@/utils/policyApi";
+import { getValidToken } from "@/utils/tokenUtils";
 import toast from "react-hot-toast";
 import AddPolicyModal from "./components/AddPolicyModal";
 import { FaSearch, FaFileExcel, FaTimes, FaCheck, FaEdit, FaSave, FaFile, FaDownload, FaUpload, FaTrash } from "react-icons/fa";
@@ -60,7 +61,18 @@ export default function PolicyManagement() {
   const fetchPolicies = useCallback(async () => {
     try {
       setLoading(true);
-      const response: ApiResponse<PolicyApiResponse[]> = await apiService.getAllPolicies(token!);
+      
+      // Check if token is still valid before making API call
+      const validToken = getValidToken();
+      if (!validToken) {
+        toast.error('Session expired. Please login again.');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+        return;
+      }
+      
+      const response: ApiResponse<PolicyApiResponse[]> = await apiService.getAllPolicies(validToken);
       
       if (response.success && response.data) {
         // Convert API response to frontend Policy interface
@@ -85,12 +97,22 @@ export default function PolicyManagement() {
     } catch (error) {
       console.error('Error fetching policies:', error);
       
-      if (error instanceof Error && error.message.includes('Cannot connect to Policy Management server')) {
-        toast.error('Policy Management backend is not available. Please start the backend server on port 5003.');
-        // Set empty policies array so UI doesn't break
-        setPolicies([]);
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid token')) {
+          toast.error('Session expired. Please login again.');
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 2000);
+        } else if (error.message.includes('Cannot connect to Policy Management server')) {
+          toast.error('❌ Cannot connect to Policy Management API server on port 5010. Please ensure the backend is running and accessible.');
+          // Set empty policies array so UI doesn't break
+          setPolicies([]);
+        } else {
+          toast.error('Failed to load policies: ' + error.message);
+        }
       } else {
-        toast.error('Failed to load policies: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        toast.error('Failed to load policies: Unknown error');
       }
     } finally {
       setLoading(false);
@@ -101,15 +123,15 @@ export default function PolicyManagement() {
     if (token) {
       console.log('=== Policy Management Debug Info ===');
       console.log('Token available:', !!token);
-      console.log('API Base URL:', process.env.NEXT_PUBLIC_POLICY_API_BASE_URL || 'http://localhost:5003');
+      console.log('API Base URL:', process.env.NEXT_PUBLIC_POLICY_API_BASE_URL || 'http://localhost:5010');
       
       // Test API connection first
       apiService.testConnection().then(isConnected => {
         console.log('Policy API Connection Test Result:', isConnected ? 'SUCCESS' : 'FAILED');
         if (!isConnected) {
-          toast.error('❌ Cannot connect to Policy Management API server on port 5003. Please ensure the backend is running and accessible.');
+          toast.error('❌ Cannot connect to Policy Management API server on port 5010. Please ensure the backend is running and accessible.');
           console.log('Backend Requirements:');
-          console.log('1. Policy Management backend should be running on port 5003');
+          console.log('1. Policy Management backend should be running on port 5010 (ITG service)');
           console.log('2. CORS should be configured to allow requests from frontend');
           console.log('3. API endpoint /api/policies should be available');
         }

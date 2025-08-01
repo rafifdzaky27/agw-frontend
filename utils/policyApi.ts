@@ -1,7 +1,7 @@
+import { getValidToken, clearAuthData } from './tokenUtils';
+
 // API service for policy management
 const API_BASE_URL = process.env.NEXT_PUBLIC_POLICY_API_BASE_URL || 'http://localhost:5010';
-
-console.log('Policy API Base URL:', API_BASE_URL);
 
 console.log('Policy API Base URL:', API_BASE_URL);
 
@@ -44,7 +44,7 @@ export interface ApiResponse<T> {
 
 class PolicyApiService {
   private getAuthHeaders(token?: string): HeadersInit {
-    const authToken = token || localStorage.getItem('token');
+    const authToken = token || getValidToken();
     return {
       'Content-Type': 'application/json',
       'Authorization': authToken ? `Bearer ${authToken}` : '',
@@ -52,7 +52,7 @@ class PolicyApiService {
   }
 
   private getFileUploadHeaders(token?: string): HeadersInit {
-    const authToken = token || localStorage.getItem('token');
+    const authToken = token || getValidToken();
     return {
       'Authorization': authToken ? `Bearer ${authToken}` : '',
     };
@@ -62,6 +62,16 @@ class PolicyApiService {
     console.log('API Response Status:', response.status);
     console.log('API Response URL:', response.url);
     
+    // Handle token validation errors
+    if (response.status === 401) {
+      const errorText = await response.text();
+      if (errorText.includes('Invalid token') || errorText.includes('Unauthorized')) {
+        // Clear invalid token from localStorage
+        clearAuthData();
+        throw new Error('Invalid token. Please login again.');
+      }
+    }
+    
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -69,7 +79,7 @@ class PolicyApiService {
       console.error('Non-JSON response received:', textResponse);
       
       if (response.status === 404) {
-        throw new Error('Policy API endpoint not found. Please check if the backend server is running on port 5003.');
+        throw new Error('Policy API endpoint not found. Please check if the backend server is running on port 5010.');
       }
       
       throw new Error(`Server returned non-JSON response. Status: ${response.status}. Please check backend server.`);
@@ -79,6 +89,12 @@ class PolicyApiService {
     console.log('API Response Data:', data);
     
     if (!response.ok) {
+      // Handle specific error cases
+      if (response.status === 401 && (data.error === 'Invalid token' || data.message === 'Invalid token')) {
+        clearAuthData();
+        throw new Error('Invalid token. Please login again.');
+      }
+      
       throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
     }
     
@@ -90,12 +106,12 @@ class PolicyApiService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      console.log('Testing connection to Policy API:', `${API_BASE_URL}/api/test`);
+      console.log('Testing connection to Policy API:', `${API_BASE_URL}/api/policies`);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${API_BASE_URL}/api/test`, {
+      const response = await fetch(`${API_BASE_URL}/api/policies`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -108,40 +124,10 @@ class PolicyApiService {
       clearTimeout(timeoutId);
       console.log('Connection test response:', response.status, response.statusText);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Test endpoint response:', data);
-        return true;
-      }
-      
-      // If test endpoint fails, try the main endpoint
-      console.log('Test endpoint failed, trying main endpoint...');
-      const mainResponse = await fetch(`${API_BASE_URL}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-        mode: 'cors',
-        credentials: 'omit',
-      });
-      
-      console.log('Main endpoint response:', mainResponse.status, mainResponse.statusText);
-      
-      // Consider 200, 401, 403 as "server is running"
-      return mainResponse.ok || mainResponse.status === 401 || mainResponse.status === 403;
+      // 401 means server is running but needs auth - that's good
+      return response.status === 401 || response.ok;
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.error('Connection test timed out after 10 seconds');
-        } else if (error.message === 'Failed to fetch') {
-          console.error('Failed to connect to Policy API server - check if backend is running and CORS is configured');
-          console.error('Expected backend URL:', API_BASE_URL);
-          console.error('Make sure the backend is running on port 5003');
-        } else {
-          console.error('Connection test failed:', error.message);
-        }
-      }
+      console.error('Connection test failed:', error);
       return false;
     }
   }
@@ -176,7 +162,7 @@ class PolicyApiService {
       console.error('Error fetching policies:', error);
       
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error('Cannot connect to Policy Management server. Please check if the backend is running on port 5003 and CORS is configured properly.');
+        throw new Error('Cannot connect to Policy Management server. Please check if the backend is running on port 5010 and CORS is configured properly.');
       }
       
       throw error;

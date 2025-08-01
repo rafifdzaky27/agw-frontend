@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { getValidToken, clearAuthData } from "@/utils/tokenUtils";
 
 interface User {
   id: number;
@@ -28,11 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
-      const storedToken = localStorage.getItem("token");
+      const validToken = getValidToken();
 
-      if (storedUser && storedToken) {
+      if (storedUser && validToken) {
         setUser(JSON.parse(storedUser));
-        setToken(storedToken);
+        setToken(validToken);
+      } else if (storedUser && !validToken) {
+        // Token expired, clear user data
+        clearAuthData();
       }
     }
     setLoading(false); // Mark loading as complete after retrieving data
@@ -51,11 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     setToken(null);
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-    }
+    clearAuthData();
   };
 
   return (
