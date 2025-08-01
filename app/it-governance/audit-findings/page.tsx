@@ -9,7 +9,7 @@ import { ConfirmationModal } from "@/components/ConfirmationModal";
 import FileUpload, { FileData } from "@/components/FileUpload";
 import { FaFileExcel, FaPlus,FaTrash, FaTimes, FaSave, FaSearch, FaClipboardList, FaFile, FaDownload, FaEdit } from "react-icons/fa";
 import toast from "react-hot-toast";
-import { auditFindingsApiService, AuditFinding, AuditFindingFile } from "@/utils/auditFindingsApi_v2";
+import { auditFindingsApiService, AuditFinding, AuditFindingFile } from "@/utils/auditFindingsApi";
 import { auditApiService } from "@/utils/auditApi"; // Add this import for fetching audits
 
 export default function AuditFindings() {
