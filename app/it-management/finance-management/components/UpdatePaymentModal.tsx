@@ -18,7 +18,7 @@ interface PaymentTerm {
 interface UpdatePaymentModalProps {
   term: PaymentTerm;
   projectType: 'internal development' | 'procurement' | 'non procurement';
-  onSave: (term: PaymentTerm) => void;
+  onSave: (term: PaymentTerm) => Promise<void>;
   onClose: () => void;
 }
 
@@ -93,7 +93,8 @@ export default function UpdatePaymentModal({ term, projectType, onSave, onClose 
         notes: formData.notes.trim()
       };
 
-      onSave(updatedTerm);
+      await onSave(updatedTerm);
+      onClose();
       // Remove duplicate toast - parent component will handle success notification
     } catch (error) {
       console.error("Error updating payment:", error);

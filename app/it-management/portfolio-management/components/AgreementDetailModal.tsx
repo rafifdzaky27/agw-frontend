@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaTimes, FaEdit, FaCalendarAlt, FaUser, FaBuilding, FaFileContract, FaMoneyBillWave, FaFile, FaDownload } from "react-icons/fa";
 
@@ -54,6 +54,39 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
     };
   }, []);
 
+  const [detailedAgreement, setDetailedAgreement] = useState<Agreement | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch detailed agreement data when modal opens
+  useEffect(() => {
+    const fetchDetailedData = async () => {
+      try {
+        setLoading(true);
+        
+        const { portfolioApi } = await import("../services/portfolioApi");
+        const response = await portfolioApi.getProjectById(agreement.id);
+        
+        if (response.success) {
+          setDetailedAgreement(response.data);
+        } else {
+          setDetailedAgreement(agreement); // Fallback to original data
+        }
+      } catch (error) {
+        console.error("Error fetching detailed data:", error);
+        setDetailedAgreement(agreement); // Fallback to original data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (agreement?.id) {
+      fetchDetailedData();
+    }
+  }, [agreement.id]);
+
+  // Use detailed agreement data if available, otherwise use original
+  const displayAgreement = detailedAgreement || agreement;
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -81,7 +114,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
   };
 
   const getTotalPayment = () => {
-    return agreement.terminPembayaran.reduce((total, term) => total + term.nominal, 0);
+    return displayAgreement?.terminPembayaran?.reduce((total, term) => total + (term.nominal || 0), 0) || 0;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -119,7 +152,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
 
   const getProjectStatus = () => {
     const today = new Date();
-    const endDate = new Date(agreement.tanggalBerakhir);
+    const endDate = new Date(displayAgreement.tanggalBerakhir);
     
     if (endDate < today) {
       return { status: 'Expired', color: 'text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400' };
@@ -129,6 +162,19 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
   };
 
   const projectStatus = getProjectStatus();
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading project details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -141,7 +187,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                 Agreement Details
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {agreement.kodeProject}
+                {displayAgreement.kodeProject}
               </p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${projectStatus.color}`}>
@@ -177,25 +223,25 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Project Name</label>
-                  <p className="text-gray-900 dark:text-white font-medium mt-1">{agreement.projectName}</p>
+                  <p className="text-gray-900 dark:text-white font-medium mt-1">{displayAgreement.projectName}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Project Code</label>
-                  <p className="text-gray-900 dark:text-white font-mono mt-1">{agreement.kodeProject}</p>
+                  <p className="text-gray-900 dark:text-white font-mono mt-1">{displayAgreement.kodeProject}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Project Type</label>
                   <p className="text-gray-900 dark:text-white mt-1">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      agreement.projectType === 'internal development' 
+                      displayAgreement.projectType === 'internal development' 
                         ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        : agreement.projectType === 'procurement'
+                        : displayAgreement.projectType === 'procurement'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
                     }`}>
-                      {agreement.projectType === 'internal development' 
+                      {displayAgreement.projectType === 'internal development' 
                         ? 'Internal Development' 
-                        : agreement.projectType === 'procurement'
+                        : displayAgreement.projectType === 'procurement'
                         ? 'Procurement'
                         : 'Non Procurement'
                       }
@@ -206,20 +252,20 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Initiating Division</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaBuilding className="text-blue-500 text-sm" />
-                    {agreement.divisiInisiasi}
+                    {displayAgreement.divisiInisiasi}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Involved Groups</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaUser className="text-green-500 text-sm" />
-                    {agreement.grupTerlibat}
+                    {displayAgreement.grupTerlibat}
                   </p>
                 </div>
-                {agreement.keterangan && (
+                {displayAgreement.keterangan && (
                   <div className="md:col-span-2">
                     <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</label>
-                    <p className="text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{agreement.keterangan}</p>
+                    <p className="text-gray-900 dark:text-white mt-1 whitespace-pre-wrap">{displayAgreement.keterangan}</p>
                   </div>
                 )}
               </div>
@@ -227,7 +273,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
           </div>
 
           {/* Vendor & Contract Information - For Procurement and Non Procurement */}
-          {(agreement.projectType === 'procurement' || agreement.projectType === 'non procurement') && (
+          {(displayAgreement.projectType === 'procurement' || displayAgreement.projectType === 'non procurement') && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <FaUser className="text-green-500" />
@@ -237,31 +283,31 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Vendor Name</label>
-                  <p className="text-gray-900 dark:text-white font-medium mt-1">{agreement.namaVendor}</p>
+                  <p className="text-gray-900 dark:text-white font-medium mt-1">{displayAgreement.namaVendor}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">PKS/PO Number</label>
-                  <p className="text-gray-900 dark:text-white font-mono mt-1">{agreement.noPKSPO}</p>
+                  <p className="text-gray-900 dark:text-white font-mono mt-1">{displayAgreement.noPKSPO}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">PKS/PO Date</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaCalendarAlt className="text-blue-500 text-sm" />
-                    {formatDate(agreement.tanggalPKSPO)}
+                    {formatDate(displayAgreement.tanggalPKSPO)}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Handover Date (BAPP)</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaCalendarAlt className="text-green-500 text-sm" />
-                    {formatDate(agreement.tanggalBAPP)}
+                    {formatDate(displayAgreement.tanggalBAPP)}
                   </p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">End Date</label>
                   <p className="text-gray-900 dark:text-white mt-1 flex items-center gap-2">
                     <FaCalendarAlt className="text-red-500 text-sm" />
-                    {formatDate(agreement.tanggalBerakhir)}
+                    {formatDate(displayAgreement.tanggalBerakhir)}
                   </p>
                 </div>
               </div>
@@ -275,13 +321,13 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
               <FaFile className="text-purple-500" />
               Documents
             </h3>
-            {(!agreement.files || agreement.files.length === 0) ? (
+            {(!displayAgreement.files || displayAgreement.files.length === 0) ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <p>No documents uploaded</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {(agreement.files || []).map((file) => (
+                {(displayAgreement.files || []).map((file) => (
                   <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                     <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
                       <FaFile className="text-blue-500 text-lg flex-shrink-0" />
@@ -312,19 +358,19 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
           </div>
 
           {/* Payment Terms - For Procurement and Non Procurement */}
-          {(agreement.projectType === 'procurement' || agreement.projectType === 'non procurement') && (
+          {(displayAgreement.projectType === 'procurement' || displayAgreement.projectType === 'non procurement') && (
             <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <FaMoneyBillWave className="text-yellow-500" />
               Payment Terms
             </h3>
-            {agreement.terminPembayaran.length === 0 ? (
+            {(!displayAgreement.terminPembayaran || displayAgreement.terminPembayaran.length === 0) ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <p>No payment terms defined</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {agreement.terminPembayaran.map((term, index) => (
+                {displayAgreement.terminPembayaran.map((term, index) => (
                   <div key={term.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border-l-4 border-blue-500">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -375,11 +421,11 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <label className="text-gray-500 dark:text-gray-400">Created At</label>
-                <p className="text-gray-900 dark:text-white">{formatDateTime(agreement.createdAt)}</p>
+                <p className="text-gray-900 dark:text-white">{formatDateTime(displayAgreement.createdAt)}</p>
               </div>
               <div>
                 <label className="text-gray-500 dark:text-gray-400">Last Updated</label>
-                <p className="text-gray-900 dark:text-white">{formatDateTime(agreement.updatedAt)}</p>
+                <p className="text-gray-900 dark:text-white">{formatDateTime(displayAgreement.updatedAt)}</p>
               </div>
             </div>
           </div>
