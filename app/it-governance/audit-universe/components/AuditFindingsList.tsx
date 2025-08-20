@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 // Define AuditFinding interface locally since it's not in auditApi
 interface AuditFinding {
   id: number;
@@ -61,6 +62,12 @@ const formatDate = (dateString: string) => {
 export default function AuditFindingsList({ 
   findings
 }: AuditFindingsListProps) {
+  const router = useRouter();
+  
+  const handleFindingClick = (findingId: number) => {
+    // Redirect to audit findings page with the specific finding ID
+    router.push(`/it-governance/audit-findings?findingId=${findingId}`);
+  };
   // Enhanced Debug logging
   console.log('🔍 DEBUG - AuditFindingsList received findings:', findings);
   console.log('🔍 DEBUG - AuditFindingsList findings type:', typeof findings);
@@ -90,62 +97,24 @@ export default function AuditFindingsList({
         </h3>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {findings.map((finding, index) => (
           <div
-            key={finding.id}
-            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+            key={`finding-${finding.id}-${index}`}
+            className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow duration-200 cursor-pointer hover:bg-gray-50"
+            onClick={() => handleFindingClick(finding.id)}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-start gap-3 flex-1">
-                <div className="flex-shrink-0 mt-1">
-                  {getStatusIcon(finding.status)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900 text-sm leading-tight">
-                      {index + 1}. {finding.name}
-                    </h4>
-                    <span className={getStatusBadge(finding.status)}>
-                      {finding.status === 'not started' ? 'Belum Dimulai' :
-                       finding.status === 'in progress' ? 'Sedang Berjalan' : 'Selesai'}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-gray-600 space-y-2">
-                    <div>
-                      <span className="font-medium text-gray-700">Root Cause:</span>
-                      <p className="mt-1 text-gray-600">{finding.root_cause}</p>
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium text-gray-700">Rekomendasi:</span>
-                      <p className="mt-1 text-gray-600">{finding.recommendation}</p>
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium text-gray-700">Komitmen:</span>
-                      <p className="mt-1 text-gray-600">{finding.commitment}</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900 text-sm flex-1">
+                {index + 1}. {finding.name}
+              </h4>
+              <div className="flex items-center gap-1 text-xs text-gray-500">
+                <FaClock />
+                <span>{formatDate(finding.commitment_date)}</span>
               </div>
             </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-4 text-xs text-gray-500">
-                <div className="flex items-center gap-1">
-                  <FaUser />
-                  <span>{finding.person_in_charge}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <FaClock />
-                  <span>Target: {formatDate(finding.commitment_date)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>Progress: {finding.progress_pemenuhan}</span>
-                </div>
-              </div>
+            <div className="text-xs text-gray-600 whitespace-pre-wrap ml-4">
+              {finding.progress_pemenuhan}
             </div>
           </div>
         ))}

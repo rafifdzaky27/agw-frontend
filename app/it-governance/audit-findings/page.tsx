@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -14,6 +15,7 @@ import { auditApiService } from "@/utils/auditApi"; // Add this import for fetch
 
 export default function AuditFindings() {
   const { user, token, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
   const [auditFindings, setAuditFindings] = useState<AuditFinding[]>([]);
   const [filteredFindings, setFilteredFindings] = useState<AuditFinding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,7 +179,7 @@ export default function AuditFindings() {
       const response = await auditFindingsApiService.createFinding(findingData, token);
       
       if (response.success && response.data) {
-        // Instead of just adding response.data, fetch all findings again to get complete data with audit info
+        // Just add the new finding to the list without refreshing audits
         await fetchAuditFindings();
         setShowCreateDialog(false);
         resetForm();
@@ -545,6 +547,18 @@ export default function AuditFindings() {
       fetchAudits(); // Also fetch audits for dropdown
     }
   }, [authLoading, token, fetchAuditFindings, fetchAudits]);
+
+  // Handle URL parameter for auto-opening finding detail
+  useEffect(() => {
+    const findingId = searchParams.get('findingId');
+    if (findingId && auditFindings.length > 0) {
+      const finding = auditFindings.find(f => f.id.toString() === findingId);
+      if (finding) {
+        setCurrentFinding(finding);
+        setShowDialog(true);
+      }
+    }
+  }, [searchParams, auditFindings]);
 
   // Handle delete confirmation
   const confirmDelete = (id: string) => {
@@ -963,12 +977,12 @@ export default function AuditFindings() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Progress Notes
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       name="progress_pemenuhan"
                       value={formData.progress_pemenuhan}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
                       placeholder="e.g., 50%, In progress, Almost done, etc."
                     />
                   </div>
@@ -1168,12 +1182,12 @@ export default function AuditFindings() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Progress Notes
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       name="progress_pemenuhan"
                       value={formData.progress_pemenuhan}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors"
+                      rows={3}
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors resize-none"
                       placeholder="e.g., 50%, In progress, Almost done, etc."
                     />
                   </div>
@@ -1483,7 +1497,7 @@ function FindingDetailModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Progress Notes</label>
-                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white">{finding.progress_pemenuhan || 'No progress notes'}</div>
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">{finding.progress_pemenuhan || 'No progress notes'}</div>
               </div>
             </div>
 
