@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
 import Sidebar from "@/components/Sidebar";
-import { FaDownload } from 'react-icons/fa';
+import { FaDownload, FaSave } from 'react-icons/fa';
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import BackButton from '@/components/BackButton';
@@ -200,25 +200,62 @@ export default function ChangeRequestForm() {
         <Sidebar />
         <div className="flex-1 md:ml-60 p-6">
           <BackButton />
-          <div className="flex items-center mb-6">
-            <h1 className="text-3xl font-bold text-center flex-grow text-black dark:text-white">Create Change Request</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Create Change Request
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Submit a new change request for IT infrastructure or software modifications
+              </p>
+            </div>
           </div>
 
           {loading && <div className="text-center text-blue-600 dark:text-gray-300 font-medium">Loading...</div>}
           {error && <div className="text-center text-red-600 dark:text-red-400 font-medium">{error}</div>}
 
           {(!loading && !error) && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Change Request</h2>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="submit"
+                      form="change-request-form"
+                      className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                      title="Save change request"
+                    >
+                      <FaSave className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/it-management/change-management')}
+                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <form id="change-request-form" onSubmit={handleSubmit}>
               <div className="flex flex-row gap-6">
                 {/* Column 1 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="name" className="block text-sm font-medium text-black dark:text-gray-300">Name:</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Request Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       id="name"
-                      placeholder="Request Name"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter request name"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
@@ -226,10 +263,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="group" className="block text-sm font-medium text-black dark:text-gray-300">Group:</label>
+                    <label htmlFor="group" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Group <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="group"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.group}
                       onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                       required
@@ -241,10 +280,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="division" className="block text-sm font-medium text-black dark:text-gray-300">Division:</label>
+                    <label htmlFor="division" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Division <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="division"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.division}
                       onChange={(e) => setFormData({ ...formData, division: e.target.value })}
                       required
@@ -256,11 +297,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="type" className="block text-sm font-medium text-black dark:text-gray-300">Request Type:</label>
+                    <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Request Type <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="type"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
-                      title="Request Type"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       required
@@ -271,11 +313,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="category" className="block text-sm font-medium text-black dark:text-gray-300">Request Category:</label>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Request Category <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="category"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
-                      title="Request Category"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       required
@@ -288,11 +331,12 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="urgency" className="block text-sm font-medium text-black dark:text-gray-300">Urgency:</label>
+                    <label htmlFor="urgency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Urgency <span className="text-red-500">*</span>
+                    </label>
                     <select
                       id="urgency"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
-                      title="Urgency"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.urgency}
                       onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
                       required
@@ -303,12 +347,13 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-black dark:text-gray-300">Requested Migration Date:</label>
+                    <label htmlFor="requested_migration_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Requested Migration Date <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="datetime-local"
                       id="requested_migration_date"
-                      title="Requested Migration Date"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.requested_migration_date}
                       onChange={(e) => setFormData({ ...formData, requested_migration_date: e.target.value })}
                       required
@@ -319,24 +364,28 @@ export default function ChangeRequestForm() {
                 {/* Column 2 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="project_code" className="block text-sm font-medium text-black dark:text-gray-300">Project Code:</label>
+                    <label htmlFor="project_code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Project Code
+                    </label>
                     <input
                       type="text"
                       id="project_code"
-                      placeholder="Project Code"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter project code"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.project_code}
                       onChange={(e) => setFormData({ ...formData, project_code: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="rfc_number" className="block text-sm font-medium text-black dark:text-gray-300">RFC Number:</label>
+                    <label htmlFor="rfc_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      RFC Number
+                    </label>
                     <input
                       type="text"
                       id="rfc_number"
-                      placeholder="RFC Number"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter RFC number"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.rfc_number}
                       onChange={(e) => setFormData({ ...formData, rfc_number: e.target.value })}
                     />
@@ -350,17 +399,30 @@ export default function ChangeRequestForm() {
 
                     return (
                       <div key={field} className="flex flex-col">
-                        <label htmlFor={field} className="block text-sm font-medium text-black dark:text-gray-300">
-                          {field.replace("_", " ").toUpperCase()}:
+                        <label htmlFor={field} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {field.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase())}{field === "compliance_checklist" ? " *" : ""}
                         </label>
-                        <div className="flex items-center">
+                        <div className="relative">
                           <label
                             htmlFor={field}
-                            className={`mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 cursor-pointer relative overflow-hidden ${hasValue ? 'w-4/5' : ''}`}
+                            className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent dark:bg-gray-700 cursor-pointer flex items-center justify-between"
                           >
-                            <span className={`block truncate ${!formData[typedField] ? 'text-gray-400 dark:text-gray-400' : 'text-black dark:text-white'}`}>
+                            <span className={`truncate ${!formData[typedField] ? 'text-gray-400 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
                               {truncatedFilename}
                             </span>
+                            {formData[typedField] && (
+                              <button
+                                type="button"
+                                title={`Download ${field.replace("_", " ")}`}
+                                className="ml-2 p-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDownloadFile(typedField);
+                                }}
+                              >
+                                <FaDownload className="w-4 h-4" />
+                              </button>
+                            )}
                             <input
                               type="file"
                               id={field}
@@ -369,16 +431,6 @@ export default function ChangeRequestForm() {
                               required={field === "compliance_checklist"}
                             />
                           </label>
-                          {formData[typedField] && (
-                            <button
-                              type="button"
-                              title={`Download ${field.replace("_", " ")}`}
-                              className="mt-1 ml-2 w-10 h-10 p-2 rounded bg-blue-100 hover:bg-blue-200 dark:bg-gray-700 dark:hover:bg-gray-600 flex items-center justify-center border-2 border-blue-300"
-                              onClick={() => handleDownloadFile(typedField)}
-                            >
-                              <FaDownload className="text-blue-600 dark:text-white" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     );
@@ -388,37 +440,43 @@ export default function ChangeRequestForm() {
                 {/* Column 3 */}
                 <div className="flex flex-col w-1/3 gap-6">
                   <div className="flex flex-col">
-                    <label htmlFor="pic" className="block text-sm font-medium text-black dark:text-gray-300">PIC:</label>
+                    <label htmlFor="pic" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      PIC (Person in Charge)
+                    </label>
                     <input
                       type="text"
                       id="pic"
-                      placeholder="PIC"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter person in charge"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.pic}
                       onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-black dark:text-gray-300">CAB Meeting Link:</label>
+                    <label htmlFor="cab_meeting_link" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      CAB Meeting Link
+                    </label>
                     <input
                       type="text"
                       id="cab_meeting_link"
-                      placeholder="CAB Meeting Link"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter CAB meeting link"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.cab_meeting_link}
                       onChange={(e) => setFormData({ ...formData, cab_meeting_link: e.target.value })}
                     />
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-black dark:text-gray-300">Downtime Risk:</label>
+                    <label htmlFor="downtime_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Downtime Risk <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="number"
                       id="downtime_risk"
                       min="0"
-                      placeholder="Downtime Risk"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter downtime risk"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.downtime_risk}
                       onChange={(e) => setFormData({ ...formData, downtime_risk: Number(e.target.value) })}
                       required
@@ -426,14 +484,16 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="integration_risk" className="block text-sm font-medium text-black dark:text-gray-300">Integration Risk (0-10):</label>
+                    <label htmlFor="integration_risk" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Integration Risk (0-10) <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="number"
                       id="integration_risk"
                       min="0"
                       max="10"
-                      placeholder="Integration Risk (0-10)"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter integration risk (0-10)"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.integration_risk}
                       onChange={(e) => setFormData({ ...formData, integration_risk: Number(e.target.value) })}
                       required
@@ -441,27 +501,30 @@ export default function ChangeRequestForm() {
                   </div>
 
                   <div className="flex flex-col">
-                    <label htmlFor="uat_result" className="block text-sm font-medium text-black dark:text-gray-300">UAT Score:</label>
+                    <label htmlFor="uat_result" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      UAT Score
+                    </label>
                     <select
                       id="uat_result"
-                      className="mt-1 block w-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
-                      title="uat_result"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                       value={formData.uat_result}
                       onChange={(e) => setFormData({ ...formData, uat_result: e.target.value })}
                     >
                       <option value="none">None</option>
                       <option value="done with notes">Done with Notes</option>
-                      <option value="well done">Welll Done</option>
+                      <option value="well done">Well Done</option>
                     </select>
                   </div>
 
                   {/* Description spans the remaining space */}
                   <div className="flex flex-col flex-grow">
-                    <label htmlFor="description" className="block text-sm font-medium text-black dark:text-gray-300">Description:</label>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
                     <textarea
                       id="description"
-                      placeholder="Description"
-                      className="mt-1 block w-full h-full p-2 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-black dark:text-white"
+                      placeholder="Enter request description"
+                      className="w-full h-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
@@ -469,10 +532,9 @@ export default function ChangeRequestForm() {
                 </div>
               </div>
 
-              <button type="submit" className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors font-medium">
-                Submit Request
-              </button>
-            </form>
+                </form>
+              </div>
+            </div>
           )}
 
           <ConfirmationModal

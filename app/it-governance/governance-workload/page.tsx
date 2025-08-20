@@ -199,7 +199,7 @@ export default function GovernanceTasks() {
         const processedData = data.map((task: any) => ({
           ...task,
           namaTugas: (task as any).nama_tugas || task.namaTugas, // Transform snake_case to camelCase
-          tags: task.tags || (task.tag ? [task.tag] : [])
+          tags: task.tags || (task.tag ? task.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
         }));
         
         // Sort by deadline
@@ -243,7 +243,7 @@ export default function GovernanceTasks() {
       const processedTask = {
         ...newTask,
         namaTugas: newTask.nama_tugas || newTask.namaTugas, // Transform snake_case to camelCase
-        tags: newTask.tags || (newTask.tag ? [newTask.tag] : [])
+        tags: newTask.tags || (newTask.tag ? newTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
@@ -291,7 +291,7 @@ export default function GovernanceTasks() {
       const processedTask = {
         ...updatedTask,
         namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas, // Transform snake_case to camelCase
-        tags: updatedTask.tags || (updatedTask.tag ? [updatedTask.tag] : [])
+        tags: updatedTask.tags || (updatedTask.tag ? updatedTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) =>
         prev.map((item) => (item.id === task.id ? processedTask : item))

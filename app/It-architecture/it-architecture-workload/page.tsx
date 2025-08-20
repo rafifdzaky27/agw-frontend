@@ -228,7 +228,7 @@ export default function ArchitectureTasks() {
         const processedData = data.map((task: any) => ({
           ...task,
           namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
-          tags: task.tags || []
+          tags: task.tags || (task.tag ? task.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
         }));
         
         // Sort by deadline
@@ -248,6 +248,14 @@ export default function ArchitectureTasks() {
   // Function to save new architecture task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
+      console.log('Sending task data:', {
+        nama_tugas: task.namaTugas,
+        catatan: task.catatan,
+        tanggal: task.tanggal,
+        pic: task.pic,
+        status: task.status,
+        tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
+      });
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`, {
         method: "POST",
         headers: { 
@@ -255,11 +263,12 @@ export default function ArchitectureTasks() {
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          nama_tugas: task.namaTugas,
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
-          status: task.status
+          status: task.status,
+          tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
         }),
       });
       
@@ -271,7 +280,8 @@ export default function ArchitectureTasks() {
       // Transform snake_case to camelCase
       const processedTask = {
         ...newTask,
-        namaTugas: newTask.nama_tugas || newTask.namaTugas
+        namaTugas: newTask.nama_tugas || newTask.namaTugas,
+        tags: newTask.tags || (newTask.tag ? newTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
@@ -296,11 +306,12 @@ export default function ArchitectureTasks() {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          nama_tugas: (task as any).namaTugas || task.nama_tugas,
+          nama_tugas: task.namaTugas,
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
-          status: task.status
+          status: task.status,
+          tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
         }),
       });
       
@@ -317,7 +328,8 @@ export default function ArchitectureTasks() {
       // Transform snake_case to camelCase
       const processedTask = {
         ...updatedTask,
-        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas
+        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas,
+        tags: updatedTask.tags || (updatedTask.tag ? updatedTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) => prev.map(t => t.id === task.id ? processedTask : t));
       setShowDialog(false);

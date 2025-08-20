@@ -194,7 +194,7 @@ export default function ManagementTasks() {
         const processedData = data.map((task: any) => ({
           ...task,
           namaTugas: task.nama_tugas || task.namaTugas, // Transform snake_case to camelCase
-          tags: task.tags || []
+          tags: task.tags || (task.tag ? task.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
         }));
         
         // Sort by deadline
@@ -211,7 +211,16 @@ export default function ManagementTasks() {
   }, [API_BASE_URL, authLoading, token]);
   // Function to save new management task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
+    console.log('handlePost called with task:', task);
     try {
+      console.log('Sending task data:', {
+        nama_tugas: task.namaTugas,
+        catatan: task.catatan,
+        tanggal: task.tanggal,
+        pic: task.pic,
+        status: task.status,
+        tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
+      });
       const response = await fetch(`${API_BASE_URL}/it-management-tasks`, {
         method: "POST",
         headers: { 
@@ -223,19 +232,24 @@ export default function ManagementTasks() {
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
-          status: task.status
+          status: task.status,
+          tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
         }),
       });
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Backend error:', response.status, errorText);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
       const newTask = await response.json();
+      console.log('Backend response:', newTask);
       // Transform snake_case to camelCase
       const processedTask = {
         ...newTask,
-        namaTugas: newTask.nama_tugas || newTask.namaTugas
+        namaTugas: newTask.nama_tugas || newTask.namaTugas,
+        tags: newTask.tags || (newTask.tag ? newTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) => [...prev, processedTask]);
       setShowCreateDialog(false);
@@ -264,7 +278,8 @@ export default function ManagementTasks() {
           catatan: task.catatan,
           tanggal: task.tanggal,
           pic: task.pic,
-          status: task.status
+          status: task.status,
+          tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
         }),
       });
       
@@ -281,7 +296,8 @@ export default function ManagementTasks() {
       // Transform snake_case to camelCase
       const processedTask = {
         ...updatedTask,
-        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas
+        namaTugas: updatedTask.nama_tugas || updatedTask.namaTugas,
+        tags: updatedTask.tags || (updatedTask.tag ? updatedTask.tag.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [])
       };
       setTasks((prev: Task[]) => prev.map(t => t.id === task.id ? processedTask : t));
       setShowDialog(false);
@@ -960,6 +976,7 @@ function TaskCreateDialog({ onClose, onSave }: TaskCreateDialogProps) {
 
   // Function to confirm save after modal confirmation
   const confirmSave = () => {
+    console.log('confirmSave called with formState:', formState);
     onSave(formState);
     setIsConfirmationOpen(false);
   };

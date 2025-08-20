@@ -12,7 +12,7 @@ interface MemoModalProps {
 export default function MemoModal({ onSave, onClose }: MemoModalProps) {
   const [formData, setFormData] = useState({
     jenis: "Memo" as "Memo" | "Surat",
-    tanggal: new Date().toISOString().split('T')[0],
+    // tanggal: new Date().toISOString().split('T')[0],
     kepada: "",
     cc: "",
     perihal: ""
@@ -32,10 +32,10 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
       toast.error("Jenis dokumen wajib dipilih");
       return false;
     }
-    if (!formData.tanggal) {
-      toast.error("Tanggal wajib diisi");
-      return false;
-    }
+    // if (!formData.tanggal) {
+    //   toast.error("Tanggal wajib diisi");
+    //   return false;
+    // }
     if (!formData.kepada.trim()) {
       toast.error("Kepada wajib diisi");
       return false;
@@ -156,7 +156,7 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
               </div>
             </div>
 
-            {/* Date */}
+            {/* Date 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tanggal *
@@ -173,6 +173,7 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
                 />
               </div>
             </div>
+            */}
 
             {/* Recipient */}
             <div>

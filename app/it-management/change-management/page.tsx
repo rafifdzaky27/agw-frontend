@@ -10,7 +10,7 @@ import { getStatusColor } from "@/utils/status";
 import Link from 'next/link';
 import * as XLSX from 'xlsx';  // npm install xlsx
 import { toast } from "react-hot-toast"; // Make sure you have react-hot-toast
-import { FaExclamationTriangle, FaFileExport, FaPlus, FaTimes, FaCalendarAlt, FaRocket, FaTag, FaLayerGroup, FaInfoCircle } from "react-icons/fa";
+import { FaExclamationTriangle, FaFileExport, FaPlus, FaTimes, FaCalendarAlt, FaRocket, FaTag, FaLayerGroup, FaInfoCircle, FaSearch, FaPaperPlane, FaDownload, FaSave } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
 interface ChangeRequest {
@@ -37,25 +37,7 @@ interface ChangeRequest {
     pic: string;
 }
 
-type StatusOption = { value: string; label: string };
 
-const statusOptions: StatusOption[] = [
-    { value: "draft", label: "Draft" },
-    { value: "waiting_approval", label: "Waiting Approval" },
-    { value: "waiting_finalization", label: "Waiting Finalization" },
-    { value: "waiting_ops_vdh_approval", label: "Waiting OPS VDH Approval" },
-    { value: "waiting_dev_vdh_approval", label: "Waiting DEV VDH Approval" },
-    { value: "waiting_migration", label: "Waiting Migration" },
-    { value: "success", label: "Success" },
-    { value: "failed", label: "Failed" },
-];
-
-type SortOption = { value: string; label: string };
-
-const sortOptions: SortOption[] = [
-    { value: "status", label: "Status" },
-    { value: "created_at", label: "Created At" },
-];
 
 // Type to hold both name and ID
 type RequesterInfo = {
@@ -75,95 +57,24 @@ interface User {
 export default function ChangeManagement() {
     const [allRequests, setAllRequests] = useState<ChangeRequest[]>([]);
     const [requests, setRequests] = useState<ChangeRequest[]>([]);
+    const [filteredRequests, setFilteredRequests] = useState<ChangeRequest[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [timeReference, setTimeReference] = useState<"CAB" | "Migration">("CAB");
-    const [startDate, setStartDate] = useState<string>("");
-    const [endDate, setEndDate] = useState<string>("");
-    const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]); // Use array of strings for status values
-    const [sortBy, setSortBy] = useState<string>("created_at");
-    const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [isExporting, setIsExporting] = useState<boolean>(false);
     const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
-    const [alertRequesters, setAlertRequesters] = useState<RequesterInfo[]>([]); // Store both name and ID
+    const [alertRequesters, setAlertRequesters] = useState<RequesterInfo[]>([]);
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState<boolean>(false);
     const [availableUsers, setAvailableUsers] = useState<User[]>([]);
-    const [alertSubject, setAlertSubject] = useState<string>(''); // State for subject
-    const [alertText, setAlertText] = useState<string>(''); // State for text
+    const [alertSubject, setAlertSubject] = useState<string>('');
+    const [alertText, setAlertText] = useState<string>('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+
     const router = useRouter();
 
     const { token, user } = useAuth();
 
-    useEffect(() => {
-        const replaceVariables = (template: string) => {
-            const currentDate = new Date().toLocaleDateString();
-            return template
-                .replace(/{{currentDate}}/g, currentDate)  // Global replacement for all occurrences
-                .replace(/{{currentUser}}/g, user?.name || "Admin")
-                ;
-          };
-        const loadAlertConfig = async () => {
-          if (!token || !user) return; // also check for user, since we use user variable
 
-          try {
-              const [subjectResponse, textResponse] = await Promise.all([
-                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_subject`, {
-                      method: "GET",
-                      headers: {
-                          Authorization: `Bearer ${token}`,
-                      },
-                  }),
-                  fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_text`, {
-                      method: "GET",
-                      headers: {
-                          Authorization: `Bearer ${token}`,
-                      },
-                  }),
-              ]);
-
-              // Don't throw error if config endpoints are not available, just log warnings
-              if (!subjectResponse.ok) {
-                  console.warn("Subject config endpoint not available:", subjectResponse.status);
-              }
-              if (!textResponse.ok) {
-                  console.warn("Text config endpoint not available:", textResponse.status);
-              }
-
-              const subjectData = await subjectResponse.json();
-              const textData = await textResponse.json();
-
-              let loadedSubject = "";
-              let loadedText = "";
-
-              if (subjectResponse.ok && subjectData.success && subjectData.data && subjectData.data.length > 0) {
-                  loadedSubject = subjectData.data[0].value;
-              } else {
-                  console.warn("blast_email_alert_subject not found, using default");
-                  loadedSubject = "Change Request Alert - {{currentDate}}"; // Default subject if not found
-              }
-
-              if (textResponse.ok && textData.success && textData.data && textData.data.length > 0) {
-                  loadedText = textData.data[0].value;
-              } else {
-                  console.warn("blast_email_alert_text not found, using default");
-                  loadedText = "Dear Team,\n\nThis is a blast alert regarding change requests.\n\nPlease review and take necessary action.\n\nBest regards,\n{{currentUser}}"; // Default text if not found
-              }
-
-              // Replace variables after loading
-              setAlertSubject(replaceVariables(loadedSubject ));
-              setAlertText(replaceVariables(loadedText));
-
-          } catch (error: unknown) {
-              console.error("Error loading alert configuration:", error);
-              if (error instanceof Error) {
-                  toast.error(`Error loading alert configuration: ${error.message}`);
-              } else {
-                  toast.error("Error loading alert configuration: Unknown error");
-              }
-          }
-      };
-
-        loadAlertConfig();
-    }, [token, user]); // Added user as a dependency
 
     useEffect(() => {
         async function fetchRequests() {
@@ -191,7 +102,8 @@ export default function ChangeManagement() {
                 }
 
                 setAllRequests(result.data);
-                setRequests(result.data); // Initialize requests with all data
+                setRequests(result.data);
+                setFilteredRequests(result.data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Unknown error");
             } finally {
@@ -202,70 +114,81 @@ export default function ChangeManagement() {
         fetchRequests();
     }, [token]);
 
+    // Search handler
+    const handleSearchChange = (value: string) => {
+        setSearchTerm(value);
+        if (value === '') {
+            setFilteredRequests(requests);
+        } else {
+            const filtered = requests.filter(request => 
+                request.name.toLowerCase().includes(value.toLowerCase()) ||
+                request.pic.toLowerCase().includes(value.toLowerCase()) ||
+                request.rfc_number.toLowerCase().includes(value.toLowerCase()) ||
+                request.project_code.toLowerCase().includes(value.toLowerCase()) ||
+                request.requester_name.toLowerCase().includes(value.toLowerCase())
+            );
+            setFilteredRequests(filtered);
+        }
+    };
+
     useEffect(() => {
-        const applyFilters = () => {
-            let filtered = [...allRequests];
+        setFilteredRequests(requests);
+    }, [requests]);
 
-            // Time Reference Filtering
-            if (timeReference === "CAB") {
-                filtered = filtered.filter(request => {
-                    const createdAt = new Date(request.created_at);
-                    const start = startDate ? new Date(startDate) : null;
-                    const end = endDate ? new Date(endDate) : null;
-
-                    if (start) {
-                        start.setHours(0, 0, 0, 0);
-                        if (createdAt < start) return false;
-                    }
-                    if (end) {
-                        end.setHours(23, 59, 59, 999);
-                        if (createdAt > end) return false;
-                    }
-                    return true;
-                });
-            } else if (timeReference === "Migration") {
-                filtered = filtered.filter(request => {
-                    if (request.status !== "success" && request.status !== "failed") return false;
-                    if (!request.finished_at) return false;
-
-                    const finishedAt = new Date(request.finished_at);
-                    const start = startDate ? new Date(startDate) : null;
-                    const end = endDate ? new Date(endDate) : null;
-
-                    if (start) {
-                        start.setHours(0, 0, 0, 0);
-                        if (finishedAt < start) return false;
-                    }
-                    if (end) {
-                        end.setHours(23, 59, 59, 999);
-                        if (finishedAt > end) return false;
-                    }
-
-                    return true;
-                });
-            }
-
-            // Status Filtering
-            if (selectedStatuses.length > 0) {
-                filtered = filtered.filter(request => selectedStatuses.includes(request.status));
-            }
-
-            // Sorting
-            if (sortBy === "status") {
-                filtered.sort((a, b) => a.status.localeCompare(b.status));
-            } else if (sortBy === "created_at") {
-                filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            }
-
-            setRequests(filtered);
+    useEffect(() => {
+        const replaceVariables = (template: string) => {
+            const currentDate = new Date().toLocaleDateString();
+            return template
+                .replace(/{{currentDate}}/g, currentDate)
+                .replace(/{{currentUser}}/g, user?.name || "Admin");
         };
-        // Apply filters whenever filter criteria change
-        applyFilters();
-    }, [timeReference, startDate, endDate, selectedStatuses, sortBy, allRequests]);
+        const loadAlertConfig = async () => {
+            if (!token || !user) return;
+
+            try {
+                const [subjectResponse, textResponse] = await Promise.all([
+                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_subject`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                    fetch(`${process.env.NEXT_PUBLIC_BACKEND_IP}/api/cab/config?key=blast_email_alert_text`, {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }),
+                ]);
+
+                const subjectData = subjectResponse.ok ? await subjectResponse.json() : null;
+                const textData = textResponse.ok ? await textResponse.json() : null;
+
+                let loadedSubject = "Change Request Alert - {{currentDate}}";
+                let loadedText = "Dear Team,\n\nThis is a blast alert regarding change requests.\n\nPlease review and take necessary action.\n\nBest regards,\n{{currentUser}}";
+
+                if (subjectData?.success && subjectData.data?.length > 0) {
+                    loadedSubject = subjectData.data[0].value;
+                }
+
+                if (textData?.success && textData.data?.length > 0) {
+                    loadedText = textData.data[0].value;
+                }
+
+                setAlertSubject(replaceVariables(loadedSubject));
+                setAlertText(replaceVariables(loadedText));
+
+            } catch (error) {
+                console.error("Error loading alert configuration:", error);
+            }
+        };
+
+        loadAlertConfig();
+    }, [token, user]);
 
     useEffect(() => {
         async function fetchUsers() {
-            if (!token) return;
+            if (!token || !isAddUserModalOpen) return;
 
             try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users`, {
@@ -276,129 +199,67 @@ export default function ChangeManagement() {
                     },
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    setAvailableUsers(result.data);
-                } else {
-                    console.error("Failed to fetch users:", result.error || result.message);
-                    toast.error("Failed to fetch users");
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        setAvailableUsers(result.data);
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching users:", err);
-                toast.error("Error fetching users");
             }
         }
 
-        if (isAddUserModalOpen) {
-            fetchUsers();
-        }
+        fetchUsers();
     }, [token, isAddUserModalOpen]);
 
-    const handleStatusChange = (statusValue: string) => {
-        setSelectedStatuses(prevStatuses => {
-            if (prevStatuses.includes(statusValue)) {
-                return prevStatuses.filter(s => s !== statusValue); // Unselect
-            } else {
-                return [...prevStatuses, statusValue]; // Select
-            }
-        });
-    };
 
-    const handleSelectAllStatuses = () => {
-        setSelectedStatuses(statusOptions.map(option => option.value));
-    };
-
-    const handleClearAllStatuses = () => {
-        setSelectedStatuses([]);
-    };
-
-    const formatUTCStringToInput = (utcString: string | null) => {
-        if (!utcString) return "N/A"; // Handle null case
-        const [datePart, timePart] = utcString.split('T');
-        const [time] = timePart.split('.'); // remove .000Z
-        const date_string = `${datePart}T${time}`;
-        return new Date(date_string).toLocaleString();
-    };
 
     const exportToExcel = () => {
-        const toastId = toast.loading("Exporting change requests...");
         try {
-            if (requests.length === 0) {
-                toast.error("No change requests to export based on current filter", { id: toastId, duration: 1500 });
+            setIsExporting(true);
+            if (filteredRequests.length === 0) {
+                toast.error("No change requests to export");
                 return;
             }
 
-            const dataForExcel = requests.map(request => ({
-                ID: request.id,
-                Name: request.name,
-                Migration: request.finished_at ? "Yes" : "No",
-                Type: request.type,
-                Category: request.category,
-                CAB_Meeting_Date: formatUTCStringToInput(request.cab_meeting_date),
-                Requested_Migration_Date: formatUTCStringToInput(request.requested_migration_date),
-                Project_Code: request.project_code,
-                RFC_Number: request.rfc_number,
-                Requester_Name: request.requester_name,
-                Approver_Name: request.approver_name,
-                Downtime: request.downtime_risk,
-                Time: "",
-                PIC: request.pic
+            const dataForExcel = filteredRequests.map(request => ({
+                'Request Name': request.name,
+                'RFC Number': request.rfc_number,
+                'Project Code': request.project_code,
+                'Type': request.type,
+                'Category': request.category,
+                'Urgency': request.urgency,
+                'PIC': request.pic,
+                'Status': request.status,
+                'Requester': request.requester_name,
+                'Created': new Date(request.created_at).toLocaleDateString()
             }));
 
-            const ws = XLSX.utils.json_to_sheet(dataForExcel);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Change Requests");
-            XLSX.writeFile(wb, "CAB_Report.xlsx");
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + Object.keys(dataForExcel[0] || {}).join(",") + "\n"
+                + dataForExcel.map(row => Object.values(row).map(val => `"${val}"`).join(",")).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `change_requests_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-            toast.success("Change requests exported successfully", { id: toastId, duration: 1500 });
-        } catch {
-            toast.error("Failed to export change requests", { id: toastId, duration: 1500 });
-        }
-    };
-
-    const sendAlertEmail = async (requesterIds: number[], subject: string | null, text: string | null) => {
-        try {
-            const body: { ids: number[]; subject?: string; text?: string } = {
-                ids: requesterIds
-            };
-
-            if (subject !== null && subject.trim() !== '') {
-                body.subject = subject;
-            }
-
-            if (text !== null && text.trim() !== '') {
-                body.text = text;
-            }
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users/email`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(body),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok || !result.success) {
-                console.error("Email error:", result);
-                throw new Error(result.error || result.message || "Failed to send alert emails.");
-            }
-            return true;
-        } catch (error: unknown) {
-            console.error("Error sending emails:", error);
-            throw error;
+            toast.success("Change requests exported successfully!");
+        } catch (error) {
+            console.error("Export failed:", error);
+            toast.error("Failed to export change requests");
+        } finally {
+            setIsExporting(false);
         }
     };
 
     const handleAlertClick = () => {
         const uniqueRequesters = [
-            ...new Map(requests.map((request) => [request.requester_id, { name: request.requester_name, id: request.requester_id }])).values(),
+            ...new Map(filteredRequests.map((request) => [request.requester_id, { name: request.requester_name, id: request.requester_id }])).values(),
         ];
         setAlertRequesters(uniqueRequesters);
         setIsAlertModalOpen(true);
@@ -428,9 +289,34 @@ export default function ChangeManagement() {
         const toastId = toast.loading("Sending alert emails...");
 
         try {
-            await sendAlertEmail(requesterIds, alertSubject, alertText);
-            toast.success("Alert emails sent successfully!", { id: toastId, duration: 5000 });
+            const body: { ids: number[]; subject?: string; text?: string } = {
+                ids: requesterIds
+            };
 
+            if (alertSubject.trim() !== '') {
+                body.subject = alertSubject;
+            }
+
+            if (alertText.trim() !== '') {
+                body.text = alertText;
+            }
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/users/email`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(body),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || result.message || "Failed to send alert emails.");
+            }
+            
+            toast.success("Alert emails sent successfully!", { id: toastId, duration: 5000 });
         } catch (error: unknown) {
             if (error instanceof Error) {
                 toast.error(`An error occurred while sending alerts: ${error.message}`, { id: toastId, duration: 5000 });
@@ -442,8 +328,7 @@ export default function ChangeManagement() {
         }
     };
 
-    const selectedStatusCount = selectedStatuses.length;
-    const statusText = selectedStatusCount === 0 ? "All Status" : `${selectedStatusCount} Selected`;
+
 
     return (
         <ProtectedRoute>
@@ -461,7 +346,7 @@ export default function ChangeManagement() {
                         </div>
                         <div className="text-right">
                             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                {allRequests.length}
+                                {filteredRequests.length}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                                 Total Requests
@@ -469,130 +354,40 @@ export default function ChangeManagement() {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
-                        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-stretch gap-4">
-                            <div className="flex flex-wrap items-end gap-2 sm:gap-4">
-                                <button
-                                    className="flex-1 sm:flex-none sm:w-36 h-[42px] px-4 bg-blue-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-blue-700 transition duration-200 font-medium"
-                                    onClick={() => router.push("/it-management/change-management/change-request-form")}
-                                >
-                                    <FaPlus className="text-sm" />
-                                    <span className="text-sm">Add Request</span>
-                                </button>
-                                <button className="flex-1 sm:flex-none sm:w-28 h-[42px] px-4 bg-green-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-green-700 transition duration-200 font-medium" onClick={exportToExcel}>
-                                    <FaFileExport className="text-sm" />
-                                    <span className="text-sm">Export</span>
-                                </button>
-                                <button className="flex-1 sm:flex-none sm:w-28 h-[42px] px-4 bg-yellow-500 text-white rounded flex items-center justify-center space-x-2 hover:bg-yellow-700 transition duration-200 font-medium" onClick={handleAlertClick}>
-                                    <FaExclamationTriangle className="text-sm" />
-                                    <span className="text-sm">Alert</span>
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:items-stretch gap-2 sm:gap-4">
-                                <div className="flex flex-col justify-start">
-                                    <label htmlFor="timeReference" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference:</label>
-                                    <select
-                                        id="timeReference"
-                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
-                                        value={timeReference}
-                                        onChange={(e) => setTimeReference(e.target.value as "CAB" | "Migration")}
-                                    >
-                                        <option value="CAB">CAB</option>
-                                        <option value="Migration">Migration</option>
-                                    </select>
-                                </div>
-
-                                <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date:</label>
-                                    <input
-                                        type="date"
-                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        placeholder="Select start date"
-                                        title="Select start date"
-                                    />
-                                </div>
-
-                                <div className="flex flex-col justify-start">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date:</label>
-                                    <input
-                                        type="date"
-                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        placeholder="Select end date"
-                                        title="Select end date"
-                                    />
-                                </div>
-
-                                <div className="flex flex-col justify-start relative">
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status:</label>
-                                    <div className="relative">
-                                        <button
-                                            type="button"
-                                            className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm text-left outline-none min-w-[120px]"
-                                            onClick={() => setIsStatusModalOpen(true)}
-                                        >
-                                            <span className="block truncate">{statusText}</span>
-                                        </button>
-                                    </div>
-
-                                    {isStatusModalOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-10" onClick={() => setIsStatusModalOpen(false)}></div>
-                                            <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-xl ring-1 ring-black ring-opacity-5 overflow-hidden w-56">
-                                                <div className="py-1">
-                                                    {statusOptions.map((option) => (
-                                                        <label key={option.value} className="px-4 py-2 flex items-center text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="form-checkbox h-5 w-5 text-blue-500 bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:border-blue-500 mr-2"
-                                                                value={option.value}
-                                                                checked={selectedStatuses.includes(option.value)}
-                                                                onChange={() => handleStatusChange(option.value)}
-                                                            />
-                                                            <span>{option.label}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                                <div className="px-4 py-2 bg-gray-100 dark:bg-gray-600 flex justify-between border-t border-gray-200 dark:border-gray-500">
-                                                    <button
-                                                        type="button"
-                                                        className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
-                                                        onClick={handleClearAllStatuses}
-                                                    >
-                                                        Clear
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="text-sm text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white"
-                                                        onClick={handleSelectAllStatuses}
-                                                    >
-                                                        Select All
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col justify-start col-span-2 sm:col-span-1">
-                                    <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By:</label>
-                                    <select
-                                        id="sortBy"
-                                        className="block w-full h-[42px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white shadow-sm"
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                    >
-                                        {sortOptions.map(option => (
-                                            <option key={option.value} value={option.value}>{option.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                    {/* Search Bar and Actions */}
+                    <div className="flex gap-4 mb-6">
+                        <div className="relative flex-1">
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search requests by name, PIC, RFC number, project code, or requester..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                            />
                         </div>
+                        <button
+                            onClick={exportToExcel}
+                            disabled={isExporting || filteredRequests.length === 0}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                            <FaFileExport className="text-sm" />
+                            {isExporting ? 'Exporting...' : 'Export Excel'}
+                        </button>
+                        <button
+                            onClick={handleAlertClick}
+                            className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                            <FaExclamationTriangle className="text-sm" />
+                            Alert
+                        </button>
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                            <FaPlus className="text-sm" />
+                            Add Request
+                        </button>
                     </div>
 
 
@@ -601,10 +396,11 @@ export default function ChangeManagement() {
                     ) : error ? (
                         <p className="text-red-500 text-center">{error}</p>
                     ) : (
-                        <ChangeRequestList requests={requests} />
+                        <ChangeRequestList requests={filteredRequests} />
                     )}
                 </div>
             </div>
+
             {isAlertModalOpen && (
                 <AlertModal
                     isOpen={isAlertModalOpen}
@@ -630,195 +426,23 @@ export default function ChangeManagement() {
                     error={error}
                 />
             )}
+
+            {isCreateModalOpen && (
+                <CreateRequestModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onSuccess={() => {
+                        setIsCreateModalOpen(false);
+                        window.location.reload();
+                    }}
+                    token={token}
+                />
+            )}
         </ProtectedRoute>
     );
 }
 
-// Alert Modal Component
-function AlertModal({ 
-    isOpen, 
-    onClose, 
-    alertRequesters, 
-    setAlertRequesters, 
-    setIsAddUserModalOpen, 
-    alertSubject, 
-    setAlertSubject, 
-    alertText, 
-    setAlertText, 
-    handleSendAlerts 
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    alertRequesters: RequesterInfo[];
-    setAlertRequesters: React.Dispatch<React.SetStateAction<RequesterInfo[]>>;
-    setIsAddUserModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    alertSubject: string;
-    setAlertSubject: React.Dispatch<React.SetStateAction<string>>;
-    alertText: string;
-    setAlertText: React.Dispatch<React.SetStateAction<string>>;
-    handleSendAlerts: () => void;
-}) {
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
 
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl overflow-hidden w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between flex-shrink-0">
-                            <h2 className="text-lg font-bold">Request Alert</h2>
-                            <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 focus:outline-none" title="Close Alert Modal">
-                                <FaTimes className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 flex-1 overflow-y-auto">
-                            <p className="text-gray-600 dark:text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
-
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {alertRequesters.map(requester => (
-                                    <div key={requester.id} className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center">
-                                        {requester.name}
-                                        <button
-                                            className="ml-2 focus:outline-none"
-                                            title="Remove requester"
-                                            onClick={() => {
-                                                setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
-                                            }}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                ))}
-
-                                <button className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center focus:outline-none"
-                                    onClick={() => {
-                                        setIsAddUserModalOpen(true);
-                                    }}>
-                                    +
-                                </button>
-                            </div>
-
-                            <div className="mb-4">
-                                <label htmlFor="alertSubject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject:</label>
-                                <input
-                                    type="text"
-                                    id="alertSubject"
-                                    className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white outline-none"
-                                    value={alertSubject}
-                                    onChange={(e) => setAlertSubject(e.target.value)}
-                                    placeholder="Enter subject"
-                                />
-                            </div>
-
-                            <div className="mb-4">
-                                <label htmlFor="alertText" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message:</label>
-                                <textarea
-                                    id="alertText"
-                                    rows={12}
-                                    className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white outline-none resize-none"
-                                    value={alertText}
-                                    onChange={(e) => setAlertText(e.target.value)}
-                                    placeholder="Enter your message"
-                                ></textarea>
-                            </div>
-                        </div>
-
-                        <div className="p-4 border-t border-gray-200 dark:border-gray-600 flex flex-col sm:flex-row justify-end gap-2 flex-shrink-0">
-                            <button
-                                className="w-full sm:w-auto bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-200"
-                                onClick={onClose}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="w-full sm:w-auto bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
-                                onClick={handleSendAlerts}
-                            >
-                                Send
-                            </button>
-                        </div>
-                    </div>
-                </div>
-    );
-}
-
-// Add User Modal Component
-function AddUserModal({ 
-    isOpen, 
-    onClose, 
-    availableUsers, 
-    handleAddRequester, 
-    loading, 
-    error 
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    availableUsers: User[];
-    handleAddRequester: (user: User) => void;
-    loading: boolean;
-    error: string | null;
-}) {
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-lg overflow-hidden p-4 w-full max-w-md text-gray-900 dark:text-white">
-                <h2 className="text-lg font-bold mb-4 text-center">Add User</h2>
-                {loading ? (
-                    <p className="text-center text-gray-500 dark:text-gray-300">Loading users...</p>
-                ) : error ? (
-                    <p className="text-red-500 text-center">{error}</p>
-                ) : (
-                    <div className="max-h-60 overflow-y-auto">
-                        {availableUsers.map(user => (
-                            <div key={user.id} className="flex items-center justify-between py-2 px-4 border-b border-gray-200 dark:border-gray-700">
-                                <span>{user.name}</span>
-                                <button
-                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition duration-200"
-                                    onClick={() => handleAddRequester(user)}
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-                <div className="mt-4">
-                    <button
-                        type="button"
-                        className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-200"
-                        onClick={onClose}
-                    >
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 function ChangeRequestList({ requests }: { requests: ChangeRequest[] }) {
     return (
@@ -953,4 +577,589 @@ function ChangeRequestCard({ request }: { request: ChangeRequest }) {
         </div>
       </Link>
   );
+}
+
+// Alert Modal Component
+function AlertModal({ 
+    isOpen, 
+    onClose, 
+    alertRequesters, 
+    setAlertRequesters, 
+    setIsAddUserModalOpen, 
+    alertSubject, 
+    setAlertSubject, 
+    alertText, 
+    setAlertText, 
+    handleSendAlerts 
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    alertRequesters: RequesterInfo[];
+    setAlertRequesters: React.Dispatch<React.SetStateAction<RequesterInfo[]>>;
+    setIsAddUserModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    alertSubject: string;
+    setAlertSubject: React.Dispatch<React.SetStateAction<string>>;
+    alertText: string;
+    setAlertText: React.Dispatch<React.SetStateAction<string>>;
+    handleSendAlerts: () => void;
+}) {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Request Alert</h2>
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={handleSendAlerts}
+                                className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                                title="Send alerts"
+                            >
+                                <FaPaperPlane className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                            <button
+                                onClick={onClose}
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 flex-1 overflow-y-auto">
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">There are {alertRequesters.length} requesters selected.</p>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {alertRequesters.map(requester => (
+                            <div key={requester.id} className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center">
+                                {requester.name}
+                                <button
+                                    className="ml-2"
+                                    onClick={() => {
+                                        setAlertRequesters(prevRequesters => prevRequesters.filter(r => r.id !== requester.id));
+                                    }}
+                                >
+                                    <FaTimes className="h-3 w-3" />
+                                </button>
+                            </div>
+                        ))}
+                        <button 
+                            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full px-3 py-1 flex items-center"
+                            onClick={() => setIsAddUserModalOpen(true)}
+                        >
+                            +
+                        </button>
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">Subject:</label>
+                        <input
+                            type="text"
+                            className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md"
+                            value={alertSubject}
+                            onChange={(e) => setAlertSubject(e.target.value)}
+                            placeholder="Enter subject"
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">Message:</label>
+                        <textarea
+                            rows={12}
+                            className="block w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md resize-none"
+                            value={alertText}
+                            onChange={(e) => setAlertText(e.target.value)}
+                            placeholder="Enter your message"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Add User Modal Component
+function AddUserModal({ 
+    isOpen, 
+    onClose, 
+    availableUsers, 
+    handleAddRequester, 
+    loading, 
+    error 
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    availableUsers: User[];
+    handleAddRequester: (user: User) => void;
+    loading: boolean;
+    error: string | null;
+}) {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Add User to Alert</h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-500 dark:text-gray-400">Loading users...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-8">
+                            <p className="text-red-500 text-center">{error}</p>
+                        </div>
+                    ) : availableUsers.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-gray-500 dark:text-gray-400">No users available</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">Available Users ({availableUsers.length})</h3>
+                            {availableUsers.map(user => (
+                                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-900 dark:text-white">{user.name}</div>
+                                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500">{user.division} • {user.role}</div>
+                                    </div>
+                                    <button
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                                        onClick={() => handleAddRequester(user)}
+                                    >
+                                        <FaPlus className="w-3 h-3" />
+                                        Add
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Create Request Modal Component
+interface FormDataState {
+  name: string;
+  group: string;
+  division: string;
+  type: string;
+  category: string;
+  urgency: string;
+  requested_migration_date: string;
+  project_code: string;
+  rfc_number: string;
+  compliance_checklist: File | null;
+  procedure_checklist: File | null;
+  rollback_checklist: File | null;
+  architecture_diagram: File | null;
+  captures: File | null;
+  pic: string;
+  cab_meeting_link: string;
+  downtime_risk: number;
+  integration_risk: number;
+  uat_result: string;
+  description: string;
+}
+
+function CreateRequestModal({ 
+    isOpen, 
+    onClose, 
+    onSuccess,
+    token
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    token: string | null;
+}) {
+    const [formData, setFormData] = useState<FormDataState>({
+        name: "",
+        group: "group 1",
+        division: "IT",
+        type: "software",
+        category: "monitoring",
+        urgency: "normal",
+        requested_migration_date: "",
+        project_code: "",
+        rfc_number: "",
+        compliance_checklist: null,
+        procedure_checklist: null,
+        rollback_checklist: null,
+        architecture_diagram: null,
+        captures: null,
+        pic: "",
+        cab_meeting_link: "",
+        downtime_risk: 0,
+        integration_risk: 0,
+        uat_result: "none",
+        description: "",
+    });
+
+    const [loading, setLoading] = useState<boolean>(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const loadingToast = toast.loading("Creating request...");
+
+        try {
+            const formDataToSend = new FormData();
+
+            for (const key in formData) {
+                if (typeof formData[key as keyof FormDataState] === 'string' || typeof formData[key as keyof FormDataState] === 'number') {
+                    formDataToSend.append(key, String(formData[key as keyof FormDataState]));
+                }
+            }
+
+            formDataToSend.append('compliance_checklist', formData.compliance_checklist || '');
+            formDataToSend.append('procedure_checklist', formData.procedure_checklist || '');
+            formDataToSend.append('rollback_checklist', formData.rollback_checklist || '');
+            formDataToSend.append('architecture_diagram', formData.architecture_diagram || '');
+            formDataToSend.append('captures', formData.captures || '');
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_ITM_SERVICE_URL}/api/cab/requests`, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formDataToSend,
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || "Failed to create change request.");
+            }
+
+            toast.dismiss(loadingToast);
+            toast.success("Change request created successfully.");
+            onSuccess();
+        } catch (err) {
+            toast.dismiss(loadingToast);
+            toast.error(err instanceof Error ? err.message : "Unknown error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Change Request</h2>
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="submit"
+                                form="change-request-form"
+                                disabled={loading}
+                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg disabled:opacity-50"
+                                title="Save change request"
+                            >
+                                <FaSave className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+                            <button
+                                onClick={onClose}
+                                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                    <form id="change-request-form" onSubmit={handleSubmit}>
+                        <div className="grid grid-cols-3 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Request Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter request name"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Group <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.group}
+                                        onChange={(e) => setFormData({ ...formData, group: e.target.value })}
+                                        required
+                                    >
+                                        <option value="group 1">Group 1</option>
+                                        <option value="group 2">Group 2</option>
+                                        <option value="group 3">Group 3</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Division <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.division}
+                                        onChange={(e) => setFormData({ ...formData, division: e.target.value })}
+                                        required
+                                    >
+                                        <option value="IT">IT</option>
+                                        <option value="ITS">ITS</option>
+                                        <option value="DDB">DDB</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Request Type <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.type}
+                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                        required
+                                    >
+                                        <option value="software">Software</option>
+                                        <option value="hardware">Hardware</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Request Category <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.category}
+                                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                        required
+                                    >
+                                        <option value="monitoring">Monitoring</option>
+                                        <option value="transactional">Transactional</option>
+                                        <option value="regulatory">Regulatory</option>
+                                        <option value="reporting">Reporting</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Urgency <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.urgency}
+                                        onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
+                                        required
+                                    >
+                                        <option value="normal">Normal</option>
+                                        <option value="emergency">Emergency</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Migration Date <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.requested_migration_date}
+                                        onChange={(e) => setFormData({ ...formData, requested_migration_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Project Code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter project code"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.project_code}
+                                        onChange={(e) => setFormData({ ...formData, project_code: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        RFC Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter RFC number"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.rfc_number}
+                                        onChange={(e) => setFormData({ ...formData, rfc_number: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        PIC
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter person in charge"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.pic}
+                                        onChange={(e) => setFormData({ ...formData, pic: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        CAB Meeting Link
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter CAB meeting link"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.cab_meeting_link}
+                                        onChange={(e) => setFormData({ ...formData, cab_meeting_link: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Downtime Risk <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="Enter downtime risk"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.downtime_risk}
+                                        onChange={(e) => setFormData({ ...formData, downtime_risk: Number(e.target.value) })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Integration Risk <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        placeholder="Enter integration risk (0-10)"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.integration_risk}
+                                        onChange={(e) => setFormData({ ...formData, integration_risk: Number(e.target.value) })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        UAT Score
+                                    </label>
+                                    <select
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        value={formData.uat_result}
+                                        onChange={(e) => setFormData({ ...formData, uat_result: e.target.value })}
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="done with notes">Done with Notes</option>
+                                        <option value="well done">Well Done</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Compliance Checklist <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="file"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        onChange={(e) => setFormData({ ...formData, compliance_checklist: e.target.files?.[0] || null })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Procedure Checklist
+                                    </label>
+                                    <input
+                                        type="file"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        onChange={(e) => setFormData({ ...formData, procedure_checklist: e.target.files?.[0] || null })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Rollback Checklist
+                                    </label>
+                                    <input
+                                        type="file"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        onChange={(e) => setFormData({ ...formData, rollback_checklist: e.target.files?.[0] || null })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Architecture Diagram
+                                    </label>
+                                    <input
+                                        type="file"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        onChange={(e) => setFormData({ ...formData, architecture_diagram: e.target.files?.[0] || null })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Captures
+                                    </label>
+                                    <input
+                                        type="file"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                                        onChange={(e) => setFormData({ ...formData, captures: e.target.files?.[0] || null })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        placeholder="Enter request description"
+                                        className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        rows={4}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
 }
