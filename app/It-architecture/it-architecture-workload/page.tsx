@@ -248,14 +248,6 @@ export default function ArchitectureTasks() {
   // Function to save new architecture task
   const handlePost = useCallback(async (task: Omit<Task, 'id'>) => {
     try {
-      console.log('Sending task data:', {
-        nama_tugas: task.namaTugas,
-        catatan: task.catatan,
-        tanggal: task.tanggal,
-        pic: task.pic,
-        status: task.status,
-        tag: Array.isArray(task.tags) ? task.tags.join(', ') : ''
-      });
       const response = await fetch(`${API_BASE_URL}/it-architecture-tasks`, {
         method: "POST",
         headers: { 
