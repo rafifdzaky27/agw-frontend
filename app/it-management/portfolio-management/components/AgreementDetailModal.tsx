@@ -132,36 +132,39 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Agreement Details
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {agreement.kodeProject}
-              </p>
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Agreement Details
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {agreement.kodeProject}
+                </p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${projectStatus.color}`}>
+                {projectStatus.status}
+              </span>
             </div>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${projectStatus.color}`}>
-              {projectStatus.status}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-            >
-              <FaEdit className="text-sm" />
-              Edit
-            </button>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <FaTimes className="text-xl" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onEdit}
+                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                title="Edit agreement"
+              >
+                <FaEdit className="w-4 h-4" />
+              </button>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2"></div>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         </div>
 
@@ -385,22 +388,7 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 border border-gray-300 dark:border-gray-500 rounded-md transition-colors"
-          >
-            Close
-          </button>
-          <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
-          >
-            <FaEdit className="text-sm" />
-            Edit Project
-          </button>
-        </div>
+
       </div>
     </div>
   );
