@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaTimes, FaEdit, FaCalendarAlt, FaUser, FaBuilding, FaFileContract, FaMoneyBillWave, FaFile, FaDownload } from "react-icons/fa";
+import { downloadFile, getFileViewUrl } from "@/utils/portfolioApi";
 
 interface PaymentTerm {
   id: string;
@@ -46,6 +47,8 @@ interface AgreementDetailModalProps {
 }
 
 export default function AgreementDetailModal({ agreement, onClose, onEdit }: AgreementDetailModalProps) {
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  
   // Block body scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -92,29 +95,69 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const openFileInNewTab = (file: AgreementFile) => {
-    if (file.file) {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const url = URL.createObjectURL(file.file);
-      
-      const browserSupported = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'txt', 'html', 'css', 'js'];
-      
-      if (browserSupported.includes(fileExtension || '')) {
+  const handleViewFile = async (file: AgreementFile) => {
+    try {
+      if (file.file) {
+        // New file - use blob URL
+        const url = URL.createObjectURL(file.file);
         window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = file.name;
-        link.click();
-        URL.revokeObjectURL(url);
+        // Existing file - use API URL
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error('Authentication required');
+          return;
+        }
+        const fileUrl = getFileViewUrl(agreement.id, file.id, token);
+        window.open(fileUrl, '_blank');
       }
-    } else {
-      toast(`Opening ${file.name}... (Mock file - no actual content)`);
+    } catch (error) {
+      toast.error('Failed to open file');
+      console.error('Error viewing file:', error);
     }
   };
 
-  const handleDownloadFile = (file: AgreementFile) => {
-    openFileInNewTab(file);
+  const handleDownloadFile = async (file: AgreementFile) => {
+    try {
+      setIsDownloading(file.id);
+      
+      if (file.file) {
+        // New file - use blob URL
+        const url = URL.createObjectURL(file.file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Existing file - use API
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error('Authentication required');
+          return;
+        }
+        
+        const blob = await downloadFile(agreement.id, file.id, token);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      
+      toast.success('File downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download file');
+      console.error('Error downloading file:', error);
+    } finally {
+      setIsDownloading(null);
+    }
   };
 
   const getProjectStatus = () => {
@@ -278,18 +321,18 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
               <FaFile className="text-purple-500" />
               Documents
             </h3>
-            {(!agreement.files || agreement.files.length === 0) ? (
+            {(!Array.isArray(agreement.files) || agreement.files.length === 0) ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <p>No documents uploaded</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {(agreement.files || []).map((file) => (
-                  <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
+                {agreement.files.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => handleViewFile(file)}>
                       <FaFile className="text-blue-500 text-lg flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                        <p className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate cursor-pointer">
                           {file.name}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -302,11 +345,15 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
                         e.stopPropagation();
                         handleDownloadFile(file);
                       }}
-                      className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                      title="Open/Download file"
+                      disabled={isDownloading === file.id}
+                      className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors disabled:opacity-50"
+                      title="Download file"
                     >
-                      <FaDownload className="text-sm" />
-                      Open
+                      {isDownloading === file.id ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                      ) : (
+                        <FaDownload className="text-sm" />
+                      )}
                     </button>
                   </div>
                 ))}
@@ -390,6 +437,8 @@ export default function AgreementDetailModal({ agreement, onClose, onEdit }: Agr
 
 
       </div>
+      
+
     </div>
   );
 }

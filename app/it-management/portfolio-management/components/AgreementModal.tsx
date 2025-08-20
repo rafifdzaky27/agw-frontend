@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FaTimes, FaPlus, FaTrash, FaCalendarAlt, FaSave, FaUpload, FaFile } from "react-icons/fa";
+import { FaTimes, FaPlus, FaTrash, FaCalendarAlt, FaSave, FaUpload, FaFile, FaDownload } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 interface PaymentTerm {
@@ -42,7 +42,7 @@ interface Agreement {
 interface AgreementModalProps {
   agreement: Agreement | null;
   onClose: () => void;
-  onSave: (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>, files: File[]) => void;
   isEditMode: boolean;
 }
 
@@ -64,6 +64,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
   const [files, setFiles] = useState<AgreementFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<AgreementFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Block body scroll when modal is open
@@ -90,7 +91,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
         tanggalBerakhir: agreement.tanggalBerakhir,
       });
       setPaymentTerms(agreement.terminPembayaran);
-      setFiles(agreement.files || []);
+      setFiles(Array.isArray(agreement.files) ? agreement.files : []);
     } else {
       // Reset form for new agreement
       setFormData({
@@ -250,10 +251,12 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
       const agreementData = {
         ...formData,
         terminPembayaran: paymentTerms,
-        files: files.map(({ file, ...fileData }) => fileData)
+        files: files.filter(f => !f.file).map(({ file, ...fileData }) => fileData) || [] // Only existing files, ensure array
       };
+      
+      const newFiles = files.filter(f => f.file).map(f => f.file!); // Only new files
 
-      await onSave(agreementData);
+      await onSave(agreementData, newFiles);
     } catch (error) {
       toast.error("Failed to save agreement");
     } finally {
@@ -457,6 +460,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                     name="tanggalPKSPO"
                     value={formData.tanggalPKSPO}
                     onChange={handleInputChange}
+
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
@@ -474,6 +478,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                     name="tanggalBAPP"
                     value={formData.tanggalBAPP}
                     onChange={handleInputChange}
+                    min={formData.tanggalPKSPO || ''}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
@@ -491,6 +496,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                     name="tanggalBerakhir"
                     value={formData.tanggalBerakhir}
                     onChange={handleInputChange}
+                    min={formData.tanggalBAPP || ''}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
@@ -517,10 +523,11 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors text-sm"
+                  disabled={files.length >= 10}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md transition-colors text-sm"
                 >
                   <FaUpload className="text-xs" />
-                  Upload Files
+                  Upload Files {files.length > 0 && `(${files.length}/10)`}
                 </button>
               </div>
             </div>
@@ -540,23 +547,51 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                     <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded border">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <FaFile className="text-blue-500 text-sm flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <div className="min-w-0 flex-1 cursor-pointer" onClick={() => {
+                          if (file.file) {
+                            const url = URL.createObjectURL(file.file);
+                            window.open(url, '_blank');
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                          }
+                        }}>
+                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 truncate">
                             {file.name}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(file.size)}
+                            {formatFileSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString('id-ID')}
                           </p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFile(file.id)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                        title="Remove file"
-                      >
-                        <FaTrash className="text-sm" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (file.file) {
+                              const url = URL.createObjectURL(file.file);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = file.name;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              URL.revokeObjectURL(url);
+                            }
+                          }}
+                          className="text-blue-500 hover:text-blue-700 p-1"
+                          title="Download file"
+                        >
+                          <FaDownload className="text-sm" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFile(file.id)}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Remove file"
+                        >
+                          <FaTrash className="text-sm" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -613,6 +648,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                             type="text"
                             value={term.termin}
                             onChange={(e) => updatePaymentTerm(term.id, 'termin', e.target.value)}
+                            maxLength={100}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
                             placeholder="e.g., Down Payment, Term 1"
                             required
@@ -629,7 +665,8 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                             onChange={(e) => updatePaymentTerm(term.id, 'nominal', parseInt(e.target.value) || 0)}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
                             placeholder="0"
-                            min="0"
+                            min="1"
+                            step="1000"
                             required
                           />
                           {term.nominal > 0 && (
@@ -647,6 +684,7 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
                             type="text"
                             value={term.description}
                             onChange={(e) => updatePaymentTerm(term.id, 'description', e.target.value)}
+                            maxLength={255}
                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
                             placeholder="Payment description"
                           />
@@ -676,6 +714,8 @@ export default function AgreementModal({ agreement, onClose, onSave, isEditMode 
 
         </form>
       </div>
+      
+
     </div>
   );
 }

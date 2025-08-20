@@ -10,6 +10,7 @@ import AgreementModal from "./components/AgreementModal";
 import AgreementDetailModal from "./components/AgreementDetailModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import toast from "react-hot-toast";
+import * as portfolioApi from "@/utils/portfolioApi";
 
 // Define interfaces
 interface PaymentTerm {
@@ -68,162 +69,26 @@ export default function PortfolioManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20); // Show 20 items per page
 
-  const BACKEND_IP = process.env.NEXT_PUBLIC_BACKEND_IP || "http://localhost:8080";
 
-  // Generate mock files for agreements
-  const generateMockFiles = (agreementIndex: number): AgreementFile[] => {
-    const fileTypes = [
-      { ext: 'pdf', type: 'application/pdf', names: ['Contract', 'Agreement', 'Proposal', 'Specification', 'Requirements'] },
-      { ext: 'docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', names: ['Document', 'Report', 'Manual', 'Guide'] },
-      { ext: 'xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', names: ['Budget', 'Timeline', 'Analysis', 'Data'] },
-      { ext: 'pptx', type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', names: ['Presentation', 'Slides', 'Overview'] }
-    ];
-    
-    const numFiles = Math.floor(Math.random() * 6) + 1; // 1-6 files per agreement
-    const files: AgreementFile[] = [];
-    
-    for (let j = 0; j < numFiles; j++) {
-      const fileType = fileTypes[Math.floor(Math.random() * fileTypes.length)];
-      const fileName = fileType.names[Math.floor(Math.random() * fileType.names.length)];
-      const fileSize = Math.floor(Math.random() * 5000000) + 100000; // 100KB - 5MB
-      const uploadDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-      
-      files.push({
-        id: `file_${agreementIndex}_${j}`,
-        name: `${fileName}_${agreementIndex}_${j + 1}.${fileType.ext}`,
-        size: fileSize,
-        type: fileType.type,
-        uploadedAt: uploadDate.toISOString()
-      });
-    }
-    
-    return files;
-  };
 
-  // Mock data for development - 200 entries for testing large dataset
-  const generateMockAgreements = (): Agreement[] => {
-    const divisions = [
-      "IT Division", "Finance Division", "Operations Division", "HR Division", 
-      "Marketing Division", "Sales Division", "Legal Division", "Procurement Division",
-      "Digital Innovation", "Business Development", "Quality Assurance", "Risk Management"
-    ];
-    
-    const groups = [
-      "IT, Finance", "IT, Operations", "IT, Security", "Finance, Operations",
-      "Marketing, Sales", "HR, Legal", "IT, Marketing, UX", "Operations, QA",
-      "Finance, Legal", "IT, Business Development", "Sales, Marketing", "IT, Risk Management"
-    ];
-    
-    const vendors = [
-      "SAP Indonesia", "Oracle Corporation", "Microsoft Indonesia", "Amazon Web Services",
-      "Google Cloud Platform", "IBM Indonesia", "Accenture", "Deloitte Consulting",
-      "TechSoft Solutions", "Digital Innovations Ltd", "CloudTech Services", "DataPro Systems",
-      "SecureNet Solutions", "InnovateTech", "SystemsPlus", "TechAdvance Corp",
-      "SmartSolutions", "NextGen Technologies", "ProTech Services", "EliteTech Solutions"
-    ];
-    
-    const projectTypes = [
-      "ERP Implementation", "Cloud Migration", "Mobile App Development", "Web Portal Development",
-      "Data Analytics Platform", "Security Assessment", "Infrastructure Upgrade", "Digital Transformation",
-      "System Integration", "Database Migration", "Network Upgrade", "Software Licensing",
-      "Cybersecurity Enhancement", "Business Intelligence", "CRM Implementation", "Workflow Automation"
-    ];
-    
-    const agreements: Agreement[] = [];
-    
-    for (let i = 1; i <= 200; i++) {
-      const year = 2024;
-      const month = Math.floor(Math.random() * 12) + 1;
-      const day = Math.floor(Math.random() * 28) + 1;
-      
-      const pksDate = new Date(year, month - 1, day);
-      const bappDate = new Date(pksDate.getTime() + (Math.random() * 30 + 7) * 24 * 60 * 60 * 1000);
-      const endDate = new Date(bappDate.getTime() + (Math.random() * 365 + 90) * 24 * 60 * 60 * 1000);
-      
-      const numPaymentTerms = Math.floor(Math.random() * 4) + 1; // 1-4 payment terms
-      const totalAmount = (Math.random() * 2000000000) + 100000000; // 100M - 2.1B IDR
-      
-      const paymentTerms: PaymentTerm[] = [];
-      const termNames = ["Down Payment", "Term 1", "Term 2", "Term 3", "Final Payment"];
-      const descriptions = [
-        "Initial payment", "After system setup", "Milestone completion", 
-        "Testing phase", "Final delivery", "Monthly payment", "Quarterly payment"
-      ];
-      
-      for (let j = 0; j < numPaymentTerms; j++) {
-        const percentage = j === 0 ? 0.3 : (1 - 0.3) / (numPaymentTerms - 1);
-        paymentTerms.push({
-          id: `t${i}_${j}`,
-          termin: j < termNames.length ? termNames[j] : `Term ${j + 1}`,
-          nominal: Math.floor(totalAmount * percentage),
-          description: descriptions[Math.floor(Math.random() * descriptions.length)]
-        });
-      }
-      
-      const createdDate = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-      
-      const projectTypeOptions: ('internal development' | 'procurement' | 'non procurement')[] = ['internal development', 'procurement', 'non procurement'];
-      const projectTypeValue = projectTypeOptions[Math.floor(Math.random() * projectTypeOptions.length)];
-      
-      agreements.push({
-        id: i.toString(),
-        kodeProject: `PRJ-2024-${i.toString().padStart(3, '0')}`,
-        projectName: `${projectTypes[Math.floor(Math.random() * projectTypes.length)]} ${i}`,
-        projectType: projectTypeValue,
-        divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
-        grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
-        keterangan: projectTypeValue === 'internal development' 
-          ? `Internal development project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project will be handled by our internal development team with focus on innovation and efficiency.`
-          : projectTypeValue === 'procurement'
-          ? `Procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves external vendor collaboration for implementation and delivery.`
-          : `Non-procurement project for ${projectTypes[Math.floor(Math.random() * projectTypes.length)].toLowerCase()}. This project involves internal resources without external procurement processes.`,
-        namaVendor: projectTypeValue === 'procurement' ? vendors[Math.floor(Math.random() * vendors.length)] : '',
-        noPKSPO: projectTypeValue === 'procurement' 
-          ? (Math.random() > 0.5 ? `PKS/2024/${i.toString().padStart(3, '0')}` : `PO/2024/${i.toString().padStart(3, '0')}`)
-          : projectTypeValue === 'internal development'
-          ? `INT/2024/${i.toString().padStart(3, '0')}`
-          : `NON/2024/${i.toString().padStart(3, '0')}`,
-        tanggalPKSPO: pksDate.toISOString().split('T')[0],
-        tanggalBAPP: bappDate.toISOString().split('T')[0],
-        tanggalBerakhir: endDate.toISOString().split('T')[0],
-        terminPembayaran: projectTypeValue === 'procurement' || projectTypeValue === 'non procurement' ? paymentTerms : [],
-        files: generateMockFiles(i),
-        createdAt: createdDate.toISOString(),
-        updatedAt: createdDate.toISOString()
-      });
-    }
-    
-    return agreements.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  };
 
-  const mockAgreements = generateMockAgreements();
 
   useEffect(() => {
-    fetchAgreements();
+    if (token) {
+      fetchAgreements();
+    }
   }, [token]);
 
   const fetchAgreements = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${BACKEND_IP}/api/agreements`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-      // const data = await response.json();
-      // setAgreements(data);
-      
-      // For now, use mock data
-      setTimeout(() => {
-        setAgreements(mockAgreements);
-        setLoading(false);
-      }, 1000);
+      const data = await portfolioApi.getAllProjects(token!);
+      setAgreements(data);
     } catch (err) {
       setError("Failed to fetch agreements");
-      setLoading(false);
       toast.error("Failed to load agreements");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -262,7 +127,7 @@ export default function PortfolioManagementPage() {
 
   const confirmDelete = async () => {
     try {
-      // TODO: Replace with actual API call
+      await portfolioApi.deleteMultipleProjects(selectedAgreements, token!);
       setAgreements(prev => prev.filter(agreement => !selectedAgreements.includes(agreement.id)));
       toast.success(`${selectedAgreements.length} agreement(s) deleted successfully`);
       setSelectedAgreements([]);
@@ -273,16 +138,11 @@ export default function PortfolioManagementPage() {
     setShowDeleteConfirm(false);
   };
 
-  const handleSaveAgreement = async (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveAgreement = async (agreementData: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt'>, files: File[]) => {
     try {
       if (isEditMode && selectedAgreement) {
         // Update existing agreement
-        const updatedAgreement: Agreement = {
-          ...agreementData,
-          id: selectedAgreement.id,
-          createdAt: selectedAgreement.createdAt,
-          updatedAt: new Date().toISOString(),
-        };
+        const updatedAgreement = await portfolioApi.updateProject(selectedAgreement.id, agreementData, files, token!);
         
         setAgreements(prev => prev.map(agreement => 
           agreement.id === updatedAgreement.id ? updatedAgreement : agreement
@@ -290,12 +150,7 @@ export default function PortfolioManagementPage() {
         toast.success(`Project "${agreementData.projectName}" berhasil diperbarui`);
       } else {
         // Create new agreement
-        const newAgreement: Agreement = {
-          ...agreementData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        const newAgreement = await portfolioApi.createProject(agreementData, files, token!);
         
         setAgreements(prev => [newAgreement, ...prev]);
         toast.success(`Project "${agreementData.projectName}" berhasil ditambahkan`);
@@ -303,8 +158,8 @@ export default function PortfolioManagementPage() {
       
       setShowModal(false);
       setSelectedAgreement(null);
-    } catch (err) {
-      toast.error("Failed to save agreement");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save agreement");
     }
   };
 

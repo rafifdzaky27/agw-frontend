@@ -8,6 +8,7 @@ import { FaSearch, FaMoneyBillWave, FaCheckCircle, FaClock, FaCalendarAlt, FaFil
 import * as XLSX from 'xlsx';
 import ProjectPaymentDetailModal from "./components/ProjectPaymentDetailModal";
 import toast from "react-hot-toast";
+import * as portfolioApi from "@/utils/portfolioApi";
 
 // Define interfaces
 interface PaymentTerm {
@@ -61,133 +62,28 @@ export default function FinanceManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
-  // Generate mock data based on Portfolio Management structure
-  const generateMockProjects = (): Project[] => {
-    const projects: Project[] = [];
-    const projectNames = [
-      "Sistem Informasi Manajemen Keuangan", "Platform E-Commerce B2B", "Aplikasi Mobile Banking",
-      "Dashboard Analytics Real-time", "Sistem Inventory Management", "Portal Customer Service",
-      "Aplikasi HR Management System", "Platform Digital Marketing", "Sistem Document Management",
-      "Aplikasi Project Management", "Portal Vendor Management", "Sistem CRM Terintegrasi",
-      "Platform Learning Management", "Aplikasi Quality Control", "Sistem Asset Management",
-      "Cloud Infrastructure Migration", "Data Warehouse Implementation", "API Gateway Development",
-      "Microservices Architecture", "DevOps Pipeline Setup", "Security Audit System",
-      "Business Intelligence Platform", "IoT Monitoring System", "Blockchain Integration",
-      "AI/ML Analytics Platform", "Digital Transformation Initiative"
-    ];
 
-    const vendors = [
-      "PT Teknologi Maju Indonesia", "CV Digital Solutions", "PT Inovasi Sistem Terpadu",
-      "PT Solusi IT Nusantara", "CV Kreasi Digital", "PT Mitra Teknologi Global",
-      "PT Sistem Informasi Prima", "CV Teknologi Canggih", "PT Digital Innovation Hub"
-    ];
-
-    const divisions = ["IT", "Finance", "Operations", "HR", "Marketing", "Procurement"];
-    const groups = ["Development Team", "Infrastructure Team", "Security Team", "Analytics Team"];
-    
-    // Define years with different project counts
-    const yearData = [
-      { year: 2022, count: 8 },
-      { year: 2023, count: 12 },
-      { year: 2024, count: 15 },
-      { year: 2025, count: 6 }
-    ];
-
-    let projectId = 1;
-
-    yearData.forEach(({ year, count }) => {
-      for (let i = 1; i <= count; i++) {
-        const numTerms = Math.floor(Math.random() * 4) + 2; // 2-5 payment terms
-        const terms: PaymentTerm[] = [];
-        
-        // Determine project type once per project
-        const projectType = Math.random() > 0.6 ? 'procurement' : 'non procurement';
-        const isNonProcurement = projectType === 'non procurement';
-        
-        // Create random date within the year
-        const createdDate = new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-        
-        for (let j = 1; j <= numTerms; j++) {
-          const baseAmount = 100000000 + (Math.random() * 500000000); // 100M - 600M
-          
-          // Adjust payment status based on year (older projects more likely to be paid)
-          let status: string;
-          if (year <= 2022) {
-            status = Math.random() > 0.2 ? 'Sudah Dibayar' : 'Checking Umum'; // 80% paid for 2022
-          } else if (year === 2023) {
-            status = Math.random() > 0.4 ? 'Sudah Dibayar' : 
-                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 60% paid for 2023
-          } else if (year === 2024) {
-            status = Math.random() > 0.6 ? 'Sudah Dibayar' : 
-                    Math.random() > 0.3 ? 'Checking Umum' : 'Belum Dibayar'; // 40% paid for 2024
-          } else {
-            status = Math.random() > 0.8 ? 'Sudah Dibayar' : 
-                    Math.random() > 0.5 ? 'Checking Umum' : 'Belum Dibayar'; // 20% paid for 2025
-          }
-          
-          terms.push({
-            id: `term_${projectId}_${j}`,
-            termin: isNonProcurement ? `Bill ${j}` : `Termin ${j}`,
-            nominal: Math.floor(baseAmount),
-            description: isNonProcurement ? 
-              (j === 1 ? "Initial billing for project setup" : 
-               j === 2 ? "Development milestone billing" :
-               j === 3 ? "Final delivery billing" : "Maintenance billing") :
-              (j === 1 ? "BA/PS, Proplan" : 
-               j === 2 ? "Delivery & Testing" :
-               j === 3 ? "Go Live & Training" : "Maintenance & Support"),
-            status: status,
-            paymentDate: status === 'Sudah Dibayar' ? 
-              new Date(year, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0] : 
-              undefined,
-            budget: status === 'Sudah Dibayar' ? (Math.random() > 0.5 ? 'Capex' : 'Opex') : undefined,
-            notes: status === 'Sudah Dibayar' ? (isNonProcurement ? 'Billing completed successfully' : 'Payment completed successfully') : ''
-          });
-        }
-        
-        projects.push({
-          id: projectId.toString(),
-          kodeProject: `PRJ-${year}-${i.toString().padStart(3, '0')}`,
-          projectName: projectNames[Math.floor(Math.random() * projectNames.length)],
-          projectType: projectType,
-          divisiInisiasi: divisions[Math.floor(Math.random() * divisions.length)],
-          grupTerlibat: groups[Math.floor(Math.random() * groups.length)],
-          keterangan: `Project implementation for ${projectNames[Math.floor(Math.random() * projectNames.length)].toLowerCase()} - ${year}`,
-          namaVendor: vendors[Math.floor(Math.random() * vendors.length)],
-          noPKSPO: `PKS/${i.toString().padStart(3, '0')}/${year}`,
-          tanggalPKSPO: createdDate.toISOString().split('T')[0],
-          tanggalBAPP: new Date(createdDate.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-          tanggalBerakhir: new Date(createdDate.getTime() + (365 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-          terminPembayaran: terms,
-          createdAt: createdDate.toISOString(),
-          updatedAt: createdDate.toISOString()
-        });
-        
-        projectId++;
-      }
-    });
-    
-    return projects.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  };
-
-  const mockProjects = generateMockProjects();
 
   useEffect(() => {
-    fetchProjects();
+    if (token) {
+      fetchProjects();
+    }
   }, [token]);
 
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API call to get projects from Portfolio Management
-      setTimeout(() => {
-        setProjects(mockProjects);
-        setLoading(false);
-      }, 1000);
+      const data = await portfolioApi.getAllProjects(token!);
+      // Filter only projects with payment terms (procurement and non procurement)
+      const projectsWithPayments = data.filter(project => 
+        project.terminPembayaran && project.terminPembayaran.length > 0
+      );
+      setProjects(projectsWithPayments);
     } catch (err) {
       setError("Failed to fetch projects");
-      setLoading(false);
       toast.error("Failed to load projects");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -581,14 +477,16 @@ export default function FinanceManagementPage() {
 
             {/* Search Bar and Controls */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              />
+              <div className="relative flex-1">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
