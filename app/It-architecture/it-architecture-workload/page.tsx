@@ -557,6 +557,7 @@ export default function ArchitectureTasks() {
                       >
                         {filteredTasks
                           .filter(task => task.status === 'not yet')
+                          .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime())
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
@@ -595,6 +596,7 @@ export default function ArchitectureTasks() {
                       >
                         {filteredTasks
                           .filter(task => task.status === 'on progress')
+                          .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime())
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
@@ -633,6 +635,7 @@ export default function ArchitectureTasks() {
                       >
                         {filteredTasks
                           .filter(task => task.status === 'done')
+                          .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime())
                           .map((task, index) => (
                             <Draggable key={task.id} draggableId={task.id} index={index}>
                               {(provided, snapshot) => (
