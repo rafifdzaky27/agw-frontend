@@ -170,10 +170,19 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode, onBac
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
     for (const pic of validPics) {
       if (!emailRegex.test(pic.email)) {
-        toast.error(`Invalid email format for ${pic.nama}`);
+        toast.error(`Format email tidak valid untuk ${pic.nama}`);
+        return false;
+      }
+    }
+
+    // Validate phone format
+    const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+    for (const pic of validPics) {
+      if (!phoneRegex.test(pic.noHP)) {
+        toast.error(`Format nomor HP tidak valid untuk ${pic.nama}`);
         return false;
       }
     }
@@ -416,11 +425,12 @@ export default function VendorModal({ vendor, onClose, onSave, isEditMode, onBac
                           No. HP *
                         </label>
                         <input
-                          type="text"
+                          type="tel"
                           value={pic.noHP}
                           onChange={(e) => handlePICChange(pic.id, "noHP", e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
                           placeholder="08123456789"
+                          pattern="[0-9+\-\s()]{10,15}"
                         />
                       </div>
 

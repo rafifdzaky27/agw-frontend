@@ -209,13 +209,14 @@ export default function MemoModal({ onSave, onClose }: MemoModalProps) {
             {/* Subject */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Perihal *
+                Perihal * <span className="text-xs text-gray-500">({formData.perihal.length}/100)</span>
               </label>
               <textarea
                 name="perihal"
                 value={formData.perihal}
                 onChange={handleInputChange}
                 rows={3}
+                maxLength={100}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
                 placeholder="Masukkan perihal/subjek dokumen"
                 required
