@@ -8,7 +8,7 @@ import { FaSearch, FaMoneyBillWave, FaCheckCircle, FaClock, FaCalendarAlt, FaFil
 import * as XLSX from 'xlsx';
 import ProjectPaymentDetailModal from "./components/ProjectPaymentDetailModal";
 import toast from "react-hot-toast";
-import * as portfolioApi from "@/utils/portfolioApi";
+import * as financeApi from "@/utils/financeApi";
 
 // Define interfaces
 interface PaymentTerm {
@@ -73,12 +73,8 @@ export default function FinanceManagementPage() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const data = await portfolioApi.getAllProjects(token!);
-      // Filter only projects with payment terms (procurement and non procurement)
-      const projectsWithPayments = data.filter(project => 
-        project.terminPembayaran && project.terminPembayaran.length > 0
-      );
-      setProjects(projectsWithPayments);
+      const data = await financeApi.getAllFinanceProjects(token!);
+      setProjects(data);
     } catch (err) {
       setError("Failed to fetch projects");
       toast.error("Failed to load projects");
@@ -149,9 +145,14 @@ export default function FinanceManagementPage() {
   };
 
   // Update project payment terms
-  const handleUpdateProject = (updatedProject: Project) => {
-    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-    toast.success("Payment information updated successfully");
+  const handleUpdateProject = async (updatedProject: Project) => {
+    try {
+      await financeApi.updatePaymentTerms(updatedProject.id, updatedProject.terminPembayaran, token!);
+      setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+      toast.success("Payment information updated successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update payment information");
+    }
   };
   // Selection mode functions
   const handleMultipleSelect = (projectId: string) => {
