@@ -569,7 +569,7 @@ export default function AuditUniversePage() {
           </h3>
           {(audit.files?.length || 0) > 0 && (
             <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex-shrink-0 ml-2">
-              {audit.files?.length || 0}
+              {[...new Set(audit.files?.map(f => f.name) || [])].length}
             </span>
           )}
         </div>

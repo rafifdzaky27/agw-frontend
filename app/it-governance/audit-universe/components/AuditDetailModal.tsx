@@ -461,8 +461,8 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                         Existing Files ({files.length})
                       </h4>
                       <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
-                        {files.map((file, index) => (
-                          <div key={`existing-file-${file.id}-${index}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded border">
+                        {Array.from(new Map(files.map(file => [file.id, file])).values()).map((file, index) => (
+                          <div key={`existing-file-${file.id}`} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded border">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <FaFile className="text-blue-500 text-sm flex-shrink-0" />
                               <div className="min-w-0 flex-1">
@@ -526,7 +526,7 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
                       </h4>
                       <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-hide">
                         {newFiles.map((file, index) => (
-                          <div key={`new-file-${file.id}-${index}`} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                          <div key={`new-file-${file.id}`} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <FaFile className="text-green-500 text-sm flex-shrink-0" />
                               <div className="min-w-0 flex-1">
@@ -593,46 +593,57 @@ export default function AuditDetailModal({ audit, onClose, onSave }: AuditDetail
               </div>
 
               {/* Documents */}
-              {audit.files.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Documents ({audit.files.length})</h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
-                    {audit.files.map((file, index) => (
-                      <div key={`file-${file.id}-${index}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
-                        <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
-                          <FaFile className="text-blue-500 text-lg flex-shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
-                              {file.name || file.original_name || file.filename || 'Unknown file'}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatFileSize(file.size || file.file_size || 0)} • Uploaded {formatDateTime(file.uploadedAt || file.created_at || new Date().toISOString())}
-                            </p>
+              {(() => {
+                const uniqueFiles = Array.from(new Map(
+                  (audit.files || []).map((file: any) => [file.id, file])
+                ).values());
+                
+                return uniqueFiles.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Documents ({uniqueFiles.length})</h3>
+                    <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-hide">
+                      {uniqueFiles.map((file, index) => (
+                        <div key={`file-${file.id}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                          <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onClick={() => openFileInNewTab(file)}>
+                            <FaFile className="text-blue-500 text-lg flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 truncate">
+                                {file.name || file.original_name || file.filename || 'Unknown file'}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatFileSize(file.size || file.file_size || 0)} • Uploaded {formatDateTime(file.uploadedAt || file.created_at || new Date().toISOString())}
+                              </p>
+                            </div>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadFile(file);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                          >
+                            <FaDownload className="text-sm" />
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownloadFile(file);
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                        >
-                          <FaDownload className="text-sm" />
-                        </button>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Audit Findings */}
               <div className="space-y-4">
                 <AuditFindingsList 
                   findings={
-                    audit.findings || 
-                    (audit as any).related_findings || 
-                    (audit as any).audit_findings || 
-                    []
+                    // Ensure we get unique findings by deduplicating based on ID
+                    Array.from(new Map(
+                      (
+                        audit.findings || 
+                        (audit as any).related_findings || 
+                        (audit as any).audit_findings || 
+                        []
+                      ).map((finding: any) => [finding.id, finding])
+                    ).values())
                   }
                 />
               </div>

@@ -100,7 +100,7 @@ export default function AuditFindingsList({
       <div className="space-y-2">
         {findings.map((finding, index) => (
           <div
-            key={`finding-${finding.id}-${index}`}
+            key={`finding-${finding.id}`}
             className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow duration-200 cursor-pointer hover:bg-gray-50"
             onClick={() => handleFindingClick(finding.id)}
           >
