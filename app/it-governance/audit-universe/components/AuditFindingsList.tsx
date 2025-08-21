@@ -108,13 +108,18 @@ export default function AuditFindingsList({
               <h4 className="font-medium text-gray-900 text-sm flex-1">
                 {index + 1}. {finding.name}
               </h4>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
+              <span className={getStatusBadge(finding.status)}>
+                {finding.status === 'done' ? 'Done' : finding.status === 'in progress' ? 'In Progress' : 'Not Started'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-gray-600 whitespace-pre-wrap flex-1">
+                {finding.progress_pemenuhan}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-gray-500 ml-2">
                 <FaClock />
                 <span>{formatDate(finding.commitment_date)}</span>
               </div>
-            </div>
-            <div className="text-xs text-gray-600 whitespace-pre-wrap ml-4">
-              {finding.progress_pemenuhan}
             </div>
           </div>
         ))}
